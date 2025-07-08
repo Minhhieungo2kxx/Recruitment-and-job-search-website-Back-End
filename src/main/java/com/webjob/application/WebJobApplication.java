@@ -8,7 +8,6 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 //@SpringBootApplication
 @SpringBootApplication(exclude = { SecurityAutoConfiguration.class })
 
-
 public class WebJobApplication {
 
     public static void main(String[] args) {
