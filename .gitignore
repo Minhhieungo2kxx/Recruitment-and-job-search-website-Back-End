@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+# Env files - chứa thông tin nhạy cảm
+.env
+.env.*
