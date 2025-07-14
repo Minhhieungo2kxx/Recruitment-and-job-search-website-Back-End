@@ -99,11 +99,12 @@
 		</dependency>
 
 
-		<!-- Thêm dependencies cho OAuth2 -->
+		<!-- Thêm dependencies cho OAuth2 va JWT -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-oauth2-client</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
@@ -113,6 +114,15 @@
             <artifactId>spring-security-oauth2-jose</artifactId>
 
         </dependency>
+
+		<dependency>
+			<groupId>com.nimbusds</groupId>
+			<artifactId>nimbus-jose-jwt</artifactId>
+			<version>10.3.1</version>
+		</dependency>
+
+<!--END-->
+
 
 
 

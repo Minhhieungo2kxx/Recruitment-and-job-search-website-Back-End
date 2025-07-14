@@ -10,13 +10,8 @@ public class HomeController {
 
     @GetMapping("/")
     public String getHome(){
-        return "Welcome SpringBoot RestFul API";
+        return "Welcome SpringBoot RestFul API Beginner";
     }
 
-    // Chỉ người dùng có quyền ADMIN mới được truy cập
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/admin/dashboard")
-    public String getAdminDashboard() {
-        return "Welcome to Admin Dashboard!";
-    }
+
 }

@@ -1,7 +1,6 @@
-package com.webjob.application.Utils;
+package com.webjob.application.Services;
 
 
-import com.webjob.application.Utils.exceptions.AppConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -13,8 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-
-import static com.webjob.application.Utils.exceptions.AppConfig.JWT_ALGORITHM;
 
 
 @Service
@@ -42,7 +39,10 @@ public class SecurityUtil {
                 .expiresAt(validity)
                 .subject(authentication.getName())
                 .claim("admin",authentication)
-                .build();
+//                .claim("admin", authentication.getAuthorities().stream()
+//                        .map(GrantedAuthority::getAuthority)
+//                        .collect(toList()))
+               .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader,
                 claims)).getTokenValue();
