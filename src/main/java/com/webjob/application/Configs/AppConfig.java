@@ -3,6 +3,8 @@ package com.webjob.application.Configs;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
 
+import org.modelmapper.ModelMapper;
+import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -70,6 +72,17 @@ public class AppConfig {
                 JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
         return jwtAuthenticationConverter;
+    }
+
+    @Bean
+    public ModelMapper modelMapper() {
+        ModelMapper modelMapper = new ModelMapper();
+        // Cấu hình để ModelMapper bỏ qua các field null
+        modelMapper.getConfiguration().setSkipNullEnabled(true);
+        // Cấu hình chiến lược matching (bạn có thể thay đổi theo nhu cầu)
+        modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
+
+        return modelMapper;
     }
 
 

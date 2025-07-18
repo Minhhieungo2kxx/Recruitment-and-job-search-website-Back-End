@@ -48,7 +48,7 @@ public class GlobalExceptionHandler {
 
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "Kiểu dữ liệu không hợp lệ",
+                ex.getMessage(),
                 LocalDateTime.now(),
                 errors
         );
@@ -61,7 +61,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "Yêu cầu không hợp lệ hoặc thiếu dữ liệu (JSON sai định dạng)",
+                ex.getMessage(),
                 LocalDateTime.now(),
                 null
         );
@@ -73,7 +73,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNullPointerException(NullPointerException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Lỗi hệ thống: NullPointerException",
+                ex.getMessage(),
                 LocalDateTime.now(),
                 null
         );
@@ -85,7 +85,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Đã xảy ra lỗi không xác định",
+                ex.getMessage(),
                 LocalDateTime.now(),
                 null
         );
@@ -112,6 +112,17 @@ public class GlobalExceptionHandler {
                 null
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    }
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleExitsEmail(IllegalArgumentException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+
     }
 
 
