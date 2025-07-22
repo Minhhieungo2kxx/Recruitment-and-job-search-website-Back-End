@@ -2,12 +2,14 @@ package com.webjob.application.Services;
 
 import com.webjob.application.Models.User;
 import com.webjob.application.Repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -69,8 +71,20 @@ public class UserService {
     }
 
     public User getbyEmail(String email) {
-        return this.userRepository.findByEmail(email);
+        User user = this.userRepository.findByEmail(email);
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found with email: " + email);
+        }
+        return user;
     }
+    public User getEmailAndRefreshtoken(String email,String tokenrefresh) {
+        User user =userRepository.findByEmailAndRefreshToken(email,tokenrefresh);
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found with email or Refreshtoken,Please Check again");
+        }
+        return user;
+    }
+
 
     public Page<User> getAllPage(int page,int size){
         Sort.Direction direction=Sort.Direction.ASC;
@@ -80,4 +94,29 @@ public class UserService {
 
 
     }
+    @Transactional
+    public void updateRefreshtoken(Long id, String refreshtoken){
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
+        user.setRefreshToken(refreshtoken);
+        userRepository.save(user);
+    }
 }
+
+///@Transactional là một annotation trong Spring (Spring Framework và Spring Boot),
+// dùng để quản lý giao dịch (transaction) khi bạn làm việc với CSDL (thường là qua JPA/Hibernate).
+//✅ Nó là gì?
+//@Transactional đánh dấu một phương thức hoặc class sẽ được thực thi trong một giao dịch CSDL (database transaction).
+//        🔍 Hiểu đơn giản:
+//Giao dịch (transaction) là một đơn vị công việc phải thành công hoàn toàn hoặc thất bại hoàn toàn – không có trạng thái nửa vời.
+//        📦 Tác dụng của @Transactional:
+//        1. Tự động mở giao dịch khi bắt đầu method
+//Spring sẽ tạo một transaction khi method được gọi.
+//
+//2. Theo dõi thay đổi của entity (managed state)
+//Nếu bạn lấy entity từ DB, chỉnh sửa nó – Hibernate sẽ tự động cập nhật khi kết thúc method (dirty checking).
+//
+//        3. Tự động commit hoặc rollback
+//Nếu method kết thúc bình thường, Spring commit giao dịch (lưu thay đổi vào DB).
+//
+//Nếu xảy ra lỗi (runtime exception), Spring rollback giao dịch (hủy bỏ toàn bộ thay đổi)./

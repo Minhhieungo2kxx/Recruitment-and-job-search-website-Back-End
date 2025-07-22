@@ -68,7 +68,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-    // ✅ 4. Xử lý NullPointerException (lỗi lập trình)
+  //   ✅ 4. Xử lý NullPointerException (lỗi lập trình)
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<ErrorResponse> handleNullPointerException(NullPointerException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
@@ -124,6 +124,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
 
     }
+
 
 
 

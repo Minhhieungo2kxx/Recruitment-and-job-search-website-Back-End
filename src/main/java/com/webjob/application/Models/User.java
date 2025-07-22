@@ -54,26 +54,27 @@ public class User {
     @Size(max = 500, message = "Địa chỉ không được vượt quá 500 ký tự")
     private String address;
 
+    @Column(length = 512)
     private String refreshToken;
 
     @Column(name = "created_at", updatable = false)
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
+//    @JsonFormat(
+//            shape = JsonFormat.Shape.STRING,
+//            pattern = "yyyy-MM-dd HH:mm:ss a z",
+//            timezone = "Asia/Ho_Chi_Minh",
+//            locale = "en_US"
+//    )
     @CreatedDate
     private Instant createdAt;
 
     @Column(name = "updated_at")
     @LastModifiedDate
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
+//    @JsonFormat(
+//            shape = JsonFormat.Shape.STRING,
+//            pattern = "yyyy-MM-dd HH:mm:ss a z",
+//            timezone = "Asia/Ho_Chi_Minh",
+//            locale = "en_US"
+//    )
     private Instant updatedAt;
 
     @Column(name = "created_by")

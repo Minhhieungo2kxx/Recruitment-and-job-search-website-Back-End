@@ -11,6 +11,7 @@ public interface UserRepository extends JpaRepository<User,Long>, JpaSpecificati
     @SuppressWarnings("NullableProblems")
     boolean existsById(Long id);
     User findByEmail(String email);
+    User findByEmailAndRefreshToken(String email,String refreshtoken);
 
 
 

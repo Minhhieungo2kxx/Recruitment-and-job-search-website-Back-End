@@ -1,6 +1,9 @@
 package com.webjob.application.Services;
 
 
+import com.webjob.application.Models.Dto.LoginDTO;
+import com.webjob.application.Models.Dto.LoginResponse;
+import com.webjob.application.Models.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -19,8 +22,12 @@ public class SecurityUtil {
 
     @Value("${security.jwt.base64-secret}")
     private String jwtKey;
-    @Value("${security.jwt.token-validity-in-seconds}")
-    private Long jwtExpiration;
+
+    @Value("${security.jwt.access-token-validity-in-seconds}")
+    private Long jwtaccessExpiration;
+
+    @Value("${security.jwt.refresh-token-validity-in-seconds}")
+    private Long jwtrefreshExpiration;
     public static final MacAlgorithm JWT_ALGORITHM = MacAlgorithm.HS512;
 
     private final JwtEncoder jwtEncoder;
@@ -30,15 +37,15 @@ public class SecurityUtil {
     }
 
 
-    public String createToken(Authentication authentication) {
+    public String createacessToken(String email,LoginResponse.User user) {
         Instant now = Instant.now();
-        Instant validity = now.plus(jwtExpiration, ChronoUnit.SECONDS);
+        Instant validity = now.plus(jwtaccessExpiration, ChronoUnit.SECONDS);
 // @formatter:off
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)
                 .expiresAt(validity)
-                .subject(authentication.getName())
-                .claim("admin",authentication)
+                .subject(email)
+                .claim("user",user)
 //                .claim("admin", authentication.getAuthorities().stream()
 //                        .map(GrantedAuthority::getAuthority)
 //                        .collect(toList()))
@@ -47,4 +54,23 @@ public class SecurityUtil {
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader,
                 claims)).getTokenValue();
     }
+    public String createrefreshToken(String email,LoginResponse loginResponse) {
+        Instant now = Instant.now();
+        Instant validity = now.plus(jwtrefreshExpiration, ChronoUnit.SECONDS);
+// @formatter:off
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuedAt(now)
+                .expiresAt(validity)
+                .subject(email)
+                .claim("user",loginResponse.getUser())
+//                .claim("admin", authentication.getAuthorities().stream()
+//                        .map(GrantedAuthority::getAuthority)
+//                        .collect(toList()))
+                .build();
+        JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
+        return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader,
+                claims)).getTokenValue();
+    }
+
+
 }

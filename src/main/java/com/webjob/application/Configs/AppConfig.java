@@ -30,6 +30,7 @@ public class AppConfig {
     @Value("${security.jwt.base64-secret}")
     private String jwtKey;
 
+
     public static final MacAlgorithm JWT_ALGORITHM = MacAlgorithm.HS512;
 
     @Bean
@@ -67,7 +68,7 @@ public class AppConfig {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new
                 JwtGrantedAuthoritiesConverter();
         grantedAuthoritiesConverter.setAuthorityPrefix("");
-        grantedAuthoritiesConverter.setAuthoritiesClaimName("admin");
+        grantedAuthoritiesConverter.setAuthoritiesClaimName("permission");
         JwtAuthenticationConverter jwtAuthenticationConverter = new
                 JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
