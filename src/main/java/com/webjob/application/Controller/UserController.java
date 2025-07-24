@@ -1,13 +1,16 @@
 package com.webjob.application.Controller;
 
-import com.webjob.application.Models.Dto.MetaDTO;
-import com.webjob.application.Models.Dto.ResponsepageDTO;
-import com.webjob.application.Models.Dto.UserDTO;
+import com.webjob.application.Models.Company;
+import com.webjob.application.Models.Request.Userrequest;
+import com.webjob.application.Models.Response.ApiResponse;
+import com.webjob.application.Models.Response.MetaDTO;
+import com.webjob.application.Models.Response.ResponseDTO;
+import com.webjob.application.Models.Response.UserDTO;
 import com.webjob.application.Models.User;
+import com.webjob.application.Services.CompanyService;
 import com.webjob.application.Services.UserService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,24 +26,45 @@ public class UserController {
     private final UserService userService;
     private final ModelMapper modelMapper;
 
+    private final CompanyService companyService;
 
-    public UserController(UserService userService, ModelMapper modelMapper) {
+
+    public UserController(UserService userService, ModelMapper modelMapper, CompanyService companyService) {
         this.userService = userService;
         this.modelMapper = modelMapper;
+        this.companyService = companyService;
     }
 
     @PostMapping("/create/user")
-    public ResponseEntity<?> create(@Valid @RequestBody User user) {
+    public ResponseEntity<ApiResponse<UserDTO>> create(@Valid @RequestBody Userrequest userrequest) {
         try {
-            User save_user = userService.handle(user);
-            UserDTO userDTO=modelMapper.map(save_user, UserDTO.class);
-            return new ResponseEntity<>(userDTO, HttpStatus.CREATED);
+            Company company = companyService.getbyID(userrequest.getCompany().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Company not found with ID: " + userrequest.getCompany().getId()));
+
+            // Tạo user và ánh xạ dữ liệu
+            User user = modelMapper.map(userrequest, User.class);
+            user.setCompany(company); // Gán lại company sau khi map để không bị ghi đè
+
+            // Xử lý và phản hồi
+            User userSaved = userService.handle(user);
+            UserDTO userDTO = modelMapper.map(userSaved, UserDTO.class);
+
+            ApiResponse<UserDTO> response = new ApiResponse<>(
+                    HttpStatus.CREATED.value(),
+                    null,
+                    "Create USER successful",
+                    userDTO
+            );
+
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
 
         } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
-        }
 
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new ApiResponse<>(HttpStatus.CONFLICT.value(), null, ex.getMessage(), null));
+        }
     }
+
 
 
     @GetMapping("/all/user")
@@ -56,27 +80,38 @@ public class UserController {
                 UserDTO userDTO=modelMapper.map(user,UserDTO.class);
                 userDTOList.add(userDTO);
             }
-            return ResponseEntity.ok(userDTOList);
+            ApiResponse<List<UserDTO>> response = new ApiResponse<>(
+                    HttpStatus.CREATED.value(),
+                    null,
+                    "Get List USER successful",
+                    userDTOList
+            );
+            return ResponseEntity.ok(response);
         }
 
     }
 
 
     @PutMapping("user/edit/{id}")
-    public ResponseEntity<?> editUserById(@PathVariable Long id, @Valid @RequestBody User user) {
+    public ResponseEntity<?> editUserById(@PathVariable Long id,@Valid @RequestBody Userrequest userrequest) {
         try {
             userService.checkById(id);
-            Optional<User> canFind = userService.getbyID(id);
-            if (canFind.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + id);
-            }
-            User existingUser = canFind.get();
-            modelMapper.typeMap(User.class, User.class)
-                    .addMappings(mapper -> mapper.skip(User::setId));
+            Company company = companyService.getbyID(userrequest.getCompany().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Company not found with ID: " + userrequest.getCompany().getId()));
 
-            modelMapper.map(user, existingUser);
-            User updatedUser = userService.handleUpdate(existingUser);
-            return ResponseEntity.ok(modelMapper.map(updatedUser, UserDTO.class));
+            User user=userService.getbyID(id).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " +id));
+            modelMapper.map(userrequest,user);
+            user.setCompany(company);
+            User updatedUser = userService.handleUpdate(user);
+            UserDTO userDTO=modelMapper.map(updatedUser, UserDTO.class);
+            ApiResponse<UserDTO> response = new ApiResponse<>(
+                    HttpStatus.CREATED.value(),
+                    null,
+                    "Edit USER successful",
+                    userDTO
+
+            );
+            return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
@@ -90,8 +125,18 @@ public class UserController {
         try {
             userService.checkById(id);
             Optional<User> canfind = userService.getbyID(id);
+            if (canfind.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + id);
+            }
             User edit = canfind.get();
             userService.delete(edit);
+            ApiResponse<Object> response = new ApiResponse<>(
+                    HttpStatus.NO_CONTENT.value(),
+                    null,
+                    "Delete USER successful",
+                    null
+
+            );
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 
         } catch (
@@ -104,9 +149,16 @@ public class UserController {
     public ResponseEntity<?> getUserbyID(@PathVariable Long id) {
         try {
             userService.checkById(id);
-            Optional<User> findId = userService.getbyID(id);
-            User userid = findId.get();
-            return ResponseEntity.ok(userid);
+            User user=userService.getbyID(id).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " +id));
+            UserDTO userDTO=modelMapper.map(user,UserDTO.class);
+            ApiResponse<?> response = new ApiResponse<>(
+                    HttpStatus.CREATED.value(),
+                    null,
+                    "Detail USER successful",
+                    userDTO
+
+            );
+            return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
@@ -134,8 +186,20 @@ public class UserController {
         Long totalItem=pagelist.getTotalElements();
 
         MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
-        ResponsepageDTO<User> respon=new ResponsepageDTO<>(metaDTO,pagelist.getContent());
-        return ResponseEntity.ok(respon);
+        List<User> userList=pagelist.getContent();
+        List<UserDTO> userDTOList=new ArrayList<>();
+        for (User user:userList){
+            UserDTO userDTO=modelMapper.map(user,UserDTO.class);
+            userDTOList.add(userDTO);
+        }
+        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,userDTOList);
+        ApiResponse<?> response=new ApiResponse<>(
+                HttpStatus.OK.value(),
+                null,
+                "fetch all user",
+                respond
+        );
+        return ResponseEntity.ok(response);
 
     }
 

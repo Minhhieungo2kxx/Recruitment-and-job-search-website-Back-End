@@ -19,13 +19,13 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
-        ErrorResponse error = new ErrorResponse(
+        ErrorResponse<Object> error = new ErrorResponse(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized: " + authException.getMessage(),
                 null,
-                new HashMap<>()
+                new HashMap<>(),
+                null
         );
-
         response.setContentType("application/json");
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
 

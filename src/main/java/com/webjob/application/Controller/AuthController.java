@@ -1,13 +1,13 @@
 package com.webjob.application.Controller;
 
 
-import com.webjob.application.Models.Dto.LoginDTO;
-import com.webjob.application.Models.Dto.LoginResponse;
+import com.webjob.application.Models.Response.ApiResponse;
+import com.webjob.application.Models.Request.LoginDTO;
+import com.webjob.application.Models.Response.LoginResponse;
 import com.webjob.application.Models.User;
 import com.webjob.application.Services.SecurityUtil;
 import com.webjob.application.Services.UserService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -17,11 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 public class AuthController {
@@ -62,9 +58,7 @@ public class AuthController {
         String acess_token=securityUtil.createacessToken(respon.getEmail(),user);
         LoginResponse loginResponse=new LoginResponse(acess_token,user);
         String refresh_token=securityUtil.createrefreshToken(respon.getEmail(),loginResponse);
-
         userService.updateRefreshtoken(respon.getId(),refresh_token);
-
         ResponseCookie responseCookie= ResponseCookie.from("refresh",refresh_token)
                 .httpOnly(true)
                 .secure(true)
@@ -73,7 +67,14 @@ public class AuthController {
                 .build();
         HttpHeaders httpHeaders=new HttpHeaders();
         httpHeaders.set(HttpHeaders.SET_COOKIE,responseCookie.toString());
-        return ResponseEntity.ok().headers(httpHeaders).body(loginResponse);
+        ApiResponse<LoginResponse> response = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                null,
+                "Call API Login successful",
+                loginResponse
+        );
+
+        return ResponseEntity.ok().headers(httpHeaders).body(response);
 
     }
 //    Lay ra thong tin nguoi dung khi da gui kem access-token khi yeu cau den server
@@ -91,7 +92,13 @@ public class AuthController {
         String email = authentication.getName();
         User user = userService.getbyEmail(email);
         LoginResponse.User responseUser = new LoginResponse.User(user.getId(), user.getEmail(),user.getFullName());
-        return ResponseEntity.ok(responseUser);
+        ApiResponse<LoginResponse.User> response = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                null,
+                "get Account successful",
+                responseUser
+        );
+        return ResponseEntity.ok(response);
     }
     @GetMapping("/auth/refresh")
     public ResponseEntity<?> getRefreshToken(@CookieValue(name = "refresh", defaultValue = "default") String refreshToken) {
@@ -111,7 +118,13 @@ public class AuthController {
                     .httpOnly(true).secure(true).path("/").maxAge(jwtrefreshExpiration).build();
             HttpHeaders httpHeaders=new HttpHeaders();
             httpHeaders.set(HttpHeaders.SET_COOKIE,responseCookie.toString());
-            return ResponseEntity.ok().headers(httpHeaders).body(loginResponse);
+            ApiResponse<LoginResponse> response = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                null,
+                "Get User by refresh token",
+                loginResponse
+        );
+            return ResponseEntity.ok().headers(httpHeaders).body(response);
 
     }
     @PostMapping("/auth/logout")
@@ -133,11 +146,14 @@ public class AuthController {
                 .httpOnly(true).secure(true).path("/").maxAge(0).build();
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.SET_COOKIE, deleteCookie.toString());
-        Map<String,Object> responseBody=new HashMap<>();
-        responseBody.put("statusCode",HttpStatus.OK.value());
-        responseBody.put("message", "Logout User");
-        responseBody.put("data", null); // được phép
-        return ResponseEntity.ok().headers(headers).body(responseBody);
+        ApiResponse<Object> response = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                null,
+                "Logout User",
+                null
+        );
+
+        return ResponseEntity.ok().headers(headers).body(response);
     }
 
 }

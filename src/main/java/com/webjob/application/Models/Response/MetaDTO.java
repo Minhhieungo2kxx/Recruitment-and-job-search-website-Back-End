@@ -1,4 +1,4 @@
-package com.webjob.application.Models.Dto;
+package com.webjob.application.Models.Response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

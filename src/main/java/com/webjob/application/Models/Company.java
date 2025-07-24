@@ -2,6 +2,7 @@ package com.webjob.application.Models;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,6 +15,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Table(name = "companies")
@@ -45,23 +47,11 @@ public class Company {
 
 
     @Column(name = "created_at", updatable = false)
-//    @JsonFormat(
-//            shape = JsonFormat.Shape.STRING,
-//            pattern = "yyyy-MM-dd HH:mm:ss a z",
-//            timezone = "Asia/Ho_Chi_Minh",
-//            locale = "en_US"
-//    )
     @CreatedDate
     private Instant createdAt;
 
     @Column(name = "updated_at")
     @LastModifiedDate
-//    @JsonFormat(
-//            shape = JsonFormat.Shape.STRING,
-//            pattern = "yyyy-MM-dd HH:mm:ss a z",
-//            timezone = "Asia/Ho_Chi_Minh",
-//            locale = "en_US"
-//    )
     private Instant updatedAt;
 
     @Column(name = "created_by")
@@ -73,4 +63,10 @@ public class Company {
     @Size(max = 100, message = "Người cập nhật không được vượt quá 100 ký tự")
     @LastModifiedBy
     private String updatedBy;
+
+    @OneToMany(mappedBy ="company",fetch =FetchType.LAZY)
+    @JsonIgnore
+    private List<User> users;
+
+
 }

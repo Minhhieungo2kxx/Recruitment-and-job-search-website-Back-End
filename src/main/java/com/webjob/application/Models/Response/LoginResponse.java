@@ -1,5 +1,6 @@
-package com.webjob.application.Models.Dto;
+package com.webjob.application.Models.Response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,14 +10,12 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class LoginResponse {
+    @JsonProperty("access_token")
     private String accessToken;
     private User user;
 
-    public LoginResponse(String accessToken, User user) {
-        this.accessToken = accessToken;
-        this.user = user;
-    }
 
     @Getter
     @Setter

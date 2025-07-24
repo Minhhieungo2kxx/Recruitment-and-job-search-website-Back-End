@@ -1,5 +1,6 @@
-package com.webjob.application.Services;
+package com.webjob.application.Configs;
 
+import com.webjob.application.Services.UserService;
 import org.hibernate.annotations.Comment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;

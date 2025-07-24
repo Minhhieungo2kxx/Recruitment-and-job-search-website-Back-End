@@ -1,11 +1,8 @@
 package com.webjob.application.Services;
 
 
-import com.webjob.application.Models.Dto.LoginDTO;
-import com.webjob.application.Models.Dto.LoginResponse;
-import com.webjob.application.Models.User;
+import com.webjob.application.Models.Response.LoginResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;

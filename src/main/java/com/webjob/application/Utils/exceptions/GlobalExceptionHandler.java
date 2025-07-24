@@ -28,29 +28,31 @@ public class GlobalExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        ErrorResponse errorResponse = new ErrorResponse(
+        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
                 HttpStatus.BAD_REQUEST.value(),
                 "Dữ liệu không hợp lệ",
                 LocalDateTime.now(),
-                errors
+                errors,
+                null
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+    public ResponseEntity<?> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         String param = ex.getName();
         String message = "Tham số '" + param + "' sai kiểu. Phải là kiểu " + ex.getRequiredType().getSimpleName();
 
         Map<String, String> errors = new HashMap<>();
         errors.put(param, message);
 
-        ErrorResponse errorResponse = new ErrorResponse(
+        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
                 HttpStatus.BAD_REQUEST.value(),
                 ex.getMessage(),
                 LocalDateTime.now(),
-                errors
+                errors,
+                null
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
@@ -58,23 +60,27 @@ public class GlobalExceptionHandler {
 
     // ✅ 3. Xử lý HttpMessageNotReadableException (khi JSON bị sai format hoặc thiếu)
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
+    public ResponseEntity<?> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
                 HttpStatus.BAD_REQUEST.value(),
                 ex.getMessage(),
                 LocalDateTime.now(),
+                null,
                 null
+
+
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
   //   ✅ 4. Xử lý NullPointerException (lỗi lập trình)
     @ExceptionHandler(NullPointerException.class)
-    public ResponseEntity<ErrorResponse> handleNullPointerException(NullPointerException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
+    public ResponseEntity<?> handleNullPointerException(NullPointerException ex) {
+        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 ex.getMessage(),
                 LocalDateTime.now(),
+                null,
                 null
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -82,43 +88,47 @@ public class GlobalExceptionHandler {
 
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
+    public ResponseEntity<?> handleGenericException(Exception ex) {
+        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 ex.getMessage(),
                 LocalDateTime.now(),
+                null,
                 null
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUsernameNotFoundException(UsernameNotFoundException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
+    public ResponseEntity<?> handleUsernameNotFoundException(UsernameNotFoundException ex) {
+        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),
                 LocalDateTime.now(),
-                null // Không có errors chi tiết dạng field, có thể bỏ qua
+                null,
+                null
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
+        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
                 HttpStatus.FORBIDDEN.value(),
                 "Tài khoản hoặc mật khẩu không đúng",
                 LocalDateTime.now(),
+                null,
                 null
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleExitsEmail(IllegalArgumentException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
+        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
                 HttpStatus.CONFLICT.value(),
                 ex.getMessage(),
                 LocalDateTime.now(),
+                null,
                 null
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);

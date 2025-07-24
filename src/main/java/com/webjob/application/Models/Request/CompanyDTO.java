@@ -1,4 +1,4 @@
-package com.webjob.application.Models.Dto;
+package com.webjob.application.Models.Request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;

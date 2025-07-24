@@ -1,4 +1,4 @@
-package com.webjob.application.Models.Dto;
+package com.webjob.application.Models.Response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Column;
@@ -19,8 +19,8 @@ import java.time.Instant;
 
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class UserDTO {
 
     private long id;
@@ -35,24 +35,26 @@ public class UserDTO {
 
     private String address;
 
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
 
     private Instant createdAt;
 
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
     private Instant updatedAt;
 
     private String createdBy;
 
     private String updatedBy;
+
+    private Company company;
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Company{
+        private Long id;
+        private String name;
+
+
+    }
+
 }

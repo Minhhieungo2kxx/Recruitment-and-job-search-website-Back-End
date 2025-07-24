@@ -2,21 +2,21 @@ package com.webjob.application.Controller;
 
 
 import com.webjob.application.Models.Company;
-import com.webjob.application.Models.Dto.CompanyDTO;
-import com.webjob.application.Models.Dto.MetaDTO;
-import com.webjob.application.Models.Dto.ResponsepageDTO;
-import com.webjob.application.Models.Dto.SearchCompanyDTO;
+import com.webjob.application.Models.Request.CompanyDTO;
+import com.webjob.application.Models.Request.SearchCompanyDTO;
+import com.webjob.application.Models.Response.ApiResponse;
+import com.webjob.application.Models.Response.MetaDTO;
+import com.webjob.application.Models.Response.ResponseDTO;
 import com.webjob.application.Models.User;
 import com.webjob.application.Services.CompanyService;
+import com.webjob.application.Services.UserService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,26 +24,43 @@ import java.util.Optional;
 public class CompanyController {
     private final CompanyService companyService;
     private final ModelMapper modelMapper;
+    private final UserService userService;
 
 
-    public CompanyController(CompanyService companyService, ModelMapper modelMapper) {
+    public CompanyController(CompanyService companyService, ModelMapper modelMapper, UserService userService) {
         this.companyService = companyService;
         this.modelMapper = modelMapper;
+        this.userService = userService;
     }
     @PostMapping("/create/companies")
     public ResponseEntity<?> create(@Valid @RequestBody CompanyDTO companyDTO){
         Company company=modelMapper.map(companyDTO,Company.class);
         Company respond=companyService.handle(company);
-        return new ResponseEntity<>(respond, HttpStatus.CREATED);
+        ApiResponse<Company> response = new ApiResponse<>(
+                HttpStatus.CREATED.value(),
+                null,
+                "Create Company successful",
+                respond
+
+        );
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
 
     }
     @GetMapping("/all/companies")
     public ResponseEntity<?> GetallCompanies(){
         List<Company> list=companyService.getAll();
         if(list.isEmpty()){
+
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
-        return ResponseEntity.ok(list);
+        ApiResponse<List<Company>> response = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                null,
+                "GEt All Company successful",
+                list
+
+        );
+        return ResponseEntity.ok(response);
     }
     @PutMapping("edit/company/{id}")
     public ResponseEntity<?> EditCompany(@PathVariable Long id,@Valid @RequestBody CompanyDTO companyDTO){
@@ -53,7 +70,14 @@ public class CompanyController {
                 Company edit=ops.get();
                 modelMapper.map(companyDTO,edit);
                 companyService.handle(edit);
-                return ResponseEntity.ok(edit);
+            ApiResponse<Company> response = new ApiResponse<>(
+                    HttpStatus.OK.value(),
+                    null,
+                    "Edit Company successful",
+                    edit
+
+            );
+                return ResponseEntity.ok(response);
 
         }catch (IllegalArgumentException ex){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
@@ -66,7 +90,15 @@ public class CompanyController {
             companyService.checkByID(id);
             Optional<Company> findId=companyService.getbyID(id);
             Company detail=findId.get();
-            return ResponseEntity.ok(detail);
+
+            ApiResponse<Company> response = new ApiResponse<>(
+                    HttpStatus.OK.value(),
+                    null,
+                    "Edit Company successful",
+                    detail
+
+            );
+            return ResponseEntity.ok(response);
 
         }catch (IllegalArgumentException ex){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
@@ -107,8 +139,16 @@ public class CompanyController {
         int totalPages = companypage.getTotalPages(); // Tổng số trang
         long totalItems = companypage.getTotalElements(); // Tổng số phần tử
         MetaDTO metaDTO=new MetaDTO(currentpage,pageSize,totalPages,totalItems);
-        ResponsepageDTO<Company> responsepageDTO =new ResponsepageDTO<>(metaDTO,companypage.getContent());
-        return ResponseEntity.ok(responsepageDTO);
+        ResponseDTO<?> responseDTO =new ResponseDTO<>(metaDTO,companypage.getContent());
+        ApiResponse<?> response = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                null,
+                "Fetch Company successful",
+                responseDTO
+
+        );
+
+        return ResponseEntity.ok(response);
 
     }
     @GetMapping("/api/companies/search")
@@ -134,8 +174,14 @@ public class CompanyController {
         long totalItems = companyPage.getTotalElements();
 
         MetaDTO metaDTO = new MetaDTO(currentPage, pageSize, totalPages, totalItems);
-        ResponsepageDTO<Company> responsePageDTO = new ResponsepageDTO<>(metaDTO, companyPage.getContent());
+        ResponseDTO<?> responsePageDTO = new ResponseDTO<>(metaDTO, companyPage.getContent());
+        ApiResponse<?> response = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                null,
+                "Fetch Company successful",
+                responsePageDTO
+        );
 
-        return ResponseEntity.ok(responsePageDTO);
+        return ResponseEntity.ok(response);
     }
 }

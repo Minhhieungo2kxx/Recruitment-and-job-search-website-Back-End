@@ -1,6 +1,7 @@
-package com.webjob.application.Models;
+package com.webjob.application.Models.Request;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.webjob.application.Models.Company;
+import com.webjob.application.Models.Response.UserDTO;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -11,21 +12,15 @@ import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 
-@Entity
-@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EntityListeners(AuditingEntityListener.class)
-public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+public class Userrequest {
+
 
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không đúng định dạng")
@@ -34,7 +29,6 @@ public class User {
 
     @NotBlank(message = "Mật khẩu không được để trống")
     @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
-
     private String password;
 
     @NotBlank(message = "Họ tên không được để trống")
@@ -54,32 +48,17 @@ public class User {
     @Size(max = 500, message = "Địa chỉ không được vượt quá 500 ký tự")
     private String address;
 
-    @Column(length = 512)
-    private String refreshToken;
-
-    @Column(name = "created_at", updatable = false)
-
-    @CreatedDate
-    private Instant createdAt;
-
-    @Column(name = "updated_at")
-    @LastModifiedDate
-    private Instant updatedAt;
-
-    @Column(name = "created_by")
-    @Size(max = 100, message = "Người tạo không được vượt quá 100 ký tự")
-    @CreatedBy
-    private String createdBy;
-
-    @Column(name = "updated_by")
-    @Size(max = 100, message = "Người cập nhật không được vượt quá 100 ký tự")
-    @LastModifiedBy
-    private String updatedBy;
-
-    @ManyToOne
-    @JoinColumn(name ="company_id")
     private Company company;
 
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Company{
+        private Long id;
+        private String name;
+
+    }
 
 
 

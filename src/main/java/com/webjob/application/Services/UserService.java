@@ -1,5 +1,6 @@
 package com.webjob.application.Services;
 
+import com.webjob.application.Models.Company;
 import com.webjob.application.Models.User;
 import com.webjob.application.Repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -100,6 +101,9 @@ public class UserService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
         user.setRefreshToken(refreshtoken);
         userRepository.save(user);
+    }
+    public Optional<User> geybyCompany(Company company){
+        return userRepository.findByCompany(company);
     }
 }
 

@@ -1,4 +1,4 @@
-package com.webjob.application.Models.Dto;
+package com.webjob.application.Models.Request;
 
 
 import jakarta.validation.constraints.NotBlank;
@@ -18,7 +18,6 @@ import java.util.List;
 public class SearchCompanyDTO {
 
     private String name;
-
 
     private String description;
 
