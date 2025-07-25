@@ -57,6 +57,7 @@ public class CompanyService {
         return true;
 
     }
+//    quan he 1-n
     @Transactional
     public void delete(Company company){
         List<User> userList=userRepository.findAllByCompany(company);

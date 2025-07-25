@@ -22,7 +22,7 @@ public class SearchCompanyDTO {
     private String description;
 
 
-  private String address;
+    private String address;
 
 
     private String logo;

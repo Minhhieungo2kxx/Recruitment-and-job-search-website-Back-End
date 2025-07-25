@@ -115,7 +115,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException ex) {
         ErrorResponse<Object> errorResponse = new ErrorResponse<>(
                 HttpStatus.FORBIDDEN.value(),
-                "Tài khoản hoặc mật khẩu không đúng",
+                ex.getMessage(),
                 LocalDateTime.now(),
                 null,
                 null

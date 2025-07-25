@@ -1,13 +1,13 @@
 package com.webjob.application.Models;
 
-
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -18,33 +18,20 @@ import java.time.Instant;
 import java.util.List;
 
 @Entity
-@Table(name = "companies")
+@Table(name = "skills")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-
-public class Company {
+public class Skill {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
-    @Column(nullable = false)
-    @NotBlank(message = "Tên công ty không được để trống")
-    @Size(min = 2, max = 255, message = "Tên công ty phải có từ 2 đến 255 ký tự")
+    @NotBlank(message = "Tên Skill không được để trống")
+    @Size(max = 255, message = "Tên Skill không được vượt quá 255 ký tự")
     private String name;
-
-    @Column(columnDefinition = "MEDIUMTEXT")
-    private String description;
-
-    @Size(max = 500, message = "Địa chỉ không được vượt quá 500 ký tự")
-    private String address;
-
-    @Size(max = 500, message = "Đường dẫn logo không được vượt quá 500 ký tự")
-    private String logo;
-
 
     @Column(name = "created_at", updatable = false)
     @CreatedDate
@@ -64,15 +51,9 @@ public class Company {
     @LastModifiedBy
     private String updatedBy;
 
-    @OneToMany(mappedBy ="company",fetch =FetchType.LAZY)
-    @JsonIgnore
-    private List<User> users;
-
-    @OneToMany(mappedBy ="company",fetch =FetchType.LAZY)
+    @ManyToMany(mappedBy = "skills")
     @JsonIgnore
     private List<Job> jobs;
-
-
 
 
 }

@@ -57,9 +57,9 @@ public class User {
     @Column(length = 512)
     private String refreshToken;
 
-    @Column(name = "created_at", updatable = false)
 
     @CreatedDate
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
     @Column(name = "updated_at")
