@@ -83,7 +83,7 @@ public class JobService {
     }
     public Job getById(Long id){
         Job getjob=jobRepository.findById(id).
-                orElseThrow(() -> new IllegalArgumentException("Company not found with ID: " +id));
+                orElseThrow(() -> new IllegalArgumentException("Job not found with ID: " +id));
         return getjob;
     }
 

@@ -1,6 +1,7 @@
 package com.webjob.application.Models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -79,6 +81,10 @@ public class User {
     @ManyToOne
     @JoinColumn(name ="company_id")
     private Company company;
+
+    @OneToMany(mappedBy ="user",fetch =FetchType.LAZY)
+    @JsonIgnore
+    private List<Resume> resumeList;
 
 
 

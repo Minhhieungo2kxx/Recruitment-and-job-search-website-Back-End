@@ -27,10 +27,14 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        String[] paths = {"/", "/auth/login", "/auth/refresh", "/storage/**"
+                ,"/api/jobs/**","api/companies/**"
+        };
+
+
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/auth/login","/auth/refresh"
-                        ,"/storage/**").permitAll()
+                        .requestMatchers(paths).permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())
