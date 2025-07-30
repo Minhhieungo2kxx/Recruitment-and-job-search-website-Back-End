@@ -40,6 +40,7 @@ public class ResumeResponse {
     private String createdBy;
 
     private String updatedBy;
+    private String companyName;
     private User user;
     private Job job;
     @Getter

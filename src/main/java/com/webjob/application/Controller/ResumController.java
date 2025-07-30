@@ -34,6 +34,9 @@ public class ResumController {
     public ResponseEntity<?> createJob(@Valid @RequestBody Resume resume) {
         Resume resumeSave=resumService.saveResume(resume);
         ResumeResponse resumeResponse=modelMapper.map(resumeSave,ResumeResponse.class);
+        if(resumeSave.getJob()!=null){
+            resumeResponse.setCompanyName(resumeSave.getJob().getCompany().getName());
+        }
         ApiResponse<?> apiResponse=new ApiResponse<>(HttpStatus.CREATED.value(), null,
                 "Tạo Resume thành công",
                 resumeResponse);
@@ -44,6 +47,9 @@ public class ResumController {
     public ResponseEntity<?> createJob(@PathVariable Long id, @Valid @RequestBody UpdateResumeDTO dto) {
         Resume edit=resumService.editResume(id,dto);
         ResumeResponse resumeResponse=modelMapper.map(edit,ResumeResponse.class);
+        if(edit.getJob()!=null){
+            resumeResponse.setCompanyName(edit.getJob().getCompany().getName());
+        }
         ApiResponse<?> apiResponse=new ApiResponse<>(HttpStatus.OK.value(), null,
                 "Update Resume thành công",
                 resumeResponse);
@@ -67,6 +73,9 @@ public class ResumController {
     public ResponseEntity<?> detailResumebyId(@PathVariable Long id) {
         Resume resume=resumService.getById(id);
         ResumeResponse resumeResponse=modelMapper.map(resume,ResumeResponse.class);
+        if(resume.getJob()!=null){
+            resumeResponse.setCompanyName(resume.getJob().getCompany().getName());
+        }
         ApiResponse<?> response = new ApiResponse<>(HttpStatus.OK.value(),
                 null,
                 "Detail Resume successful with "+id,
@@ -98,11 +107,50 @@ public class ResumController {
         List<ResumeResponse> ResponseList=new ArrayList<>();
         for(Resume resume:resumessList){
             ResumeResponse resumeResponse=modelMapper.map(resume,ResumeResponse.class);
+            if(resume.getJob()!=null){
+                resumeResponse.setCompanyName(resume.getJob().getCompany().getName());
+            }
             ResponseList.add(resumeResponse);
         }
         ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,ResponseList);
         ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
                 "Fetch all Resume Successful",
+                respond
+        );
+        return ResponseEntity.ok(response);
+
+    }
+    @PostMapping("/resumes/by-user")
+    public ResponseEntity<?> GetallResumebyUser(@RequestParam(value ="page") String pageparam){
+        int page=0;
+        int size=8;
+        try {
+            page = Integer.parseInt(pageparam);
+            if (page <= 0)
+                page = 1;
+        } catch (NumberFormatException e) {
+            // Nếu người dùng nhập sai, mặc định về trang đầu
+            page = 1;
+        }
+        Page<Resume> pagelist=resumService.getAllResumbyuser(page-1,size);
+        int currentpage=pagelist.getNumber()+1;
+        int pagesize=pagelist.getSize();
+        int totalpage=pagelist.getTotalPages();
+        Long totalItem=pagelist.getTotalElements();
+
+        MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
+        List<Resume> resumessList=pagelist.getContent();
+        List<ResumeResponse> ResponseList=new ArrayList<>();
+        for(Resume resume:resumessList){
+            ResumeResponse resumeResponse=modelMapper.map(resume,ResumeResponse.class);
+            if(resume.getJob()!=null){
+                resumeResponse.setCompanyName(resume.getJob().getCompany().getName());
+            }
+            ResponseList.add(resumeResponse);
+        }
+        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,ResponseList);
+        ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
+                "Fetch all Resumes by User Successful",
                 respond
         );
         return ResponseEntity.ok(response);

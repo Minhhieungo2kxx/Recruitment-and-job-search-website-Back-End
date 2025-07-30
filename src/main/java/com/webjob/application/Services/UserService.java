@@ -1,7 +1,10 @@
 package com.webjob.application.Services;
 
 import com.webjob.application.Models.Company;
+import com.webjob.application.Models.Resume;
+import com.webjob.application.Models.Role;
 import com.webjob.application.Models.User;
+import com.webjob.application.Repository.ResumeRepository;
 import com.webjob.application.Repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -22,7 +25,10 @@ public class UserService {
     private final UserRepository userRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
-
+    @Autowired
+    private RoleService roleService;
+    @Autowired
+    private ResumeRepository resumeRepository;
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -37,6 +43,8 @@ public class UserService {
             String encodedPassword = passwordEncoder.encode(user.getPassword());
             user.setPassword(encodedPassword);
         }
+        Role role=roleService.getByid(user.getRole().getId());
+        user.setRole(role);
         return userRepository.save(user);
     }
     @Transactional
@@ -68,6 +76,12 @@ public class UserService {
 
     @Transactional
     public void delete(User user){
+        Page<Resume> resumes = resumeRepository.findAllByUser(user,null);
+        List<Resume> resumeList=resumes.getContent();
+        for(Resume resume:resumeList){
+            resume.setUser(null);
+        }
+        resumeRepository.saveAll(resumeList);
         userRepository.delete(user);
     }
 

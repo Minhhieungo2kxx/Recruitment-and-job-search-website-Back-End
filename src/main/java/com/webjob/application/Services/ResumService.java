@@ -13,6 +13,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -63,6 +68,15 @@ public class ResumService {
         Pageable pageable= PageRequest.of(page,size,sort);
         return resumeRepository.findAll(pageable);
 
+    }
+    public Page<Resume> getAllResumbyuser(int page, int size){
+//        Sort.Direction direction=Sort.Direction.ASC;
+//        Sort sort=Sort.by(direction,"email");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        User user = userService.getbyEmail(email);
+        Pageable pageable= PageRequest.of(page,size);
+        return resumeRepository.findAllByUser(user,pageable);
     }
 
 

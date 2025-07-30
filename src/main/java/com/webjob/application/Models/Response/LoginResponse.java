@@ -1,6 +1,7 @@
 package com.webjob.application.Models.Response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.webjob.application.Models.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,7 +17,6 @@ public class LoginResponse {
     private String accessToken;
     private User user;
 
-
     @Getter
     @Setter
     @NoArgsConstructor
@@ -24,8 +24,21 @@ public class LoginResponse {
     public static class User {
         private Long id;
         private String email;
-        private String username;
+        private String fullName;
+        private Role role;
 
+
+
+    }
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UserinsideToken {
+        private Long id;
+        private String email;
+        private String username;
+        
 
     }
 }

@@ -11,8 +11,8 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ErrorResponse<T> {
-    private int status;
+public class ErrorResponseVadidate<T> {
+    private int statusCode;
     private String message;
     private LocalDateTime timestamp;
     private Map<String, String> errors;

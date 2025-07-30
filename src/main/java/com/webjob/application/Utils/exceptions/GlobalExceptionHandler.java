@@ -9,8 +9,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
@@ -28,7 +26,7 @@ public class GlobalExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
+        ErrorResponseVadidate<Object> errorResponseVadidate = new ErrorResponseVadidate<>(
                 HttpStatus.BAD_REQUEST.value(),
                 "Dữ liệu không hợp lệ",
                 LocalDateTime.now(),
@@ -36,102 +34,95 @@ public class GlobalExceptionHandler {
                 null
         );
 
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(errorResponseVadidate, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<?> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        String param = ex.getName();
-        String message = "Tham số '" + param + "' sai kiểu. Phải là kiểu " + ex.getRequiredType().getSimpleName();
-
-        Map<String, String> errors = new HashMap<>();
-        errors.put(param, message);
-
-        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
+        ErrorResponException<?> errorResponException=new ErrorResponException<>(
                 HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage(),
+                "Exception Error",
                 LocalDateTime.now(),
-                errors,
+                ex.getMessage(),
                 null
         );
 
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(ResponseEntity.badRequest(), HttpStatus.BAD_REQUEST);
     }
 
     // ✅ 3. Xử lý HttpMessageNotReadableException (khi JSON bị sai format hoặc thiếu)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
+        ErrorResponException<?> errorResponException=new ErrorResponException<>(
                 HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage(),
+                "Exception Error",
                 LocalDateTime.now(),
-                null,
+                ex.getMessage(),
                 null
-
-
         );
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(errorResponException, HttpStatus.BAD_REQUEST);
     }
 
   //   ✅ 4. Xử lý NullPointerException (lỗi lập trình)
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<?> handleNullPointerException(NullPointerException ex) {
-        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
+        ErrorResponException<?> errorResponException=new ErrorResponException<>(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                ex.getMessage(),
+                "Exception Error",
                 LocalDateTime.now(),
-                null,
+                ex.getMessage(),
                 null
         );
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(errorResponException, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGenericException(Exception ex) {
-        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
+        ErrorResponException<?> errorResponException=new ErrorResponException<>(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                ex.getMessage(),
+                "Exception Error",
                 LocalDateTime.now(),
-                null,
+                ex.getMessage(),
                 null
         );
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+
+        return new ResponseEntity<>(errorResponException, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<?> handleUsernameNotFoundException(UsernameNotFoundException ex) {
-        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
+        ErrorResponException<?> errorResponException=new ErrorResponException<>(
                 HttpStatus.NOT_FOUND.value(),
-                ex.getMessage(),
+                "Exception Error",
                 LocalDateTime.now(),
-                null,
+                ex.getMessage(),
                 null
         );
-        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(errorResponException, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException ex) {
-        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
+        ErrorResponException<?> errorResponException=new ErrorResponException<>(
                 HttpStatus.FORBIDDEN.value(),
-                ex.getMessage(),
+                "Exception Error",
                 LocalDateTime.now(),
-                null,
+                ex.getMessage(),
                 null
         );
-        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+        return new ResponseEntity<>(errorResponException, HttpStatus.FORBIDDEN);
     }
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleExitsEmail(IllegalArgumentException ex) {
-        ErrorResponse<Object> errorResponse = new ErrorResponse<>(
+        ErrorResponException<?> errorResponException=new ErrorResponException<>(
                 HttpStatus.CONFLICT.value(),
-                ex.getMessage(),
+                "Exception Error",
                 LocalDateTime.now(),
-                null,
+                ex.getMessage(),
                 null
         );
-        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+        return new ResponseEntity<>(errorResponException, HttpStatus.CONFLICT);
 
     }
 

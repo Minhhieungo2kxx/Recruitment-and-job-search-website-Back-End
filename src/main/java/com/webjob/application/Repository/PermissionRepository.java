@@ -1,0 +1,15 @@
+package com.webjob.application.Repository;
+
+import com.webjob.application.Models.Permission;
+import com.webjob.application.Models.Skill;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface PermissionRepository extends JpaRepository<Permission,Long> {
+
+    boolean existsByApiPathAndMethodAndModule(String apiPath,String method,String Module);
+    List<Permission> findByIdIn(List<Long> ids);
+}

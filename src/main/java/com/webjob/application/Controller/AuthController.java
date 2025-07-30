@@ -8,6 +8,8 @@ import com.webjob.application.Models.User;
 import com.webjob.application.Services.SecurityUtil;
 import com.webjob.application.Services.UserService;
 import jakarta.validation.Valid;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -30,6 +32,8 @@ public class AuthController {
     private final UserService userService;
 
     private final JwtDecoder jwtDecoder;
+    @Autowired
+    private ModelMapper modelMapper;
 
     public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil, UserService userService, JwtDecoder jwtDecoder) {
         this.authenticationManagerBuilder = authenticationManagerBuilder;
@@ -54,10 +58,12 @@ public class AuthController {
         String getEmail=auth.getName();
         User respon=userService.getbyEmail(getEmail);
 
-        LoginResponse.User user=new LoginResponse.User(respon.getId(),respon.getEmail(),respon.getFullName());
+//        LoginResponse.User user=new LoginResponse.User(respon.getId(),respon.getEmail(),respon.getFullName());
+        LoginResponse.User user=modelMapper.map(respon,LoginResponse.User.class);
+
         String acess_token=securityUtil.createacessToken(respon.getEmail(),user);
         LoginResponse loginResponse=new LoginResponse(acess_token,user);
-        String refresh_token=securityUtil.createrefreshToken(respon.getEmail(),loginResponse);
+        String refresh_token=securityUtil.createrefreshToken(respon.getEmail(),user);
         userService.updateRefreshtoken(respon.getId(),refresh_token);
         ResponseCookie responseCookie= ResponseCookie.from("refresh",refresh_token)
                 .httpOnly(true)
@@ -91,7 +97,8 @@ public class AuthController {
 
         String email = authentication.getName();
         User user = userService.getbyEmail(email);
-        LoginResponse.User responseUser = new LoginResponse.User(user.getId(), user.getEmail(),user.getFullName());
+//        LoginResponse.User responseUser = new LoginResponse.User(user.getId(), user.getEmail(),user.getFullName());
+        LoginResponse.User responseUser=modelMapper.map(user,LoginResponse.User.class);
         ApiResponse<LoginResponse.User> response = new ApiResponse<>(
                 HttpStatus.OK.value(),
                 null,
@@ -109,10 +116,13 @@ public class AuthController {
             String username = decodedJwt.getSubject();
             User getbyuser=userService.getEmailAndRefreshtoken(username,refreshToken);
 
-            LoginResponse.User user=new LoginResponse.User(getbyuser.getId(),getbyuser.getEmail(),getbyuser.getFullName());
+//            LoginResponse.User user=new LoginResponse.User(getbyuser.getId(),getbyuser.getEmail(),getbyuser.getFullName());
+            LoginResponse.User user=modelMapper.map(getbyuser,LoginResponse.User.class);
+
             String acess_token=securityUtil.createacessToken(getbyuser.getEmail(),user);
             LoginResponse loginResponse=new LoginResponse(acess_token,user);
-            String refresh_token=securityUtil.createrefreshToken(getbyuser.getEmail(),loginResponse);
+
+            String refresh_token=securityUtil.createrefreshToken(getbyuser.getEmail(),user);
             userService.updateRefreshtoken(getbyuser.getId(),refresh_token);
             ResponseCookie responseCookie= ResponseCookie.from("refresh",refresh_token)
                     .httpOnly(true).secure(true).path("/").maxAge(jwtrefreshExpiration).build();

@@ -86,6 +86,10 @@ public class User {
     @JsonIgnore
     private List<Resume> resumeList;
 
+    @ManyToOne
+    @JoinColumn(name = "role_id")
+    private Role role;
+
 
 
 

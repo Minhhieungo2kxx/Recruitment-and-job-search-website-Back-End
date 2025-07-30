@@ -50,6 +50,8 @@ public class Userrequest {
 
     private Company company;
 
+    private Role role;
+
     @Getter
     @Setter
     @NoArgsConstructor
@@ -57,6 +59,14 @@ public class Userrequest {
     public static class Company{
         private Long id;
         private String name;
+
+    }
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Role{
+        private Long id;
 
     }
 

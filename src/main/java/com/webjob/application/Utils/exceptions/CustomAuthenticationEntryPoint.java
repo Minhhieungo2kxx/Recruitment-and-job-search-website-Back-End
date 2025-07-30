@@ -10,7 +10,6 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 
 @Component
@@ -19,7 +18,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
-        ErrorResponse<Object> error = new ErrorResponse(
+        ErrorResponseVadidate<Object> error = new ErrorResponseVadidate(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized: " + authException.getMessage(),
                 null,

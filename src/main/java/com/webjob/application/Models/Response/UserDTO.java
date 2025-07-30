@@ -45,6 +45,7 @@ public class UserDTO {
     private String updatedBy;
 
     private Company company;
+    private Role role;
 
     @Getter
     @Setter
@@ -54,6 +55,15 @@ public class UserDTO {
         private Long id;
         private String name;
 
+
+    }
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Role{
+        private Long id;
+        private String name;
 
     }
 

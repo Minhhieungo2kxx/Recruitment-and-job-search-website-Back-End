@@ -8,12 +8,14 @@ import com.webjob.application.Models.Response.ResponseDTO;
 import com.webjob.application.Models.Response.UserDTO;
 import com.webjob.application.Models.User;
 import com.webjob.application.Services.CompanyService;
+import com.webjob.application.Services.RoleService;
 import com.webjob.application.Services.UserService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -29,21 +31,30 @@ public class UserController {
     private final CompanyService companyService;
 
 
-    public UserController(UserService userService, ModelMapper modelMapper, CompanyService companyService) {
+
+
+    public UserController(UserService userService, ModelMapper modelMapper, CompanyService companyService, RoleService roleService) {
         this.userService = userService;
         this.modelMapper = modelMapper;
         this.companyService = companyService;
+
     }
 
     @PostMapping("/create/user")
     public ResponseEntity<ApiResponse<UserDTO>> create(@Valid @RequestBody Userrequest userrequest) {
-        try {
-            Company company = companyService.getbyID(userrequest.getCompany().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Company not found with ID: " + userrequest.getCompany().getId()));
 
+//            Company company = companyService.getbyID(userrequest.getCompany().getId())
+//                    .orElseThrow(() -> new IllegalArgumentException("Company not found with ID: " + userrequest.getCompany().getId()));
+            Optional<Company> company=companyService.getbyID(userrequest.getCompany().getId());
             // Tạo user và ánh xạ dữ liệu
             User user = modelMapper.map(userrequest, User.class);
-            user.setCompany(company); // Gán lại company sau khi map để không bị ghi đè
+            if(company.isPresent()){
+                user.setCompany(company.get()); // Gán lại company sau khi map để không bị ghi đè
+            }
+            else{
+                user.setCompany(null);
+            }
+
 
             // Xử lý và phản hồi
             User userSaved = userService.handle(user);
@@ -58,12 +69,8 @@ public class UserController {
 
             return new ResponseEntity<>(response, HttpStatus.CREATED);
 
-        } catch (IllegalArgumentException ex) {
-
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(new ApiResponse<>(HttpStatus.CONFLICT.value(), null, ex.getMessage(), null));
         }
-    }
+
 
 
 
@@ -94,14 +101,22 @@ public class UserController {
 
     @PutMapping("user/edit/{id}")
     public ResponseEntity<?> editUserById(@PathVariable Long id,@Valid @RequestBody Userrequest userrequest) {
-        try {
+
             userService.checkById(id);
-            Company company = companyService.getbyID(userrequest.getCompany().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Company not found with ID: " + userrequest.getCompany().getId()));
+//            Company company = companyService.getbyID(userrequest.getCompany().getId())
+//                    .orElseThrow(() -> new IllegalArgumentException("Company not found with ID: " + userrequest.getCompany().getId()));
 
             User user=userService.getbyID(id).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " +id));
             modelMapper.map(userrequest,user);
-            user.setCompany(company);
+            Optional<Company> company=companyService.getbyID(userrequest.getCompany().getId());
+            if(company.isPresent()){
+                user.setCompany(company.get()); // Gán lại company sau khi map để không bị ghi đè
+            }
+            else{
+                user.setCompany(null);
+            }
+
+
             User updatedUser = userService.handleUpdate(user);
             UserDTO userDTO=modelMapper.map(updatedUser, UserDTO.class);
             ApiResponse<UserDTO> response = new ApiResponse<>(
@@ -113,20 +128,15 @@ public class UserController {
             );
             return ResponseEntity.ok(response);
 
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error: " + ex.getMessage());
-        }
     }
 
     @DeleteMapping("user/delete/{id}")
     public ResponseEntity<?> deleteUserbyId(@PathVariable Long id) {
-        try {
+
             userService.checkById(id);
             Optional<User> canfind = userService.getbyID(id);
             if (canfind.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + id);
+                throw new UsernameNotFoundException("User not found with id: " + id);
             }
             User edit = canfind.get();
             userService.delete(edit);
@@ -137,12 +147,8 @@ public class UserController {
                     null
 
             );
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+            return ResponseEntity.ok(response);
 
-        } catch (
-                IllegalArgumentException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        }
     }
 
     @GetMapping("user/detail/{id}")

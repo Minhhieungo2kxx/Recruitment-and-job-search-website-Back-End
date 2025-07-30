@@ -37,12 +37,16 @@ public class SecurityUtil {
     public String createacessToken(String email,LoginResponse.User user) {
         Instant now = Instant.now();
         Instant validity = now.plus(jwtaccessExpiration, ChronoUnit.SECONDS);
+        LoginResponse.UserinsideToken userinsideToken=new LoginResponse.UserinsideToken();
+        userinsideToken.setId(user.getId());
+        userinsideToken.setEmail(user.getEmail());
+        userinsideToken.setUsername(user.getFullName());
 // @formatter:off
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)
                 .expiresAt(validity)
                 .subject(email)
-                .claim("user",user)
+                .claim("user",userinsideToken)
 //                .claim("admin", authentication.getAuthorities().stream()
 //                        .map(GrantedAuthority::getAuthority)
 //                        .collect(toList()))
@@ -51,15 +55,19 @@ public class SecurityUtil {
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader,
                 claims)).getTokenValue();
     }
-    public String createrefreshToken(String email,LoginResponse loginResponse) {
+    public String createrefreshToken(String email,LoginResponse.User user) {
         Instant now = Instant.now();
         Instant validity = now.plus(jwtrefreshExpiration, ChronoUnit.SECONDS);
+        LoginResponse.UserinsideToken userinsideToken=new LoginResponse.UserinsideToken();
+        userinsideToken.setId(user.getId());
+        userinsideToken.setEmail(user.getEmail());
+        userinsideToken.setUsername(user.getFullName());
 // @formatter:off
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)
                 .expiresAt(validity)
                 .subject(email)
-                .claim("user",loginResponse.getUser())
+                .claim("user",userinsideToken)
 //                .claim("admin", authentication.getAuthorities().stream()
 //                        .map(GrantedAuthority::getAuthority)
 //                        .collect(toList()))
