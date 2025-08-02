@@ -3,6 +3,7 @@ package com.webjob.application.Controller;
 import com.webjob.application.Models.Company;
 import com.webjob.application.Models.Job;
 import com.webjob.application.Models.Request.JobRequest;
+import com.webjob.application.Models.Request.Search.JobFiltersearch;
 import com.webjob.application.Models.Response.*;
 import com.webjob.application.Models.Skill;
 import com.webjob.application.Models.User;
@@ -76,26 +77,9 @@ public class JobController {
 
     }
     @GetMapping("/api/jobs")
-    public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
-        int page=0;
-        int size=8;
-        try {
-            page = Integer.parseInt(pageparam);
-            if (page <= 0)
-                page = 1;
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
-            page = 1;
-        }
-        Page<Job> pagelist=jobService.getAllPage(page-1,size);
-        int currentpage=pagelist.getNumber()+1;
-        int pagesize=pagelist.getSize();
-        int totalpage=pagelist.getTotalPages();
-        Long totalItem=pagelist.getTotalElements();
+    public ResponseEntity<?> GetallPageList(@ModelAttribute JobFiltersearch jobFiltersearch){
 
-        MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
-        List<Job> jobsList=pagelist.getContent();
-        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,jobsList);
+        ResponseDTO<?> respond=jobService.getPaginated(jobFiltersearch,"default");
         ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
                 "fetch all Jobs",
                 respond
@@ -123,6 +107,16 @@ public class JobController {
 
             );
             return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+    @GetMapping("/api/jobs/search")
+    public ResponseEntity<?> GetallSearch(@ModelAttribute JobFiltersearch jobFiltersearch){
+        ResponseDTO<?> respond=jobService.getPaginated(jobFiltersearch,"filter-job");
+        ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
+                "Filter all Jobs with condition Succesful",
+                respond
+        );
+        return ResponseEntity.ok(response);
+
     }
 
 

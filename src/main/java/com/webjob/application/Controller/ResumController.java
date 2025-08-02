@@ -86,33 +86,8 @@ public class ResumController {
     }
     @GetMapping("/api/resumes")
     public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
-        int page=0;
-        int size=8;
-        try {
-            page = Integer.parseInt(pageparam);
-            if (page <= 0)
-                page = 1;
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
-            page = 1;
-        }
-        Page<Resume> pagelist=resumService.getAllPage(page-1,size);
-        int currentpage=pagelist.getNumber()+1;
-        int pagesize=pagelist.getSize();
-        int totalpage=pagelist.getTotalPages();
-        Long totalItem=pagelist.getTotalElements();
 
-        MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
-        List<Resume> resumessList=pagelist.getContent();
-        List<ResumeResponse> ResponseList=new ArrayList<>();
-        for(Resume resume:resumessList){
-            ResumeResponse resumeResponse=modelMapper.map(resume,ResumeResponse.class);
-            if(resume.getJob()!=null){
-                resumeResponse.setCompanyName(resume.getJob().getCompany().getName());
-            }
-            ResponseList.add(resumeResponse);
-        }
-        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,ResponseList);
+        ResponseDTO<?> respond=resumService.getPaginatedResumes(pageparam,"default");
         ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
                 "Fetch all Resume Successful",
                 respond
@@ -122,39 +97,23 @@ public class ResumController {
     }
     @PostMapping("/resumes/by-user")
     public ResponseEntity<?> GetallResumebyUser(@RequestParam(value ="page") String pageparam){
-        int page=0;
-        int size=8;
-        try {
-            page = Integer.parseInt(pageparam);
-            if (page <= 0)
-                page = 1;
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
-            page = 1;
-        }
-        Page<Resume> pagelist=resumService.getAllResumbyuser(page-1,size);
-        int currentpage=pagelist.getNumber()+1;
-        int pagesize=pagelist.getSize();
-        int totalpage=pagelist.getTotalPages();
-        Long totalItem=pagelist.getTotalElements();
 
-        MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
-        List<Resume> resumessList=pagelist.getContent();
-        List<ResumeResponse> ResponseList=new ArrayList<>();
-        for(Resume resume:resumessList){
-            ResumeResponse resumeResponse=modelMapper.map(resume,ResumeResponse.class);
-            if(resume.getJob()!=null){
-                resumeResponse.setCompanyName(resume.getJob().getCompany().getName());
-            }
-            ResponseList.add(resumeResponse);
-        }
-        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,ResponseList);
+        ResponseDTO<?> respond=resumService.getPaginatedResumes(pageparam,"by-user");
         ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
                 "Fetch all Resumes by User Successful",
                 respond
         );
         return ResponseEntity.ok(response);
+    }
+    @GetMapping("/resumes/byHRcompany")
+    public ResponseEntity<?> GetallResumeHRcompany(@RequestParam(value ="page") String pageparam){
 
+        ResponseDTO<?> respond=resumService.getPaginatedResumes(pageparam,"HRfrom-Company");
+        ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
+                "Fetch all Resumes from Company Successful",
+                respond
+        );
+        return ResponseEntity.ok(response);
     }
 
 

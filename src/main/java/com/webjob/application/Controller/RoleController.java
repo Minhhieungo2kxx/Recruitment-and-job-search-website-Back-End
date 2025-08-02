@@ -1,14 +1,8 @@
 package com.webjob.application.Controller;
 
-import com.webjob.application.Models.Company;
-import com.webjob.application.Models.Job;
+import com.webjob.application.Models.*;
 import com.webjob.application.Models.Request.JobRequest;
-import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Models.Response.JobResponse;
-import com.webjob.application.Models.Response.MetaDTO;
-import com.webjob.application.Models.Response.ResponseDTO;
-import com.webjob.application.Models.Role;
-import com.webjob.application.Models.Skill;
+import com.webjob.application.Models.Response.*;
 import com.webjob.application.Services.RoleService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -44,25 +39,7 @@ public class RoleController {
     }
     @GetMapping("/api/roles")
     public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
-        int page=0;
-        int size=8;
-        try {
-            page = Integer.parseInt(pageparam);
-            if (page <= 0)
-                page = 1;
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
-            page = 1;
-        }
-        Page<Role> pagelist=roleService.getAllPage(page-1,size);
-        int currentpage=pagelist.getNumber()+1;
-        int pagesize=pagelist.getSize();
-        int totalpage=pagelist.getTotalPages();
-        Long totalItem=pagelist.getTotalElements();
-
-        MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
-        List<Role> jobsList=pagelist.getContent();
-        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,jobsList);
+        ResponseDTO<?> respond=roleService.getPaginated(pageparam,"default");
         ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
                 "fetch all Roles Successful",
                 respond
@@ -77,6 +54,17 @@ public class RoleController {
                 null,
                 "Delete Role successful with "+id,
                 null
+
+        );
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+    @GetMapping("/detail/role/{id}")
+    public ResponseEntity<?> detailRolebyId(@PathVariable Long id) {
+        Role role=roleService.getByid(id).orElseThrow(()->new IllegalArgumentException("Role not found with "+id));
+        ApiResponse<?> response = new ApiResponse<>(HttpStatus.OK.value(),
+                null,
+                "Detail Role successful with "+id,
+                role
 
         );
         return ResponseEntity.status(HttpStatus.OK).body(response);

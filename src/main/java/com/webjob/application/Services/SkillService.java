@@ -1,6 +1,9 @@
 package com.webjob.application.Services;
 
 
+import com.webjob.application.Models.Response.ApiResponse;
+import com.webjob.application.Models.Response.MetaDTO;
+import com.webjob.application.Models.Response.ResponseDTO;
 import com.webjob.application.Models.Skill;
 import com.webjob.application.Models.User;
 import com.webjob.application.Repository.SkillRepository;
@@ -9,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -48,6 +53,27 @@ public class SkillService {
         Sort sort=Sort.by(direction,"name");
         Pageable pageable= PageRequest.of(page,size,sort);
         return skillRepository.findAll(pageable);
+    }
+    public ResponseDTO<?> getAllPageList(String pageparam,String type){
+        int page=0;
+        int size=8;
+        try {
+            page = Integer.parseInt(pageparam);
+            if (page <= 0)
+                page = 1;
+        } catch (NumberFormatException e) {
+            // Nếu người dùng nhập sai, mặc định về trang đầu
+            page = 1;
+        }
+        Page<Skill> pagelist=getAllPage(page-1,size);
+        int currentpage=pagelist.getNumber()+1;
+        int pagesize=pagelist.getSize();
+        int totalpage=pagelist.getTotalPages();
+        Long totalItem=pagelist.getTotalElements();
+
+        MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
+        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,pagelist.getContent());
+        return respond;
     }
 
 

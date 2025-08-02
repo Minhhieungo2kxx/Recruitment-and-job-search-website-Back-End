@@ -1,13 +1,16 @@
 package com.webjob.application.Services;
 
-import com.webjob.application.Models.Company;
-import com.webjob.application.Models.Job;
+import com.webjob.application.Models.*;
 import com.webjob.application.Models.Request.JobRequest;
-import com.webjob.application.Models.Skill;
-import com.webjob.application.Models.User;
+import com.webjob.application.Models.Request.Search.JobFiltersearch;
+import com.webjob.application.Models.Response.ApiResponse;
+import com.webjob.application.Models.Response.MetaDTO;
+import com.webjob.application.Models.Response.ResponseDTO;
+import com.webjob.application.Models.Response.ResumeResponse;
 import com.webjob.application.Repository.CompanyRepository;
 import com.webjob.application.Repository.JobRepository;
 import com.webjob.application.Repository.SkillRepository;
+import com.webjob.application.Services.Specification.JobSpecification;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +18,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,10 +59,11 @@ public class JobService {
 
         return jobRepository.save(job);
     }
+
     @Transactional
-    public Job updateJob(Long id,JobRequest request) {
-        Job job =getById(id);
-        Instant create=job.getCreatedAt();
+    public Job updateJob(Long id, JobRequest request) {
+        Job job = getById(id);
+        Instant create = job.getCreatedAt();
 
         List<Skill> validSkills = getValidSkills(request.getSkills());
 
@@ -63,7 +71,7 @@ public class JobService {
             throw new IllegalArgumentException("Không có kỹ năng nào hợp lệ.");
         }
 
-        modelMapper.map(request,job);
+        modelMapper.map(request, job);
         job.setSkills(validSkills);
         job.setCreatedAt(create);
         if (request.getCompanyId() != null) {
@@ -74,16 +82,18 @@ public class JobService {
 
         return jobRepository.save(job);
     }
-    public boolean checkNameJob(String name){
-        boolean exist=jobRepository.existsByName(name);
-        if (exist){
-            throw new IllegalArgumentException("Job name "+name+" da ton tai, vui long tao Job khac");
+
+    public boolean checkNameJob(String name) {
+        boolean exist = jobRepository.existsByName(name);
+        if (exist) {
+            throw new IllegalArgumentException("Job name " + name + " da ton tai, vui long tao Job khac");
         }
         return false;
     }
-    public Job getById(Long id){
-        Job getjob=jobRepository.findById(id).
-                orElseThrow(() -> new IllegalArgumentException("Job not found with ID: " +id));
+
+    public Job getById(Long id) {
+        Job getjob = jobRepository.findById(id).
+                orElseThrow(() -> new IllegalArgumentException("Job not found with ID: " + id));
         return getjob;
     }
 
@@ -94,19 +104,68 @@ public class JobService {
                 .collect(Collectors.toList());
         return skillRepository.findByIdIn(ids);
     }
-    public Page<Job> getAllPage(int page, int size){
-        Sort.Direction direction=Sort.Direction.ASC;
-        Sort sort=Sort.by(direction,"name");
-        Pageable pageable= PageRequest.of(page,size,sort);
+
+    public Page<Job> getAllPage(int page, int size) {
+        Sort.Direction direction = Sort.Direction.ASC;
+        Sort sort = Sort.by(direction, "name");
+        Pageable pageable = PageRequest.of(page, size, sort);
         return jobRepository.findAll(pageable);
 
     }
-//    quan he n-n
+
+    public Page<Job> AllsearchJobs(int page, JobFiltersearch jobFilter) {
+        Specification<Job> spec = Specification.where(JobSpecification.hasNameLike(jobFilter.getName())
+                .and(JobSpecification.hasLocationLike(jobFilter.getLocation()))
+                .and(JobSpecification.hasLevel(jobFilter.getLevel()))
+                .and(JobSpecification.hasDescriptionLike(jobFilter.getDescription()))
+                .and(JobSpecification.hasSalaryBetween(jobFilter.getMinSalary(), jobFilter.getMaxSalary()))
+                .and(JobSpecification.hasDateRange(jobFilter.getStartDate(), jobFilter.getEndDate()))
+                .and(JobSpecification.isActive(jobFilter.getActive()))
+                .and(JobSpecification.hasSkills(jobFilter.getSkillIds()))
+        );
+        Sort.Direction direction = Sort.Direction.ASC;
+        Sort sort = Sort.by(direction, "name");
+        Pageable pageable = PageRequest.of(page, jobFilter.getSize(), sort);
+
+        return jobRepository.findAll(spec, pageable);
+    }
+
+    //    quan he n-n
     @Transactional
-    public void deleteJob(Job job){
+    public void deleteJob(Job job) {
         job.getSkills().clear();
         jobRepository.delete(job);
     }
+
+    public ResponseDTO<?> getPaginated(JobFiltersearch jobFiltersearch, String type) {
+        int page = 0;
+        int size = 8;
+        try {
+            page = Integer.parseInt(jobFiltersearch.getPage());
+            if (page <= 0)
+                page = 1;
+        } catch (NumberFormatException e) {
+            // Nếu người dùng nhập sai, mặc định về trang đầu
+            page = 1;
+        }
+        Page<Job> pagelist;
+        if (type.equals("filter-job")) {
+            pagelist = AllsearchJobs(page - 1, jobFiltersearch);
+        } else {
+            pagelist = getAllPage(page - 1, jobFiltersearch.getSize());
+        }
+        int currentpage = pagelist.getNumber() + 1;
+        int pagesize = pagelist.getSize();
+        int totalpage = pagelist.getTotalPages();
+        Long totalItem = pagelist.getTotalElements();
+
+        MetaDTO metaDTO = new MetaDTO(currentpage, pagesize, totalpage, totalItem);
+        List<Job> jobsList = pagelist.getContent();
+        ResponseDTO<?> respond = new ResponseDTO<>(metaDTO, jobsList);
+        return respond;
+
+    }
+
 
 }
 //

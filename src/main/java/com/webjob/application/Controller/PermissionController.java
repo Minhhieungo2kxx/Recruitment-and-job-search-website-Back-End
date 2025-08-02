@@ -44,25 +44,7 @@ public class PermissionController {
     }
     @GetMapping("/api/permissions")
     public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
-        int page=0;
-        int size=8;
-        try {
-            page = Integer.parseInt(pageparam);
-            if (page <= 0)
-                page = 1;
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
-            page = 1;
-        }
-        Page<Permission> pagelist=permissionService.getAllPage(page-1,size);
-        int currentpage=pagelist.getNumber()+1;
-        int pagesize=pagelist.getSize();
-        int totalpage=pagelist.getTotalPages();
-        Long totalItem=pagelist.getTotalElements();
-
-        MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
-        List<Permission> resumessList=pagelist.getContent();
-        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,resumessList);
+        ResponseDTO<?> respond=permissionService.getPaginated(pageparam,"default");
         ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
                 "Fetch all PerMissions Successful",
                 respond

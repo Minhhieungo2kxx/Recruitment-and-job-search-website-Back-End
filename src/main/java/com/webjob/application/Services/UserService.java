@@ -1,6 +1,7 @@
 package com.webjob.application.Services;
 
 import com.webjob.application.Models.Company;
+import com.webjob.application.Models.Response.*;
 import com.webjob.application.Models.Resume;
 import com.webjob.application.Models.Role;
 import com.webjob.application.Models.User;
@@ -8,15 +9,19 @@ import com.webjob.application.Repository.ResumeRepository;
 import com.webjob.application.Repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +34,11 @@ public class UserService {
     private RoleService roleService;
     @Autowired
     private ResumeRepository resumeRepository;
+    @Autowired
+    private CompanyService companyService;
+
+    @Autowired
+    private ModelMapper modelMapper;
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -38,18 +48,24 @@ public class UserService {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new IllegalArgumentException("Email đã tồn tại trong hệ thống.");
         }
+        Optional<Company> company=companyService.getbyID(user.getCompany().getId());
+        user.setCompany(company.isPresent()?company.get():null);
+        Optional<Role> role=roleService.getByid(user.getRole().getId());
+        user.setRole(role.isPresent()?role.get():null);
         // Mã hóa mật khẩu trước khi lưu
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             String encodedPassword = passwordEncoder.encode(user.getPassword());
             user.setPassword(encodedPassword);
         }
-        Role role=roleService.getByid(user.getRole().getId());
-        user.setRole(role);
+
         return userRepository.save(user);
     }
     @Transactional
     public User handleUpdate(User user){
-
+        Optional<Company> company=companyService.getbyID(user.getCompany().getId());
+        user.setCompany(company.isPresent()?company.get():null);
+        Optional<Role> role=roleService.getByid(user.getRole().getId());
+        user.setRole(role.isPresent()?role.get():null);
         // Mã hóa mật khẩu trước khi lưu
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             String encodedPassword = passwordEncoder.encode(user.getPassword());
@@ -117,9 +133,37 @@ public class UserService {
         userRepository.save(user);
     }
     public Optional<User> geybyCompany(Company company){
+
         return userRepository.findByCompany(company);
     }
+    public ResponseDTO<?> getPaginatedResumes(String pageparam,String type) {
+        int page = 1;
+        int size = 8;
+        try {
+            page = Integer.parseInt(pageparam);
+            if (page <= 0) page = 1;
+        } catch (NumberFormatException e) {
+            page = 1; // mặc định về trang đầu tiên nếu input không hợp lệ
+        }
+        Page<User> pagelist=getAllPage(page-1,size);
+        int currentpage=pagelist.getNumber()+1;
+        int pagesize=pagelist.getSize();
+        int totalpage=pagelist.getTotalPages();
+        Long totalItem=pagelist.getTotalElements();
+
+        MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
+        List<User> userList=pagelist.getContent();
+        List<UserDTO> userDTOList=new ArrayList<>();
+        for (User user:userList){
+            UserDTO userDTO=modelMapper.map(user,UserDTO.class);
+            userDTOList.add(userDTO);
+        }
+        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,userDTOList);
+        return respond;
+    }
 }
+
+
 
 ///@Transactional là một annotation trong Spring (Spring Framework và Spring Boot),
 // dùng để quản lý giao dịch (transaction) khi bạn làm việc với CSDL (thường là qua JPA/Hibernate).

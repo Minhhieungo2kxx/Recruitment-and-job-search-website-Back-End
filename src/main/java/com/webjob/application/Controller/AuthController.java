@@ -1,9 +1,11 @@
 package com.webjob.application.Controller;
 
 
+import com.webjob.application.Models.Request.Userrequest;
 import com.webjob.application.Models.Response.ApiResponse;
 import com.webjob.application.Models.Request.LoginDTO;
 import com.webjob.application.Models.Response.LoginResponse;
+import com.webjob.application.Models.Response.UserDTO;
 import com.webjob.application.Models.User;
 import com.webjob.application.Services.SecurityUtil;
 import com.webjob.application.Services.UserService;
@@ -164,6 +166,21 @@ public class AuthController {
         );
 
         return ResponseEntity.ok().headers(headers).body(response);
+    }
+    @PostMapping("/auth/register")
+    public ResponseEntity<?> createRegister(@Valid @RequestBody Userrequest userrequest){
+        // Tạo user và ánh xạ dữ liệu
+        User user = modelMapper.map(userrequest, User.class);
+        // Xử lý và phản hồi
+        User userSaved = userService.handle(user);
+        UserDTO userDTO = modelMapper.map(userSaved, UserDTO.class);
+        ApiResponse<UserDTO> response = new ApiResponse<>(
+                HttpStatus.CREATED.value(),
+                null,
+                "Register Account successful",
+                userDTO
+        );
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
 }

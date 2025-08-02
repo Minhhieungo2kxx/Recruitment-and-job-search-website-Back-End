@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -43,23 +44,11 @@ public class UserController {
     @PostMapping("/create/user")
     public ResponseEntity<ApiResponse<UserDTO>> create(@Valid @RequestBody Userrequest userrequest) {
 
-//            Company company = companyService.getbyID(userrequest.getCompany().getId())
-//                    .orElseThrow(() -> new IllegalArgumentException("Company not found with ID: " + userrequest.getCompany().getId()));
-            Optional<Company> company=companyService.getbyID(userrequest.getCompany().getId());
             // Tạo user và ánh xạ dữ liệu
             User user = modelMapper.map(userrequest, User.class);
-            if(company.isPresent()){
-                user.setCompany(company.get()); // Gán lại company sau khi map để không bị ghi đè
-            }
-            else{
-                user.setCompany(null);
-            }
-
-
             // Xử lý và phản hồi
             User userSaved = userService.handle(user);
             UserDTO userDTO = modelMapper.map(userSaved, UserDTO.class);
-
             ApiResponse<UserDTO> response = new ApiResponse<>(
                     HttpStatus.CREATED.value(),
                     null,
@@ -101,22 +90,10 @@ public class UserController {
 
     @PutMapping("user/edit/{id}")
     public ResponseEntity<?> editUserById(@PathVariable Long id,@Valid @RequestBody Userrequest userrequest) {
-
-            userService.checkById(id);
-//            Company company = companyService.getbyID(userrequest.getCompany().getId())
-//                    .orElseThrow(() -> new IllegalArgumentException("Company not found with ID: " + userrequest.getCompany().getId()));
-
             User user=userService.getbyID(id).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " +id));
+            Instant instant=user.getCreatedAt();
             modelMapper.map(userrequest,user);
-            Optional<Company> company=companyService.getbyID(userrequest.getCompany().getId());
-            if(company.isPresent()){
-                user.setCompany(company.get()); // Gán lại company sau khi map để không bị ghi đè
-            }
-            else{
-                user.setCompany(null);
-            }
-
-
+            user.setCreatedAt(instant);
             User updatedUser = userService.handleUpdate(user);
             UserDTO userDTO=modelMapper.map(updatedUser, UserDTO.class);
             ApiResponse<UserDTO> response = new ApiResponse<>(
@@ -127,7 +104,6 @@ public class UserController {
 
             );
             return ResponseEntity.ok(response);
-
     }
 
     @DeleteMapping("user/delete/{id}")
@@ -175,30 +151,8 @@ public class UserController {
     }
     @GetMapping("/api/users")
     public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
-        int page=0;
-        int size=3;
-        try {
-            page = Integer.parseInt(pageparam);
-            if (page <= 0)
-                page = 1;
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
-            page = 1;
-        }
-        Page<User> pagelist=userService.getAllPage(page-1,size);
-        int currentpage=pagelist.getNumber()+1;
-        int pagesize=pagelist.getSize();
-        int totalpage=pagelist.getTotalPages();
-        Long totalItem=pagelist.getTotalElements();
 
-        MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
-        List<User> userList=pagelist.getContent();
-        List<UserDTO> userDTOList=new ArrayList<>();
-        for (User user:userList){
-            UserDTO userDTO=modelMapper.map(user,UserDTO.class);
-            userDTOList.add(userDTO);
-        }
-        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,userDTOList);
+        ResponseDTO<?> respond=userService.getPaginatedResumes(pageparam,"default");
         ApiResponse<?> response=new ApiResponse<>(
                 HttpStatus.OK.value(),
                 null,

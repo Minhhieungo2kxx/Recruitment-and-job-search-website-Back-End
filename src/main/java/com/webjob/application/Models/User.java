@@ -36,7 +36,6 @@ public class User {
 
     @NotBlank(message = "Mật khẩu không được để trống")
     @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
-
     private String password;
 
     @NotBlank(message = "Họ tên không được để trống")

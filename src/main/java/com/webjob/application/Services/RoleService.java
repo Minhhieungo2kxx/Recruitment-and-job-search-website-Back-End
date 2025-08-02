@@ -1,11 +1,12 @@
 package com.webjob.application.Services;
 
 
-import com.webjob.application.Models.Job;
-import com.webjob.application.Models.Permission;
+import com.webjob.application.Models.*;
 import com.webjob.application.Models.Request.JobRequest;
-import com.webjob.application.Models.Role;
-import com.webjob.application.Models.Skill;
+import com.webjob.application.Models.Response.ApiResponse;
+import com.webjob.application.Models.Response.MetaDTO;
+import com.webjob.application.Models.Response.ResponseDTO;
+import com.webjob.application.Models.Response.ResumeResponse;
 import com.webjob.application.Repository.PermissionRepository;
 import com.webjob.application.Repository.RoleRepository;
 import jakarta.transaction.Transactional;
@@ -14,11 +15,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,7 +53,7 @@ public class RoleService {
     }
     @Transactional
     public Role EditRole(Long id, Role role){
-        Role update=getByid(id);
+        Role update=getByid(id).orElseThrow(()-> new IllegalArgumentException("Role not found with "+id));
 //        boolean exists = roleRepository.existsByName(role.getName());
 //        if(exists){
 //            throw new IllegalArgumentException("Role đã tồn tại với name: " + role.getName());
@@ -84,16 +88,37 @@ public class RoleService {
                 .collect(Collectors.toList());
         return permissionRepository.findByIdIn(ids);
     }
-    public Role getByid(Long id){
-        Role role=roleRepository.findById(id)
-                .orElseThrow(()->new IllegalArgumentException("Role not found with "+id));
-        return role;
+    public Optional<Role> getByid(Long id){
+       return roleRepository.findById(id);
     }
     @Transactional
     public void deleteRole(Long id){
-        Role role=getByid(id);
+        Role role=getByid(id).orElseThrow(()->new IllegalArgumentException("Role not found with "+id));
         role.getPermissions().clear();
         roleRepository.delete(role);
+    }
+
+    public ResponseDTO<?> getPaginated(String pageparam, String type) {
+        int page=0;
+        int size=8;
+        try {
+            page = Integer.parseInt(pageparam);
+            if (page <= 0)
+                page = 1;
+        } catch (NumberFormatException e) {
+            // Nếu người dùng nhập sai, mặc định về trang đầu
+            page = 1;
+        }
+        Page<Role> pagelist=getAllPage(page-1,size);
+        int currentpage=pagelist.getNumber()+1;
+        int pagesize=pagelist.getSize();
+        int totalpage=pagelist.getTotalPages();
+        Long totalItem=pagelist.getTotalElements();
+
+        MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
+        List<Role> jobsList=pagelist.getContent();
+        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,jobsList);
+        return respond;
     }
 
 

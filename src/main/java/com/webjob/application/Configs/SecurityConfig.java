@@ -4,6 +4,7 @@ import com.webjob.application.Utils.exceptions.CustomAuthenticationEntryPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,13 +29,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         String[] paths = {"/", "/auth/login", "/auth/refresh", "/storage/**"
-                ,"/api/jobs/**","api/companies/**"
+                ,"/api/jobs/**","/api/companies/**","/api/skill/**","/auth/register"
         };
 
 
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(paths).permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/companies").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/jobs").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/skill").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())

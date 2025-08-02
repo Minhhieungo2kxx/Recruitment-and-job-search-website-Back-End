@@ -105,24 +105,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException ex) {
         ErrorResponException<?> errorResponException=new ErrorResponException<>(
-                HttpStatus.FORBIDDEN.value(),
+                HttpStatus.CONFLICT.value(),
                 "Exception Error",
                 LocalDateTime.now(),
-                ex.getMessage(),
+                "Sai tai khoan hoac mat khau",
                 null
         );
-        return new ResponseEntity<>(errorResponException, HttpStatus.FORBIDDEN);
+        return new ResponseEntity<>(errorResponException, HttpStatus.CONFLICT);
     }
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleExitsEmail(IllegalArgumentException ex) {
         ErrorResponException<?> errorResponException=new ErrorResponException<>(
-                HttpStatus.CONFLICT.value(),
+                HttpStatus.BAD_REQUEST.value(),
                 "Exception Error",
                 LocalDateTime.now(),
                 ex.getMessage(),
                 null
         );
-        return new ResponseEntity<>(errorResponException, HttpStatus.CONFLICT);
+        return new ResponseEntity<>(errorResponException, HttpStatus.BAD_REQUEST);
 
     }
 

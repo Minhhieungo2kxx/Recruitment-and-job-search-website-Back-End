@@ -3,16 +3,13 @@ package com.webjob.application.Controller;
 
 import com.webjob.application.Models.Company;
 import com.webjob.application.Models.Request.CompanyDTO;
-import com.webjob.application.Models.Request.SearchCompanyDTO;
+import com.webjob.application.Models.Request.Search.SearchCompanyDTO;
 import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Models.Response.MetaDTO;
 import com.webjob.application.Models.Response.ResponseDTO;
-import com.webjob.application.Models.User;
 import com.webjob.application.Services.CompanyService;
 import com.webjob.application.Services.UserService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -62,7 +59,7 @@ public class CompanyController {
         );
         return ResponseEntity.ok(response);
     }
-    @PutMapping("edit/company/{id}")
+    @PutMapping("/edit/company/{id}")
     public ResponseEntity<?> EditCompany(@PathVariable Long id,@Valid @RequestBody CompanyDTO companyDTO){
         try {
             companyService.checkByID(id);
@@ -121,25 +118,9 @@ public class CompanyController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
         }
     }
-    @GetMapping("api/companies")
+    @GetMapping("/api/companies")
     public ResponseEntity<?> getallPageList(@RequestParam(value ="page",defaultValue = "0")String pageparam){
-        int page=0;
-        int size=5;
-        try {
-            page = Integer.parseInt(pageparam);
-            if (page <= 0)
-                page = 1;
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
-            page = 1;
-        }
-        Page<Company> companypage=companyService.getallPage(page-1,size);
-        int currentpage=companypage.getNumber()+1;// Trang hiện tại (0-indexed)
-        int pageSize=companypage.getSize();// Kích thước trang
-        int totalPages = companypage.getTotalPages(); // Tổng số trang
-        long totalItems = companypage.getTotalElements(); // Tổng số phần tử
-        MetaDTO metaDTO=new MetaDTO(currentpage,pageSize,totalPages,totalItems);
-        ResponseDTO<?> responseDTO =new ResponseDTO<>(metaDTO,companypage.getContent());
+        ResponseDTO<?> responseDTO =companyService.getPaginated(pageparam,"default",null);
         ApiResponse<?> response = new ApiResponse<>(
                 HttpStatus.OK.value(),
                 null,
@@ -149,37 +130,15 @@ public class CompanyController {
         );
 
         return ResponseEntity.ok(response);
-
     }
     @GetMapping("/api/companies/search")
-    public ResponseEntity<?> searchCompanies(@Valid SearchCompanyDTO searchCompanyDTO) {
-        int page=0;
-        try {
-            page = Integer.parseInt(searchCompanyDTO.getPage());
-            if (page <= 0)
-                page = 1;
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
-            page = 1;
-        }
-
-
-        // Gọi service để thực hiện tìm kiếm
-        Page<Company> companyPage = companyService.searchCompanies(page-1,searchCompanyDTO);
-
-        // Tạo meta thông tin cho response
-        int currentPage = companyPage.getNumber() + 1;
-        int pageSize = companyPage.getSize();
-        int totalPages = companyPage.getTotalPages();
-        long totalItems = companyPage.getTotalElements();
-
-        MetaDTO metaDTO = new MetaDTO(currentPage, pageSize, totalPages, totalItems);
-        ResponseDTO<?> responsePageDTO = new ResponseDTO<>(metaDTO, companyPage.getContent());
+    public ResponseEntity<?> searchCompanies(@ModelAttribute SearchCompanyDTO searchCompanyDTO) {
+        ResponseDTO<?> responseDTO =companyService.getPaginated(searchCompanyDTO.getPage(),"search",searchCompanyDTO);
         ApiResponse<?> response = new ApiResponse<>(
                 HttpStatus.OK.value(),
                 null,
                 "Fetch Company successful",
-                responsePageDTO
+                responseDTO
         );
 
         return ResponseEntity.ok(response);

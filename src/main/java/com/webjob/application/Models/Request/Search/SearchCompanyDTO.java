@@ -1,4 +1,4 @@
-package com.webjob.application.Models.Request;
+package com.webjob.application.Models.Request.Search;
 
 
 import jakarta.validation.constraints.NotBlank;

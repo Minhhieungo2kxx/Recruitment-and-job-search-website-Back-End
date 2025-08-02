@@ -27,6 +27,8 @@ public class SkillController {
     private final ModelMapper modelMapper;
 
 
+
+
     public SkillController(SkillService skillService, ModelMapper modelMapper) {
         this.skillService = skillService;
         this.modelMapper = modelMapper;
@@ -63,24 +65,8 @@ public class SkillController {
     }
     @GetMapping("/api/skill")
     public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
-        int page=0;
-        int size=8;
-        try {
-            page = Integer.parseInt(pageparam);
-            if (page <= 0)
-                page = 1;
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
-            page = 1;
-        }
-        Page<Skill> pagelist=skillService.getAllPage(page-1,size);
-        int currentpage=pagelist.getNumber()+1;
-        int pagesize=pagelist.getSize();
-        int totalpage=pagelist.getTotalPages();
-        Long totalItem=pagelist.getTotalElements();
 
-        MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
-        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,pagelist.getContent());
+        ResponseDTO<?> respond=skillService.getAllPageList(pageparam,"default");
         ApiResponse<?> response=new ApiResponse<>(
                 HttpStatus.OK.value(),
                 null,

@@ -2,7 +2,9 @@ package com.webjob.application.Services;
 
 
 import com.webjob.application.Models.Company;
-import com.webjob.application.Models.Request.SearchCompanyDTO;
+import com.webjob.application.Models.Request.Search.SearchCompanyDTO;
+import com.webjob.application.Models.Response.MetaDTO;
+import com.webjob.application.Models.Response.ResponseDTO;
 import com.webjob.application.Models.User;
 import com.webjob.application.Repository.CompanyRepository;
 import com.webjob.application.Repository.UserRepository;
@@ -69,7 +71,7 @@ public class CompanyService {
     }
 
     public Page<Company> getallPage(int page,int limit){
-        Pageable pageable= PageRequest.of(page,limit);
+        Pageable pageable= PageRequest.of(page-1,limit);
         return companyRepository.findAll(pageable);
     }
     public Page<Company> searchCompanies(int page, SearchCompanyDTO companyDTO){
@@ -81,9 +83,41 @@ public class CompanyService {
 
         Sort.Direction direction="DESC".equalsIgnoreCase(companyDTO.getSortOrder())?Sort.Direction.DESC:Sort.Direction.ASC;
         Sort sort=Sort.by(direction,companyDTO.getSortBy()!=null ? companyDTO.getSortBy() :"name");
-        Pageable pageable= PageRequest.of(page,companyDTO.getLimit(),sort);
+        Pageable pageable= PageRequest.of(page-1,companyDTO.getLimit(),sort);
         return companyRepository.findAll(specification,pageable);
 
 
     }
-}
+    public ResponseDTO<?> getPaginated(String pageparam, String type,SearchCompanyDTO searchCompanyDTO) {
+        int page = 0;
+        int size = 5;
+        try {
+            page = Integer.parseInt(pageparam);
+            if (page <= 0)
+                page = 1;
+        } catch (NumberFormatException e) {
+            // Nếu người dùng nhập sai, mặc định về trang đầu
+            page = 1;
+        }
+
+        // Gọi service để thực hiện tìm kiếm
+//        Page<Company> companyPage = companyService.searchCompanies(page-1,searchCompanyDTO);
+        Page<Company> companyPage;
+        if (type.equals("search")) {
+            companyPage = searchCompanies(page, searchCompanyDTO);
+        } else {
+            companyPage = getallPage(page, size);
+        }
+            // Tạo meta thông tin cho response
+            int currentPage = companyPage.getNumber() + 1;
+            int pageSize = companyPage.getSize();
+            int totalPages = companyPage.getTotalPages();
+            long totalItems = companyPage.getTotalElements();
+
+            MetaDTO metaDTO = new MetaDTO(currentPage, pageSize, totalPages, totalItems);
+            ResponseDTO<?> responsePageDTO = new ResponseDTO<>(metaDTO, companyPage.getContent());
+            return responsePageDTO;
+        }
+    }
+
+

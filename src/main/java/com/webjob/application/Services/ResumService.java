@@ -1,8 +1,13 @@
 package com.webjob.application.Services;
 
 
+import com.webjob.application.Models.Company;
 import com.webjob.application.Models.Job;
 import com.webjob.application.Models.Request.UpdateResumeDTO;
+import com.webjob.application.Models.Response.ApiResponse;
+import com.webjob.application.Models.Response.MetaDTO;
+import com.webjob.application.Models.Response.ResponseDTO;
+import com.webjob.application.Models.Response.ResumeResponse;
 import com.webjob.application.Models.Resume;
 import com.webjob.application.Models.User;
 import com.webjob.application.Repository.ResumeRepository;
@@ -21,6 +26,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ResumService {
@@ -78,6 +85,60 @@ public class ResumService {
         Pageable pageable= PageRequest.of(page,size);
         return resumeRepository.findAllByUser(user,pageable);
     }
+    public Page<Resume> AllResumHRfromCompany(int page, int size){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        User userHR = userService.getbyEmail(email);
+        Company company =userHR.getCompany();
+        Pageable pageable= PageRequest.of(page,size);
+        return resumeRepository.findAllByJob_Company_Id(company.getId(),pageable);
+    }
+
+    // Phương thức chung để lấy resume với phân trang và ánh xạ
+    public ResponseDTO<?> getPaginatedResumes(String pageparam,String type) {
+        int page = 1;
+        int size = 8;
+        try {
+            page = Integer.parseInt(pageparam);
+            if (page <= 0) page = 1;
+        } catch (NumberFormatException e) {
+            page = 1; // mặc định về trang đầu tiên nếu input không hợp lệ
+        }
+
+        Page<Resume> pagelist;
+
+        // Nếu là yêu cầu của user, filter thêm theo userId
+        if (type.equals("by-user")) {
+            pagelist=getAllResumbyuser(page-1,size);
+        }
+        else if (type.equals("HRfrom-Company")){
+            pagelist=AllResumHRfromCompany(page-1,size);
+        }
+
+        else {
+            pagelist =getAllPage(page-1,size);
+        }
+        // Tạo MetaDTO
+        int currentPage = pagelist.getNumber() + 1;
+        int pageSize = pagelist.getSize();
+        int totalPages = pagelist.getTotalPages();
+        Long totalItems = pagelist.getTotalElements();
+
+        MetaDTO metaDTO = new MetaDTO(currentPage, pageSize, totalPages, totalItems);
+        // Ánh xạ danh sách Resume sang ResumeResponse
+        List<ResumeResponse> responseList = new ArrayList<>();
+        for (Resume resume : pagelist.getContent()) {
+            ResumeResponse resumeResponse = modelMapper.map(resume, ResumeResponse.class);
+            if (resume.getJob() != null) {
+                resumeResponse.setCompanyName(resume.getJob().getCompany().getName());
+            }
+            responseList.add(resumeResponse);
+        }
+        // Tạo ResponseDTO
+        ResponseDTO<?> responseDTO =new ResponseDTO<>(metaDTO,responseList);
+        return responseDTO;
+    }
+
 
 
 
