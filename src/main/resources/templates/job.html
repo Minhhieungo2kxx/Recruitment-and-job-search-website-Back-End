@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Cơ hội việc làm dành cho bạn từ VietNamwork</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0f2f5; padding: 40px 0;">
+    <tr>
+        <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+
+                <tr>
+                    <td colspan="2" style="background-color: #003366; padding: 25px; text-align: center;">
+                        <a href="https://www.topcv.vn/" target="_blank" style="text-decoration: none;">
+                            <h2 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">VietNamwork</h2>
+                        </a>
+                        <p style="margin: 5px 0 0 0; color: #a4c6e9; font-size: 16px;">Nền tảng tuyển dụng hàng đầu Việt Nam</p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="2" style="padding: 40px 30px 20px 30px;">
+                        <p style="font-size: 18px; color: #333333; margin: 0;">Chào <strong th:text="${name}">bạn</strong>,</p>
+                        <p style="font-size: 16px; color: #555555; line-height: 1.6; margin: 15px 0 0 0;">
+                            Cảm ơn bạn đã tin tưởng VietNamwork. Chúng tôi đã tìm thấy một số **cơ hội việc làm hấp dẫn** rất phù hợp với kỹ năng và kinh nghiệm của bạn. Hãy cùng khám phá ngay!
+                        </p>
+                    </td>
+                </tr>
+
+                <tr th:each="job : ${listjob}">
+                    <td colspan="2" style="padding: 0 30px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+                            <tr>
+                                <td style="padding: 20px; background-color: #f9f9f9;">
+                                    <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: bold;">
+                                        <a th:href="@{'https://www.topcv.vn/'}"
+                                           th:text="${job.name}"
+                                           style="color: #003366; text-decoration: none;" target="_blank">Tên công việc</a>
+                                    </h3>
+                                    <p style="margin: 0; font-size: 16px; color: #555555;" th:text="${job.company.name}">Tên công ty</p>
+                                    <p style="margin: 5px 0 15px 0; font-size: 16px; font-weight: bold; color: #ea1e30;" th:text="${job.formattedSalary}">Mức lương</p>
+
+                                    <div style="margin-top: 10px;">
+                                        <span th:each="skill : ${job.skills}"
+                                              th:text="${skill.name}"
+                                              style="display: inline-block; background-color: #e3f2fd; color: #1e88e5; border-radius: 20px; padding: 6px 12px; margin: 4px; font-size: 13px; font-weight: 500;">
+                                            Kỹ năng
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="2" style="padding: 20px 30px 40px 30px; text-align: center;">
+                        <a href="https://www.topcv.vn/" target="_blank"
+                           style="display: inline-block; background-color: #ea1e30; color: white; text-decoration: none; padding: 15px 30px; border-radius: 8px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 10px rgba(234,30,48,0.3);">
+                            Khám phá tất cả việc làm phù hợp
+                        </a>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="2" style="background-color: #f0f2f5; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+                        <p style="margin: 0 0 10px 0; font-size: 14px; color: #777777;">
+                            Chúc bạn thành công trên con đường sự nghiệp của mình!
+                        </p>
+                        <p style="margin: 0; font-size: 14px; color: #777777;">
+                            VietNamwork | Nơi tìm kiếm và tuyển dụng số 1 Việt Nam
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

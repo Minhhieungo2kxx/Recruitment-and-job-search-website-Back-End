@@ -19,7 +19,6 @@ public interface ResumeRepository extends JpaRepository<Resume,Long> {
 //    JOIN companies c ON j.company_id = c.id
 //    WHERE c.id = :companyId
 //    LIMIT ... OFFSET ...
-
     Page<Resume> findAllByJob_Company_Id(Long companyId, Pageable pageable);
 
 

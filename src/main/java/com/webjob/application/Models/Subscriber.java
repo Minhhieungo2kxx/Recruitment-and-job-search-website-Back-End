@@ -1,13 +1,15 @@
 package com.webjob.application.Models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.webjob.application.Models.Enums.SubscriberStatus;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -18,20 +20,34 @@ import java.time.Instant;
 import java.util.List;
 
 @Entity
-@Table(name = "skills")
-@Getter
-@Setter
+@Table(name = "subscribers")
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class Skill {
+public class Subscriber {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Tên Skill không được để trống")
-    @Size(max = 255, message = "Tên Skill không được vượt quá 255 ký tự")
+    @NotBlank(message = "Tên không được để trống")
     private String name;
+
+    @NotBlank(message = "Email không được để trống")
+    @Email(message = "Email không hợp lệ")
+    private String email;
+
+    @Pattern(
+            regexp = "^\\+?[0-9]{9,15}$",
+            message = "Số điện thoại không hợp lệ. Chỉ bao gồm số và có thể bắt đầu bằng '+'"
+    )
+    private String phoneNumber;
+
+    @Size(max = 500, message = "Mô tả không được vượt quá 500 ký tự")
+    private String description;
+
+    @Enumerated(EnumType.STRING)
+    private SubscriberStatus status = SubscriberStatus.ACTIVE;
 
     @Column(name = "created_at", updatable = false)
     @CreatedDate
@@ -51,14 +67,12 @@ public class Skill {
     @LastModifiedBy
     private String updatedBy;
 
-    @ManyToMany(mappedBy = "skills",fetch = FetchType.LAZY)
-    @JsonIgnore
-    private List<Job> jobs;
-
-    @ManyToMany(fetch = FetchType.LAZY,mappedBy = "skills")
-    @JsonIgnore
-    private List<Subscriber> subscribers;
-
-
-
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties(value = { "subscribers" }) // để tránh vòng lặp JSON
+    @JoinTable(
+            name = "subscriber_skill",
+            joinColumns = @JoinColumn(name = "subscriber_id"),
+            inverseJoinColumns = @JoinColumn(name = "skill_id")
+    )
+    private List<Skill> skills;
 }

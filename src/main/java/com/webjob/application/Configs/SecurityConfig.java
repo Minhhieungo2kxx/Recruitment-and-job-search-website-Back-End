@@ -30,6 +30,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         String[] paths = {"/", "/auth/login", "/auth/refresh", "/storage/**"
                 ,"/api/jobs/**","/api/companies/**","/api/skill/**","/auth/register"
+                ,"/resumes/by-user"
         };
 
 

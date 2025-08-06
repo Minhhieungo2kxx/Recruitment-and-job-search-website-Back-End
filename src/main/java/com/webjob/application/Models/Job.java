@@ -100,5 +100,4 @@ public class Job {
     private List<Resume> resumeList;
 
 
-
 }

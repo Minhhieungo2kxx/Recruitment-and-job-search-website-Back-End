@@ -24,16 +24,17 @@ public class WebConfiguration implements WebMvcConfigurer {
                 .addResourceLocations("file:" + basePath + "/company/");
     }
 
-    @Bean
-    PermissionInterceptor getPermissionInterceptor() {
-        return new PermissionInterceptor();
-    }
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        String[] paths = {"/", "/auth/login", "/auth/refresh", "/storage/**"
-                ,"/api/jobs/**","/api/companies/**","/api/skill/**","/auth/register"
-        };
-        registry.addInterceptor(getPermissionInterceptor())
-                .excludePathPatterns(paths);
-    }
+//    @Bean
+//    PermissionInterceptor getPermissionInterceptor() {
+//        return new PermissionInterceptor();
+//    }
+//    @Override
+//    public void addInterceptors(InterceptorRegistry registry) {
+//        String[] paths = {"/", "/auth/login", "/auth/refresh", "/storage/**"
+//                ,"/api/jobs/**","/api/companies/**","/api/skill/**","/auth/register"
+//                ,"/api/subscriber/**","/resumes/by-user"
+//        };
+//        registry.addInterceptor(getPermissionInterceptor())
+//                .excludePathPatterns(paths);
+//    }
 }

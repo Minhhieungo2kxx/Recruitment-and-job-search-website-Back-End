@@ -76,5 +76,16 @@ public class SkillController {
         return ResponseEntity.ok(response);
 
     }
+    @DeleteMapping("delete/skill/{id}")
+    public ResponseEntity<?> deleteSkill(@PathVariable Long id) {
+        skillService.deleteSkill(id);
+        ApiResponse<?> response=new ApiResponse<>(
+                HttpStatus.OK.value(),
+                null,
+                "Delete Skill Successful",
+                null
+        );
+        return ResponseEntity.ok(response);
+    }
 
 }

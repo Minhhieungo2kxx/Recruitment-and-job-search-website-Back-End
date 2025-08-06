@@ -75,6 +75,24 @@ public class SkillService {
         ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,pagelist.getContent());
         return respond;
     }
+    @Transactional
+    public void deleteSkill(Long id) {
+        Skill skill = skillRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Skill không tồn tại với id: " + id));
+
+        // Gỡ bỏ quan hệ với jobs
+        if (skill.getJobs() != null) {
+            skill.getJobs().forEach(job -> job.getSkills().remove(skill));
+            skill.getJobs().clear(); // để tránh cascade lỗi
+        }
+
+        // Gỡ bỏ quan hệ với subscribers
+        if (skill.getSubscribers() != null) {
+            skill.getSubscribers().forEach(subscriber -> subscriber.getSkills().remove(skill));
+            skill.getSubscribers().clear();
+        }
+        skillRepository.delete(skill);
+    }
 
 
 }
