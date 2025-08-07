@@ -1,27 +1,19 @@
 package com.webjob.application.Controller;
 
 
-import com.webjob.application.Models.Company;
 import com.webjob.application.Models.Request.SkillRequest;
-import com.webjob.application.Models.Request.Userrequest;
 import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Models.Response.MetaDTO;
 import com.webjob.application.Models.Response.ResponseDTO;
-import com.webjob.application.Models.Response.UserDTO;
-import com.webjob.application.Models.Skill;
-import com.webjob.application.Models.User;
+import com.webjob.application.Models.Entity.Skill;
 import com.webjob.application.Services.SkillService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @RestController
+@RequestMapping("/api/v1/skills")
 public class SkillController {
     private final SkillService skillService;
     private final ModelMapper modelMapper;
@@ -34,7 +26,7 @@ public class SkillController {
         this.modelMapper = modelMapper;
     }
 
-    @PostMapping("/create/skill")
+    @PostMapping
     public ResponseEntity<?> createSkill(@Valid @RequestBody Skill skill) {
         skillService.checkNameskill(skill.getName());
         Skill save=skillService.handle(skill);
@@ -48,7 +40,7 @@ public class SkillController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
 
     }
-    @PutMapping("/edit/skill/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> EditSkill(@PathVariable Long id,@Valid @RequestBody SkillRequest skillRequest) {
         Skill canfind=skillService.getbyID(id).orElseThrow(() -> new IllegalArgumentException("Skill not found with ID: " + id));
         skillService.checkNameskill(skillRequest.getName());
@@ -63,7 +55,7 @@ public class SkillController {
         return new ResponseEntity<>(response, HttpStatus.OK);
 
     }
-    @GetMapping("/api/skill")
+    @GetMapping
     public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
 
         ResponseDTO<?> respond=skillService.getAllPageList(pageparam,"default");
@@ -76,7 +68,7 @@ public class SkillController {
         return ResponseEntity.ok(response);
 
     }
-    @DeleteMapping("delete/skill/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSkill(@PathVariable Long id) {
         skillService.deleteSkill(id);
         ApiResponse<?> response=new ApiResponse<>(

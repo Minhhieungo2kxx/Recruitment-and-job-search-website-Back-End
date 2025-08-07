@@ -1,6 +1,6 @@
 package com.webjob.application.Services.Specification;
 
-import com.webjob.application.Models.Company;
+import com.webjob.application.Models.Entity.Company;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -8,7 +8,6 @@ import jakarta.persistence.criteria.Root;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.Instant;
-import java.util.List;
 
 public class CompanySpecification {
     public static Specification<Company> hasName(String name){

@@ -1,7 +1,9 @@
-package com.webjob.application.Models;
+package com.webjob.application.Models.Entity;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.webjob.application.Models.Entity.Company;
+import com.webjob.application.Models.Entity.Resume;
+import com.webjob.application.Models.Entity.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -41,6 +43,9 @@ public class User {
     @NotBlank(message = "Họ tên không được để trống")
     @Size(max = 100, message = "Họ tên không được vượt quá 100 ký tự")
     private String fullName;
+
+    @Size(max = 500, message = "Đường dẫn avatar không được vượt quá 500 ký tự")
+    private String avatar;
 
     @NotNull(message = "Tuổi không được để trống")
     @Min(value = 0, message = "Tuổi không được nhỏ hơn 0")
@@ -89,6 +94,10 @@ public class User {
     @JoinColumn(name = "role_id")
     private Role role;
 
+    // Quan hệ 1-n với token reset
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<PasswordResetToken> passwordResetTokens;
 
 
 

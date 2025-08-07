@@ -17,19 +17,19 @@ import java.io.IOException;
 import java.time.Instant;
 
 @RestController
-@RequestMapping("/api/upload")
+@RequestMapping("/api/v1/files")
 public class UploadCloudinaryController {
     @Autowired
     private CloudinaryService cloudinaryService;
 
-    @PostMapping("/clodinary")
+    @PostMapping("/cloudinary")  // sửa typo từ "clodinary" thành "cloudinary"
     public ResponseEntity<?> uploadFileCloudinary(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "folder", defaultValue = "default") String folder) {
 
         try {
             String uploadedFileName =cloudinaryService.uploadFile(file,folder);
-            UploadFileResponse uploadFileResponse=new UploadFileResponse(uploadedFileName, Instant.now());
+            UploadFileResponse uploadFileResponse=new UploadFileResponse(uploadedFileName, Instant.now(),folder);
             ApiResponse<?> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), null,
                     "Tải file thành công!",
                     uploadFileResponse

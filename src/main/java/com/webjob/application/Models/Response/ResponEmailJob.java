@@ -1,6 +1,5 @@
 package com.webjob.application.Models.Response;
 
-import com.webjob.application.Models.Skill;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

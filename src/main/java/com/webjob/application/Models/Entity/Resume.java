@@ -1,15 +1,15 @@
-package com.webjob.application.Models;
+package com.webjob.application.Models.Entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.webjob.application.Models.Enums.SubscriberStatus;
+import com.webjob.application.Models.Enums.ResumeStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -17,40 +17,32 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
-import java.util.List;
 
 @Entity
-@Table(name = "subscribers")
-@Data
+@Table(name = "resumes")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class Subscriber {
+public class Resume {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @NotBlank(message = "Tên không được để trống")
-    private String name;
 
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không hợp lệ")
     private String email;
 
-    @Pattern(
-            regexp = "^\\+?[0-9]{9,15}$",
-            message = "Số điện thoại không hợp lệ. Chỉ bao gồm số và có thể bắt đầu bằng '+'"
-    )
-    private String phoneNumber;
+    @NotBlank(message = "URL không được để trống")
+    private String url;
 
-    @Size(max = 500, message = "Mô tả không được vượt quá 500 ký tự")
-    private String description;
+    @NotNull(message = "Trạng thái không được để trống")
+    @Enumerated(EnumType.STRING) // Store enum as String in DB
+    private ResumeStatus status = ResumeStatus.PENDING; // Default status
 
-    @Enumerated(EnumType.STRING)
-    private SubscriberStatus status = SubscriberStatus.ACTIVE;
-
-    @Column(name = "created_at", updatable = false)
     @CreatedDate
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
     @Column(name = "updated_at")
@@ -67,12 +59,13 @@ public class Subscriber {
     @LastModifiedBy
     private String updatedBy;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JsonIgnoreProperties(value = { "subscribers" }) // để tránh vòng lặp JSON
-    @JoinTable(
-            name = "subscriber_skill",
-            joinColumns = @JoinColumn(name = "subscriber_id"),
-            inverseJoinColumns = @JoinColumn(name = "skill_id")
-    )
-    private List<Skill> skills;
+    // Mối quan hệ Many-to-One với User
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    // Mối quan hệ Many-to-One với Job
+    @ManyToOne
+    @JoinColumn(name = "job_id")
+    private Job job;
 }

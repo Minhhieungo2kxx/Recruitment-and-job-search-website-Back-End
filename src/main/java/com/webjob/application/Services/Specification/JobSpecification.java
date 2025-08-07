@@ -1,6 +1,6 @@
 package com.webjob.application.Services.Specification;
 
-import com.webjob.application.Models.Job;
+import com.webjob.application.Models.Entity.Job;
 import jakarta.persistence.criteria.Join;
 import org.springframework.data.jpa.domain.Specification;
 

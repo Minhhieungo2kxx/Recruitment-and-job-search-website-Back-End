@@ -1,19 +1,15 @@
 package com.webjob.application.Services;
 
 
-import com.webjob.application.Models.Response.ApiResponse;
 import com.webjob.application.Models.Response.MetaDTO;
 import com.webjob.application.Models.Response.ResponseDTO;
-import com.webjob.application.Models.Skill;
-import com.webjob.application.Models.User;
+import com.webjob.application.Models.Entity.Skill;
 import com.webjob.application.Repository.SkillRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;

@@ -12,5 +12,7 @@ import java.time.Instant;
 public class UploadFileResponse {
     private String fileName;
     private Instant uploadedAt;
+    private String folder;
+
 
 }

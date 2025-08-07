@@ -1,15 +1,14 @@
 package com.webjob.application.Services;
 
 
-import com.webjob.application.Models.Company;
-import com.webjob.application.Models.Job;
+import com.webjob.application.Models.Entity.Company;
+import com.webjob.application.Models.Entity.Job;
 import com.webjob.application.Models.Request.UpdateResumeDTO;
-import com.webjob.application.Models.Response.ApiResponse;
 import com.webjob.application.Models.Response.MetaDTO;
 import com.webjob.application.Models.Response.ResponseDTO;
 import com.webjob.application.Models.Response.ResumeResponse;
-import com.webjob.application.Models.Resume;
-import com.webjob.application.Models.User;
+import com.webjob.application.Models.Entity.Resume;
+import com.webjob.application.Models.Entity.User;
 import com.webjob.application.Repository.ResumeRepository;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
@@ -18,9 +17,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;

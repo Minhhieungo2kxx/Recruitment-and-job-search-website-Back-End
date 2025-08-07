@@ -1,12 +1,12 @@
 package com.webjob.application.Services;
 
-import com.webjob.application.Models.*;
+import com.webjob.application.Models.Entity.Company;
+import com.webjob.application.Models.Entity.Job;
+import com.webjob.application.Models.Entity.Skill;
 import com.webjob.application.Models.Request.JobRequest;
 import com.webjob.application.Models.Request.Search.JobFiltersearch;
-import com.webjob.application.Models.Response.ApiResponse;
 import com.webjob.application.Models.Response.MetaDTO;
 import com.webjob.application.Models.Response.ResponseDTO;
-import com.webjob.application.Models.Response.ResumeResponse;
 import com.webjob.application.Repository.CompanyRepository;
 import com.webjob.application.Repository.JobRepository;
 import com.webjob.application.Repository.SkillRepository;
@@ -19,12 +19,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 

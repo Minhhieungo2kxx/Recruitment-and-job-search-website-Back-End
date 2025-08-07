@@ -1,30 +1,23 @@
 package com.webjob.application.Controller;
 
 
-import com.webjob.application.Models.Job;
-import com.webjob.application.Models.Permission;
+import com.webjob.application.Models.Entity.Permission;
 import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Models.Response.MetaDTO;
 import com.webjob.application.Models.Response.ResponseDTO;
-import com.webjob.application.Models.Response.ResumeResponse;
-import com.webjob.application.Models.Resume;
 import com.webjob.application.Services.PermissionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @RestController
+@RequestMapping("/api/v1/permissions") // base path chuẩn
 public class PermissionController {
     @Autowired
     private PermissionService permissionService;
 
-    @PostMapping("/create/permission")
+    @PostMapping
     public ResponseEntity<?> createPermission(@Valid @RequestBody Permission permission) {
         Permission save=permissionService.savePermission(permission);
         ApiResponse<?> apiResponse=new ApiResponse<>(HttpStatus.CREATED.value(), null,
@@ -33,7 +26,7 @@ public class PermissionController {
         return new ResponseEntity<>(apiResponse,HttpStatus.CREATED);
 
     }
-    @PutMapping("/edit/permission/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> createPermission(@PathVariable Long id, @Valid @RequestBody Permission permission) {
         Permission edit=permissionService.editPermission(id,permission);
         ApiResponse<?> apiResponse=new ApiResponse<>(HttpStatus.CREATED.value(), null,
@@ -42,7 +35,7 @@ public class PermissionController {
         return new ResponseEntity<>(apiResponse,HttpStatus.CREATED);
 
     }
-    @GetMapping("/api/permissions")
+    @GetMapping
     public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
         ResponseDTO<?> respond=permissionService.getPaginated(pageparam,"default");
         ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
@@ -52,7 +45,7 @@ public class PermissionController {
         return ResponseEntity.ok(response);
 
     }
-    @DeleteMapping("/delete/permission/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePermissionbyId(@PathVariable Long id) {
         Permission permission=permissionService.getByID(id);
         permissionService.deletePerMission(id);

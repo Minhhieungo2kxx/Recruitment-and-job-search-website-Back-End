@@ -1,7 +1,6 @@
 package com.webjob.application.Repository;
 
-import com.webjob.application.Models.Permission;
-import com.webjob.application.Models.Skill;
+import com.webjob.application.Models.Entity.Permission;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

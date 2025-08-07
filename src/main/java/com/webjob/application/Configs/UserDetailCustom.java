@@ -1,8 +1,6 @@
 package com.webjob.application.Configs;
 
 import com.webjob.application.Services.UserService;
-import org.hibernate.annotations.Comment;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -22,7 +20,7 @@ public class UserDetailCustom implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        com.webjob.application.Models.User user=userService.getbyEmail(username);
+        com.webjob.application.Models.Entity.User user=userService.getbyEmail(username);
 
         if (user == null) {
             throw new UsernameNotFoundException("User not found "+username);

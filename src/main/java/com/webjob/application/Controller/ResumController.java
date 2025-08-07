@@ -1,25 +1,17 @@
 package com.webjob.application.Controller;
 
-import com.webjob.application.Models.Company;
-import com.webjob.application.Models.Job;
-import com.webjob.application.Models.Request.JobRequest;
 import com.webjob.application.Models.Request.UpdateResumeDTO;
 import com.webjob.application.Models.Response.*;
-import com.webjob.application.Models.Resume;
-import com.webjob.application.Models.Skill;
+import com.webjob.application.Models.Entity.Resume;
 import com.webjob.application.Services.ResumService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 @RestController
+@RequestMapping("/api/v1/resumes")
 public class ResumController {
     private final ResumService resumService;
     private final ModelMapper modelMapper;
@@ -30,7 +22,7 @@ public class ResumController {
         this.modelMapper = modelMapper;
     }
 
-    @PostMapping("/create/resume")
+    @PostMapping
     public ResponseEntity<?> createJob(@Valid @RequestBody Resume resume) {
         Resume resumeSave=resumService.saveResume(resume);
         ResumeResponse resumeResponse=modelMapper.map(resumeSave,ResumeResponse.class);
@@ -43,7 +35,7 @@ public class ResumController {
         return new ResponseEntity<>(apiResponse,HttpStatus.CREATED);
 
     }
-    @PutMapping("/edit/resume/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> createJob(@PathVariable Long id, @Valid @RequestBody UpdateResumeDTO dto) {
         Resume edit=resumService.editResume(id,dto);
         ResumeResponse resumeResponse=modelMapper.map(edit,ResumeResponse.class);
@@ -56,7 +48,7 @@ public class ResumController {
         return ResponseEntity.ok(apiResponse);
 
     }
-    @DeleteMapping("/delete/resume/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteResumebyId(@PathVariable Long id) {
         Resume resume=resumService.getById(id);
         resumService.deleteResume(resume);
@@ -69,7 +61,7 @@ public class ResumController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @GetMapping("/detail/resume/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<?> detailResumebyId(@PathVariable Long id) {
         Resume resume=resumService.getById(id);
         ResumeResponse resumeResponse=modelMapper.map(resume,ResumeResponse.class);
@@ -84,7 +76,7 @@ public class ResumController {
         );
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-    @GetMapping("/api/resumes")
+    @GetMapping
     public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
 
         ResponseDTO<?> respond=resumService.getPaginatedResumes(pageparam,"default");
@@ -95,9 +87,8 @@ public class ResumController {
         return ResponseEntity.ok(response);
 
     }
-    @PostMapping("/resumes/by-user")
+    @GetMapping("/by-user")
     public ResponseEntity<?> GetallResumebyUser(@RequestParam(value ="page") String pageparam){
-
         ResponseDTO<?> respond=resumService.getPaginatedResumes(pageparam,"by-user");
         ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
                 "Fetch all Resumes by User Successful",
@@ -105,7 +96,7 @@ public class ResumController {
         );
         return ResponseEntity.ok(response);
     }
-    @GetMapping("/resumes/byHRcompany")
+    @GetMapping("/by-companyHR")
     public ResponseEntity<?> GetallResumeHRcompany(@RequestParam(value ="page") String pageparam){
 
         ResponseDTO<?> respond=resumService.getPaginatedResumes(pageparam,"HRfrom-Company");

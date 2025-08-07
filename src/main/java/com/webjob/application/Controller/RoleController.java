@@ -1,27 +1,22 @@
 package com.webjob.application.Controller;
 
-import com.webjob.application.Models.*;
-import com.webjob.application.Models.Request.JobRequest;
+import com.webjob.application.Models.Entity.Role;
 import com.webjob.application.Models.Response.*;
 import com.webjob.application.Services.RoleService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 @RestController
+@RequestMapping("/api/v1/roles")
 public class RoleController {
     @Autowired
     private RoleService roleService;
 
 
-    @PostMapping("/create/role")
+    @PostMapping
     public ResponseEntity<?> createRole(@Valid @RequestBody Role role) {
         Role save=roleService.createRole(role);
         ApiResponse<?> apiResponse=new ApiResponse<>(HttpStatus.CREATED.value(), null,
@@ -29,7 +24,7 @@ public class RoleController {
                 save);
         return new ResponseEntity<>(apiResponse,HttpStatus.CREATED);
     }
-    @PutMapping("/edit/role/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> editRole(@PathVariable Long id, @Valid @RequestBody Role role) {
         Role edit=roleService.EditRole(id,role);
         ApiResponse<?> apiResponse=new ApiResponse<>(HttpStatus.OK.value(), null,
@@ -37,7 +32,7 @@ public class RoleController {
                 edit);
         return new ResponseEntity<>(apiResponse,HttpStatus.OK);
     }
-    @GetMapping("/api/roles")
+    @GetMapping
     public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
         ResponseDTO<?> respond=roleService.getPaginated(pageparam,"default");
         ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
@@ -47,7 +42,7 @@ public class RoleController {
         return ResponseEntity.ok(response);
 
     }
-    @DeleteMapping("/delete/role/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteRolebyId(@PathVariable Long id) {
         roleService.deleteRole(id);
         ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(),
@@ -58,7 +53,7 @@ public class RoleController {
         );
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-    @GetMapping("/detail/role/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<?> detailRolebyId(@PathVariable Long id) {
         Role role=roleService.getByid(id).orElseThrow(()->new IllegalArgumentException("Role not found with "+id));
         ApiResponse<?> response = new ApiResponse<>(HttpStatus.OK.value(),

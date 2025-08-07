@@ -1,12 +1,10 @@
 package com.webjob.application.Services;
 
 
-import com.webjob.application.Models.*;
-import com.webjob.application.Models.Request.JobRequest;
-import com.webjob.application.Models.Response.ApiResponse;
+import com.webjob.application.Models.Entity.Permission;
+import com.webjob.application.Models.Entity.Role;
 import com.webjob.application.Models.Response.MetaDTO;
 import com.webjob.application.Models.Response.ResponseDTO;
-import com.webjob.application.Models.Response.ResumeResponse;
 import com.webjob.application.Repository.PermissionRepository;
 import com.webjob.application.Repository.RoleRepository;
 import jakarta.transaction.Transactional;
@@ -14,11 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.ArrayList;
 import java.util.List;

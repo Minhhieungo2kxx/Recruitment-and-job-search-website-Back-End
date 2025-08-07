@@ -1,7 +1,7 @@
 package com.webjob.application.Controller;
 
 
-import com.webjob.application.Models.Company;
+import com.webjob.application.Models.Entity.Company;
 import com.webjob.application.Models.Request.CompanyDTO;
 import com.webjob.application.Models.Request.Search.SearchCompanyDTO;
 import com.webjob.application.Models.Response.ApiResponse;
@@ -14,10 +14,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
 
 @RestController
+@RequestMapping("/api/v1/companies") // base path chuẩn RESTful
 public class CompanyController {
     private final CompanyService companyService;
     private final ModelMapper modelMapper;
@@ -29,7 +29,7 @@ public class CompanyController {
         this.modelMapper = modelMapper;
         this.userService = userService;
     }
-    @PostMapping("/create/companies")
+    @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CompanyDTO companyDTO){
         Company company=modelMapper.map(companyDTO,Company.class);
         Company respond=companyService.handle(company);
@@ -43,23 +43,8 @@ public class CompanyController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
 
     }
-    @GetMapping("/all/companies")
-    public ResponseEntity<?> GetallCompanies(){
-        List<Company> list=companyService.getAll();
-        if(list.isEmpty()){
 
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        }
-        ApiResponse<List<Company>> response = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "GEt All Company successful",
-                list
-
-        );
-        return ResponseEntity.ok(response);
-    }
-    @PutMapping("/edit/company/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> EditCompany(@PathVariable Long id,@Valid @RequestBody CompanyDTO companyDTO){
         try {
             companyService.checkByID(id);
@@ -81,7 +66,7 @@ public class CompanyController {
 
         }
     }
-    @GetMapping("/detail/company/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<?> getCompanybyID(@PathVariable Long id){
         try {
             companyService.checkByID(id);
@@ -104,7 +89,7 @@ public class CompanyController {
 
 
     }
-    @DeleteMapping("/delete/company/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCompanybyId(@PathVariable Long id) {
         try {
             companyService.checkByID(id);
@@ -118,7 +103,7 @@ public class CompanyController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
         }
     }
-    @GetMapping("/api/companies")
+    @GetMapping
     public ResponseEntity<?> getallPageList(@RequestParam(value ="page",defaultValue = "0")String pageparam){
         ResponseDTO<?> responseDTO =companyService.getPaginated(pageparam,"default",null);
         ApiResponse<?> response = new ApiResponse<>(
@@ -131,7 +116,7 @@ public class CompanyController {
 
         return ResponseEntity.ok(response);
     }
-    @GetMapping("/api/companies/search")
+    @GetMapping("/search")
     public ResponseEntity<?> searchCompanies(@ModelAttribute SearchCompanyDTO searchCompanyDTO) {
         ResponseDTO<?> responseDTO =companyService.getPaginated(searchCompanyDTO.getPage(),"search",searchCompanyDTO);
         ApiResponse<?> response = new ApiResponse<>(

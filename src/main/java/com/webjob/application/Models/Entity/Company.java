@@ -1,15 +1,11 @@
-package com.webjob.application.Models;
+package com.webjob.application.Models.Entity;
 
-import com.webjob.application.Models.Enums.ResumeStatus;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -17,32 +13,39 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.List;
 
 @Entity
-@Table(name = "resumes")
+@Table(name = "companies")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class Resume {
+
+public class Company {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không hợp lệ")
-    private String email;
 
-    @NotBlank(message = "URL không được để trống")
-    private String url;
+    @Column(nullable = false)
+    @NotBlank(message = "Tên công ty không được để trống")
+    @Size(min = 2, max = 255, message = "Tên công ty phải có từ 2 đến 255 ký tự")
+    private String name;
 
-    @NotNull(message = "Trạng thái không được để trống")
-    @Enumerated(EnumType.STRING) // Store enum as String in DB
-    private ResumeStatus status = ResumeStatus.PENDING; // Default status
+    @Column(columnDefinition = "MEDIUMTEXT")
+    private String description;
 
-    @CreatedDate
+    @Size(max = 500, message = "Địa chỉ không được vượt quá 500 ký tự")
+    private String address;
+
+    @Size(max = 500, message = "Đường dẫn logo không được vượt quá 500 ký tự")
+    private String logo;
+
+
     @Column(name = "created_at", updatable = false)
+    @CreatedDate
     private Instant createdAt;
 
     @Column(name = "updated_at")
@@ -59,13 +62,15 @@ public class Resume {
     @LastModifiedBy
     private String updatedBy;
 
-    // Mối quan hệ Many-to-One với User
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @OneToMany(mappedBy ="company",fetch =FetchType.LAZY)
+    @JsonIgnore
+    private List<User> users;
 
-    // Mối quan hệ Many-to-One với Job
-    @ManyToOne
-    @JoinColumn(name = "job_id")
-    private Job job;
+    @OneToMany(mappedBy ="company",fetch =FetchType.LAZY)
+    @JsonIgnore
+    private List<Job> jobs;
+
+
+
+
 }

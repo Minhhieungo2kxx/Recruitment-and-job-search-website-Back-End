@@ -1,19 +1,10 @@
 package com.webjob.application.Models.Request;
 
-import com.webjob.application.Models.Company;
-import com.webjob.application.Models.Response.UserDTO;
-import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-
-import java.time.Instant;
 
 @Getter
 @Setter

@@ -1,11 +1,11 @@
 package com.webjob.application.Services;
 
 
-import com.webjob.application.Models.Company;
+import com.webjob.application.Models.Entity.Company;
 import com.webjob.application.Models.Request.Search.SearchCompanyDTO;
 import com.webjob.application.Models.Response.MetaDTO;
 import com.webjob.application.Models.Response.ResponseDTO;
-import com.webjob.application.Models.User;
+import com.webjob.application.Models.Entity.User;
 import com.webjob.application.Repository.CompanyRepository;
 import com.webjob.application.Repository.UserRepository;
 import com.webjob.application.Services.Specification.CompanySpecification;

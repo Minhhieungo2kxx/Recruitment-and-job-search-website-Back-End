@@ -1,12 +1,12 @@
 package com.webjob.application.Services;
 
 
-import com.webjob.application.Models.Job;
+import com.webjob.application.Models.Entity.Job;
 import com.webjob.application.Models.Request.SubscriberRequest;
 import com.webjob.application.Models.Response.ResponEmailJob;
-import com.webjob.application.Models.Skill;
-import com.webjob.application.Models.Subscriber;
-import com.webjob.application.Models.User;
+import com.webjob.application.Models.Entity.Skill;
+import com.webjob.application.Models.Entity.Subscriber;
+import com.webjob.application.Models.Entity.User;
 import com.webjob.application.Repository.JobRepository;
 import com.webjob.application.Repository.SkillRepository;
 import com.webjob.application.Repository.SubscriberRepository;
@@ -14,19 +14,16 @@ import com.webjob.application.Repository.SubscriberRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.NumberFormat;
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -89,9 +86,9 @@ public class SubscriberService {
         return get;
     }
 
-    @Scheduled(fixedDelay = 2592000000L)
+//    @Scheduled(fixedDelay = 2592000000L)
     @Async("taskExecutor")
-    @Transactional(readOnly = true)
+    @Transactional
     public void sendSubscribersEmailJobs() {
         System.out.println("Send email");
 

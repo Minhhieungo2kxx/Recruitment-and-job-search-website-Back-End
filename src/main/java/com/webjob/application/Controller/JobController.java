@@ -1,28 +1,24 @@
 package com.webjob.application.Controller;
 
-import com.webjob.application.Models.Company;
-import com.webjob.application.Models.Job;
+import com.webjob.application.Models.Entity.Company;
+import com.webjob.application.Models.Entity.Job;
 import com.webjob.application.Models.Request.JobRequest;
 import com.webjob.application.Models.Request.Search.JobFiltersearch;
 import com.webjob.application.Models.Response.*;
-import com.webjob.application.Models.Skill;
-import com.webjob.application.Models.User;
+import com.webjob.application.Models.Entity.Skill;
 import com.webjob.application.Services.CompanyService;
 import com.webjob.application.Services.JobService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeMap;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
+@RequestMapping("/api/v1/jobs") // Base URL chuẩn RESTful
 public class JobController {
     private final JobService jobService;
 
@@ -35,7 +31,8 @@ public class JobController {
         this.modelMapper = modelMapper;
         this.companyService = companyService;
     }
-    @PostMapping("/create/job")
+
+    @PostMapping
     public ResponseEntity<?> createJob(@Valid @RequestBody JobRequest request) {
         jobService.checkNameJob(request.getName());
         Job created = jobService.createJob(request);
@@ -56,7 +53,7 @@ public class JobController {
         return new ResponseEntity<>(apiResponse,HttpStatus.CREATED);
 
     }
-    @PutMapping("/edit/job/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> editJob(@PathVariable Long id, @Valid @RequestBody JobRequest request) {
 
         Job update = jobService.updateJob(id,request);
@@ -76,9 +73,8 @@ public class JobController {
         return new ResponseEntity<>(apiResponse,HttpStatus.OK);
 
     }
-    @GetMapping("/api/jobs")
+    @GetMapping
     public ResponseEntity<?> GetallPageList(@ModelAttribute JobFiltersearch jobFiltersearch){
-
         ResponseDTO<?> respond=jobService.getPaginated(jobFiltersearch,"default");
         ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
                 "fetch all Jobs",
@@ -88,7 +84,7 @@ public class JobController {
 
     }
 
-    @GetMapping("/detail/job/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<?> detailJob(@PathVariable Long id) {
         Job job=jobService.getById(id);
         ApiResponse<?> apiResponse=new ApiResponse<>(HttpStatus.OK.value(), null,
@@ -96,7 +92,7 @@ public class JobController {
                 job);
         return new ResponseEntity<>(apiResponse,HttpStatus.OK);
     }
-    @DeleteMapping("/delete/job/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteJobbyId(@PathVariable Long id) {
            Job job=jobService.getById(id);
            jobService.deleteJob(job);
@@ -108,7 +104,7 @@ public class JobController {
             );
             return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-    @GetMapping("/api/jobs/search")
+    @GetMapping("/search")
     public ResponseEntity<?> GetallSearch(@ModelAttribute JobFiltersearch jobFiltersearch){
         ResponseDTO<?> respond=jobService.getPaginated(jobFiltersearch,"filter-job");
         ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,

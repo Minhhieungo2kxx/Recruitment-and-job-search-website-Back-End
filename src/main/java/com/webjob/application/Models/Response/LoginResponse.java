@@ -1,7 +1,7 @@
 package com.webjob.application.Models.Response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.webjob.application.Models.Role;
+import com.webjob.application.Models.Entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

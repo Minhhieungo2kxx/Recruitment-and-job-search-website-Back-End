@@ -6,7 +6,7 @@ import com.webjob.application.Models.Response.ApiResponse;
 import com.webjob.application.Models.Request.LoginDTO;
 import com.webjob.application.Models.Response.LoginResponse;
 import com.webjob.application.Models.Response.UserDTO;
-import com.webjob.application.Models.User;
+import com.webjob.application.Models.Entity.User;
 import com.webjob.application.Services.SecurityUtil;
 import com.webjob.application.Services.UserService;
 import jakarta.validation.Valid;
@@ -24,6 +24,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/api/v1/auth") // base path cho Auth
 public class AuthController {
 
     @Value("${security.jwt.refresh-token-validity-in-seconds}")
@@ -45,9 +46,7 @@ public class AuthController {
     }
 
 
-
-
-    @PostMapping("/auth/login")
+    @PostMapping("/login")
     public ResponseEntity<?> formlogin(@Valid @RequestBody LoginDTO loginDTO) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword());
@@ -57,24 +56,24 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 //        get authentication thanh cong
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String getEmail=auth.getName();
-        User respon=userService.getbyEmail(getEmail);
+        String getEmail = auth.getName();
+        User respon = userService.getbyEmail(getEmail);
 
 //        LoginResponse.User user=new LoginResponse.User(respon.getId(),respon.getEmail(),respon.getFullName());
-        LoginResponse.User user=modelMapper.map(respon,LoginResponse.User.class);
+        LoginResponse.User user = modelMapper.map(respon, LoginResponse.User.class);
 
-        String acess_token=securityUtil.createacessToken(respon.getEmail(),user);
-        LoginResponse loginResponse=new LoginResponse(acess_token,user);
-        String refresh_token=securityUtil.createrefreshToken(respon.getEmail(),user);
-        userService.updateRefreshtoken(respon.getId(),refresh_token);
-        ResponseCookie responseCookie= ResponseCookie.from("refresh",refresh_token)
+        String acess_token = securityUtil.createacessToken(respon.getEmail(), user);
+        LoginResponse loginResponse = new LoginResponse(acess_token, user);
+        String refresh_token = securityUtil.createrefreshToken(respon.getEmail(), user);
+        userService.updateRefreshtoken(respon.getId(), refresh_token);
+        ResponseCookie responseCookie = ResponseCookie.from("refresh", refresh_token)
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
                 .maxAge(jwtrefreshExpiration)
                 .build();
-        HttpHeaders httpHeaders=new HttpHeaders();
-        httpHeaders.set(HttpHeaders.SET_COOKIE,responseCookie.toString());
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.set(HttpHeaders.SET_COOKIE, responseCookie.toString());
         ApiResponse<LoginResponse> response = new ApiResponse<>(
                 HttpStatus.OK.value(),
                 null,
@@ -85,9 +84,10 @@ public class AuthController {
         return ResponseEntity.ok().headers(httpHeaders).body(response);
 
     }
-//    Lay ra thong tin nguoi dung khi da gui kem access-token khi yeu cau den server
+
+    //    Lay ra thong tin nguoi dung khi da gui kem access-token khi yeu cau den server
 //    server se giai ma token do roi phan hoi lai client-->ta co authencaition nen get duoc email
-    @GetMapping("/auth/account")
+    @GetMapping("/account")
     public ResponseEntity<?> getAccount() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -100,7 +100,7 @@ public class AuthController {
         String email = authentication.getName();
         User user = userService.getbyEmail(email);
 //        LoginResponse.User responseUser = new LoginResponse.User(user.getId(), user.getEmail(),user.getFullName());
-        LoginResponse.User responseUser=modelMapper.map(user,LoginResponse.User.class);
+        LoginResponse.User responseUser = modelMapper.map(user, LoginResponse.User.class);
         ApiResponse<LoginResponse.User> response = new ApiResponse<>(
                 HttpStatus.OK.value(),
                 null,
@@ -109,37 +109,39 @@ public class AuthController {
         );
         return ResponseEntity.ok(response);
     }
-    @GetMapping("/auth/refresh")
+
+    @GetMapping("/token/refresh")
     public ResponseEntity<?> getRefreshToken(@CookieValue(name = "refresh", defaultValue = "default") String refreshToken) {
         if ("default".equals(refreshToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No refresh token found.");
         }
-            Jwt decodedJwt = jwtDecoder.decode(refreshToken);
-            String username = decodedJwt.getSubject();
-            User getbyuser=userService.getEmailAndRefreshtoken(username,refreshToken);
+        Jwt decodedJwt = jwtDecoder.decode(refreshToken);
+        String username = decodedJwt.getSubject();
+        User getbyuser = userService.getEmailAndRefreshtoken(username, refreshToken);
 
 //            LoginResponse.User user=new LoginResponse.User(getbyuser.getId(),getbyuser.getEmail(),getbyuser.getFullName());
-            LoginResponse.User user=modelMapper.map(getbyuser,LoginResponse.User.class);
+        LoginResponse.User user = modelMapper.map(getbyuser, LoginResponse.User.class);
 
-            String acess_token=securityUtil.createacessToken(getbyuser.getEmail(),user);
-            LoginResponse loginResponse=new LoginResponse(acess_token,user);
+        String acess_token = securityUtil.createacessToken(getbyuser.getEmail(), user);
+        LoginResponse loginResponse = new LoginResponse(acess_token, user);
 
-            String refresh_token=securityUtil.createrefreshToken(getbyuser.getEmail(),user);
-            userService.updateRefreshtoken(getbyuser.getId(),refresh_token);
-            ResponseCookie responseCookie= ResponseCookie.from("refresh",refresh_token)
-                    .httpOnly(true).secure(true).path("/").maxAge(jwtrefreshExpiration).build();
-            HttpHeaders httpHeaders=new HttpHeaders();
-            httpHeaders.set(HttpHeaders.SET_COOKIE,responseCookie.toString());
-            ApiResponse<LoginResponse> response = new ApiResponse<>(
+        String refresh_token = securityUtil.createrefreshToken(getbyuser.getEmail(), user);
+        userService.updateRefreshtoken(getbyuser.getId(), refresh_token);
+        ResponseCookie responseCookie = ResponseCookie.from("refresh", refresh_token)
+                .httpOnly(true).secure(true).path("/").maxAge(jwtrefreshExpiration).build();
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.set(HttpHeaders.SET_COOKIE, responseCookie.toString());
+        ApiResponse<LoginResponse> response = new ApiResponse<>(
                 HttpStatus.OK.value(),
                 null,
                 "Get User by refresh token",
                 loginResponse
         );
-            return ResponseEntity.ok().headers(httpHeaders).body(response);
+        return ResponseEntity.ok().headers(httpHeaders).body(response);
 
     }
-    @PostMapping("/auth/logout")
+
+    @PostMapping("/logout")
     public ResponseEntity<?> logout() {
         // Lấy thông tin xác thực hiện tại từ context
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -152,7 +154,7 @@ public class AuthController {
         String email = authentication.getName();
         User user = userService.getbyEmail(email);
         // Xoá refresh_token trong DB (set null)
-        userService.updateRefreshtoken(user.getId(),null); // cần thêm method này nếu chưa có
+        userService.updateRefreshtoken(user.getId(), null); // cần thêm method này nếu chưa có
         // Xoá cookie "refresh" bằng cách đặt maxAge = 0
         ResponseCookie deleteCookie = ResponseCookie.from("refresh", "")
                 .httpOnly(true).secure(true).path("/").maxAge(0).build();
@@ -167,8 +169,9 @@ public class AuthController {
 
         return ResponseEntity.ok().headers(headers).body(response);
     }
-    @PostMapping("/auth/register")
-    public ResponseEntity<?> createRegister(@Valid @RequestBody Userrequest userrequest){
+
+    @PostMapping("/register")
+    public ResponseEntity<?> createRegister(@Valid @RequestBody Userrequest userrequest) {
         // Tạo user và ánh xạ dữ liệu
         User user = modelMapper.map(userrequest, User.class);
         // Xử lý và phản hồi

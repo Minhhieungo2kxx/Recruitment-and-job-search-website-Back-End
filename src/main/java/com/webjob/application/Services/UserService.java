@@ -1,13 +1,12 @@
 package com.webjob.application.Services;
 
-import com.webjob.application.Models.Company;
+import com.webjob.application.Models.Entity.Company;
 import com.webjob.application.Models.Response.*;
-import com.webjob.application.Models.Resume;
-import com.webjob.application.Models.Role;
-import com.webjob.application.Models.User;
+import com.webjob.application.Models.Entity.Resume;
+import com.webjob.application.Models.Entity.Role;
+import com.webjob.application.Models.Entity.User;
 import com.webjob.application.Repository.ResumeRepository;
 import com.webjob.application.Repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +14,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

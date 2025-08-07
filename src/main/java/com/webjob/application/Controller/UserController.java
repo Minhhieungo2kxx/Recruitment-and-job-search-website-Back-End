@@ -1,29 +1,25 @@
 package com.webjob.application.Controller;
 
-import com.webjob.application.Models.Company;
 import com.webjob.application.Models.Request.Userrequest;
 import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Models.Response.MetaDTO;
 import com.webjob.application.Models.Response.ResponseDTO;
 import com.webjob.application.Models.Response.UserDTO;
-import com.webjob.application.Models.User;
+import com.webjob.application.Models.Entity.User;
 import com.webjob.application.Services.CompanyService;
 import com.webjob.application.Services.RoleService;
 import com.webjob.application.Services.UserService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 @RestController
+@RequestMapping("/api/v1/users")
 public class UserController {
 
     private final UserService userService;
@@ -41,7 +37,7 @@ public class UserController {
 
     }
 
-    @PostMapping("/create/user")
+    @PostMapping
     public ResponseEntity<ApiResponse<UserDTO>> create(@Valid @RequestBody Userrequest userrequest) {
 
             // Tạo user và ánh xạ dữ liệu
@@ -63,32 +59,32 @@ public class UserController {
 
 
 
-    @GetMapping("/all/user")
-    public ResponseEntity<?> getAllUser() {
-        List<User> list = userService.getAll();
-        List<UserDTO> userDTOList=new ArrayList<>();
-        if (list.isEmpty()) {
-            return ResponseEntity.noContent().build();
+//    @GetMapping
+//    public ResponseEntity<?> getAllUser() {
+//        List<User> list = userService.getAll();
+//        List<UserDTO> userDTOList=new ArrayList<>();
+//        if (list.isEmpty()) {
+//            return ResponseEntity.noContent().build();
+//
+//        }
+//        else {
+//            for(User user:list){
+//                UserDTO userDTO=modelMapper.map(user,UserDTO.class);
+//                userDTOList.add(userDTO);
+//            }
+//            ApiResponse<List<UserDTO>> response = new ApiResponse<>(
+//                    HttpStatus.CREATED.value(),
+//                    null,
+//                    "Get List USER successful",
+//                    userDTOList
+//            );
+//            return ResponseEntity.ok(response);
+//        }
+//
+//    }
 
-        }
-        else {
-            for(User user:list){
-                UserDTO userDTO=modelMapper.map(user,UserDTO.class);
-                userDTOList.add(userDTO);
-            }
-            ApiResponse<List<UserDTO>> response = new ApiResponse<>(
-                    HttpStatus.CREATED.value(),
-                    null,
-                    "Get List USER successful",
-                    userDTOList
-            );
-            return ResponseEntity.ok(response);
-        }
 
-    }
-
-
-    @PutMapping("user/edit/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> editUserById(@PathVariable Long id,@Valid @RequestBody Userrequest userrequest) {
             User user=userService.getbyID(id).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " +id));
             Instant instant=user.getCreatedAt();
@@ -106,7 +102,7 @@ public class UserController {
             return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("user/delete/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUserbyId(@PathVariable Long id) {
 
             userService.checkById(id);
@@ -127,7 +123,7 @@ public class UserController {
 
     }
 
-    @GetMapping("user/detail/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<?> getUserbyID(@PathVariable Long id) {
         try {
             userService.checkById(id);
@@ -149,7 +145,7 @@ public class UserController {
 
 
     }
-    @GetMapping("/api/users")
+    @GetMapping
     public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
 
         ResponseDTO<?> respond=userService.getPaginatedResumes(pageparam,"default");

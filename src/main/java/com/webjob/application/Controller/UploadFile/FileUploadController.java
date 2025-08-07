@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/upload")
+@RequestMapping("/api/v1/files")
 public class FileUploadController {
     @Autowired
     private UploadFile uploadFile;
@@ -30,7 +30,7 @@ public class FileUploadController {
 
         try {
             String uploadedFileName = uploadFile.getnameFile(file, folder);
-            UploadFileResponse uploadFileResponse=new UploadFileResponse(uploadedFileName, Instant.now());
+            UploadFileResponse uploadFileResponse=new UploadFileResponse(uploadedFileName, Instant.now(),folder);
             ApiResponse<?> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), null,
                     "Tải file thành công!",
                     uploadFileResponse

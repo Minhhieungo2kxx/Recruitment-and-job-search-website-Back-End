@@ -1,4 +1,4 @@
-package com.webjob.application.Models;
+package com.webjob.application.Models.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
