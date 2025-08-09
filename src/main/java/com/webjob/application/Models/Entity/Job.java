@@ -2,6 +2,8 @@ package com.webjob.application.Models.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.webjob.application.Models.Enums.CompetitionLevel;
+import com.webjob.application.Models.Enums.JobCategory;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -51,6 +53,19 @@ public class Job {
             message = "Cấp độ không hợp lệ. Giá trị hợp lệ: INTERN, FRESHER, JUNIOR, MIDDLE, SENIOR"
     )
     private String level;
+    @Column(name = "applied_count")
+    @Min(value = 0, message = "Số lượng ứng viên đã ứng tuyển không được âm")
+    private int appliedCount;
+
+    @NotNull(message = "Trạng thái không được để trống")
+    @Enumerated(EnumType.STRING) // Store enum as String in DB
+    @Column(name = "competition_level", length = 10)
+    private CompetitionLevel competitionLevel;
+
+    @NotNull(message = "Loại công việc không được để trống")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "job_category", length = 50)
+    private JobCategory jobCategory;
 
     @Column(columnDefinition = "MEDIUMTEXT")
     @NotBlank(message = "Mô tả công việc không được để trống")
@@ -82,6 +97,7 @@ public class Job {
     @LastModifiedBy
     private String updatedBy;
 
+
     @ManyToOne
     @JoinColumn(name = "company_id")
     private Company company;
@@ -98,6 +114,8 @@ public class Job {
     @OneToMany(mappedBy ="job",fetch =FetchType.LAZY)
     @JsonIgnore
     private List<Resume> resumeList;
+
+
 
 
 }

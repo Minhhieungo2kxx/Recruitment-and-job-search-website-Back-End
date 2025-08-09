@@ -119,6 +119,8 @@ public class JobService {
                 .and(JobSpecification.hasDateRange(jobFilter.getStartDate(), jobFilter.getEndDate()))
                 .and(JobSpecification.isActive(jobFilter.getActive()))
                 .and(JobSpecification.hasSkills(jobFilter.getSkillIds()))
+                .and(JobSpecification.hasCompetitionLevel(jobFilter.getCompetitionLevel()))
+                .and(JobSpecification.hasJobCategory(jobFilter.getJobCategory()))
         );
         Sort.Direction direction = Sort.Direction.ASC;
         Sort sort = Sort.by(direction, "name");

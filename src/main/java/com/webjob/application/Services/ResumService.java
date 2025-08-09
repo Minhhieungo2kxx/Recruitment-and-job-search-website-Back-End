@@ -9,6 +9,7 @@ import com.webjob.application.Models.Response.ResponseDTO;
 import com.webjob.application.Models.Response.ResumeResponse;
 import com.webjob.application.Models.Entity.Resume;
 import com.webjob.application.Models.Entity.User;
+import com.webjob.application.Repository.JobRepository;
 import com.webjob.application.Repository.ResumeRepository;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
@@ -35,15 +36,18 @@ public class ResumService {
     private ResumeRepository resumeRepository;
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private JobRepository jobRepository;
 
     @Transactional
     public Resume saveResume(Resume resume){
         User user=userService.getbyID(resume.getUser().getId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " +resume.getUser().getId()));
         Job job=jobService.getById(resume.getJob().getId());
-
         resume.setJob(job);
         resume.setUser(user);
+        job.setAppliedCount(job.getAppliedCount()+1);
+        jobRepository.save(job);
         return resumeRepository.save(resume);
 
     }
@@ -63,7 +67,13 @@ public class ResumService {
     }
     @Transactional
     public void deleteResume(Resume resume){
+        Job job=resume.getJob();
         resumeRepository.delete(resume);
+        // Giảm appliedCount nếu > 0
+        if (job.getAppliedCount() > 0) {
+            job.setAppliedCount(job.getAppliedCount() - 1);
+            jobRepository.save(job);
+        }
     }
     public Page<Resume> getAllPage(int page, int size){
         Sort.Direction direction=Sort.Direction.ASC;

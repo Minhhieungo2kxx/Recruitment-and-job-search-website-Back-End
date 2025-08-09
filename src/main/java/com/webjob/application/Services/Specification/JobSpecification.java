@@ -1,6 +1,8 @@
 package com.webjob.application.Services.Specification;
 
 import com.webjob.application.Models.Entity.Job;
+import com.webjob.application.Models.Enums.CompetitionLevel;
+import com.webjob.application.Models.Enums.JobCategory;
 import jakarta.persistence.criteria.Join;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -45,25 +47,26 @@ public class JobSpecification {
     }
 
     public static Specification<Job> hasSalaryBetween(Double minSalary, Double maxSalary) {
-    return (root, query, cb) -> {
-        // Không có điều kiện nào được truyền -> bỏ qua (luôn đúng)
-        if (minSalary == null && maxSalary == null) {
-            return cb.conjunction();
-        }
-        // Có cả min và max -> salary BETWEEN min AND max
-        if (minSalary != null && maxSalary != null) {
-            return cb.between(root.get("salary"), minSalary, maxSalary);
-        }
+        return (root, query, cb) -> {
+            // Không có điều kiện nào được truyền -> bỏ qua (luôn đúng)
+            if (minSalary == null && maxSalary == null) {
+                return cb.conjunction();
+            }
+            // Có cả min và max -> salary BETWEEN min AND max
+            if (minSalary != null && maxSalary != null) {
+                return cb.between(root.get("salary"), minSalary, maxSalary);
+            }
 
-        // Chỉ có min -> salary >= min
-        if (minSalary != null) {
-            return cb.greaterThanOrEqualTo(root.get("salary"), minSalary);
-        }
+            // Chỉ có min -> salary >= min
+            if (minSalary != null) {
+                return cb.greaterThanOrEqualTo(root.get("salary"), minSalary);
+            }
 
-        // Chỉ có max -> salary <= max
-        return cb.lessThanOrEqualTo(root.get("salary"), maxSalary);
-    };
-}
+            // Chỉ có max -> salary <= max
+            return cb.lessThanOrEqualTo(root.get("salary"), maxSalary);
+        };
+    }
+
     public static Specification<Job> hasDateRange(Instant from, Instant to) {
         return (root, query, cb) -> {
             if (from == null && to == null) {
@@ -86,7 +89,6 @@ public class JobSpecification {
     }
 
 
-
     public static Specification<Job> isActive(Boolean active) {
         return (root, query, cb) -> {
             if (active == null) {
@@ -106,4 +108,22 @@ public class JobSpecification {
         };
     }
 
+    public static Specification<Job> hasCompetitionLevel(CompetitionLevel competitionLevel) {
+        return (root, query, cb) -> {
+            if (competitionLevel == null) {
+                return cb.conjunction();
+            }
+            return cb.equal(root.get("competitionLevel"), competitionLevel);
+        };
+    }
+
+    public static Specification<Job> hasJobCategory(JobCategory jobCategory) {
+        return (root, query, cb) -> {
+            if (jobCategory == null) {
+                return cb.conjunction();
+            }
+            return cb.equal(root.get("jobCategory"), jobCategory);
+        };
+
+    }
 }

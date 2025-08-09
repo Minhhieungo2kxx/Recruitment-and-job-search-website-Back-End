@@ -30,7 +30,7 @@ public class SearchCompanyDTO {
     private Instant createdAt;
 
     private String page;  // Default value
-    private int limit = 5; // Default value
+    private int limit = 8; // Default value
     private String sortBy; // Name or other fields
     private String sortOrder = "ASC"; // ASC or DESC
 

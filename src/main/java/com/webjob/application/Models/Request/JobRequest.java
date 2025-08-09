@@ -1,6 +1,10 @@
 package com.webjob.application.Models.Request;
 
+import com.webjob.application.Models.Enums.CompetitionLevel;
+import com.webjob.application.Models.Enums.JobCategory;
 import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -56,6 +60,15 @@ public class JobRequest {
 
     @NotEmpty(message = "Danh sách kỹ năng không được rỗng")
     private List<SkillIdDTO> skills;
+
+    @NotNull(message = "Trạng thái không được để trống")
+    @Enumerated(EnumType.STRING) // Store enum as String in DB
+    private CompetitionLevel competitionLevel;
+
+    @NotNull(message = "Loại công việc không được để trống")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "job_category", length = 50)
+    private JobCategory jobCategory;
 
     @Data
     @AllArgsConstructor

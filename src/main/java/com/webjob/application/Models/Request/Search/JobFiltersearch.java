@@ -1,5 +1,11 @@
 package com.webjob.application.Models.Request.Search;
 
+import com.webjob.application.Models.Enums.CompetitionLevel;
+import com.webjob.application.Models.Enums.JobCategory;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +24,10 @@ public class JobFiltersearch {
     private String description;
     private Double minSalary;
     private Double maxSalary;
+
+    private CompetitionLevel competitionLevel;
+
+    private JobCategory jobCategory;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private Instant startDate;

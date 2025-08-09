@@ -1,6 +1,12 @@
 package com.webjob.application.Models.Response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.webjob.application.Models.Enums.CompetitionLevel;
+import com.webjob.application.Models.Enums.JobCategory;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +24,9 @@ public class JobResponse {
     private double salary;
     private int quantity;
     private String level;
+    private CompetitionLevel competitionLevel;
+    private int appliedCount;
+    private JobCategory jobCategory;
     private String description;
     private Instant startDate;
     private Instant endDate;

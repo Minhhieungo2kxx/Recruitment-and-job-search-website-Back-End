@@ -24,23 +24,23 @@ public class WebConfiguration implements WebMvcConfigurer {
                 .addResourceLocations("file:" + basePath + "/company/");
     }
 
-    @Bean
-    PermissionInterceptor getPermissionInterceptor() {
-        return new PermissionInterceptor();
-    }
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-//        String[] paths = {"/", "/auth/login", "/auth/refresh", "/storage/**"
-//                ,"/api/jobs/**","/api/companies/**","/api/skill/**","/auth/register"
-//                ,"/api/subscriber/**","/resumes/by-user"
+//    @Bean
+//    PermissionInterceptor getPermissionInterceptor() {
+//        return new PermissionInterceptor();
+//    }
+//    @Override
+//    public void addInterceptors(InterceptorRegistry registry) {
+////        String[] paths = {"/", "/auth/login", "/auth/refresh", "/storage/**"
+////                ,"/api/jobs/**","/api/companies/**","/api/skill/**","/auth/register"
+////                ,"/api/subscriber/**","/resumes/by-user"
+////        };
+//        String[] publicEndpoints = {"/", "/api/v1/auth/login", "/api/v1/auth/refresh",
+//                "/api/v1/auth/register", "/storage/**", "/api/v1/jobs/**",
+//                "/api/v1/companies/**", "/api/v1/skills/**", "/api/v1/resumes/by-user",
+//                "/api/v1/subscribers/**","/api/v1/subscribers/send-mails",
+//                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html","/api/v1/password/**"
 //        };
-        String[] publicEndpoints = {"/", "/api/v1/auth/login", "/api/v1/auth/refresh",
-                "/api/v1/auth/register", "/storage/**", "/api/v1/jobs/**",
-                "/api/v1/companies/**", "/api/v1/skills/**", "/api/v1/resumes/by-user",
-                "/api/v1/subscribers/**","/api/v1/subscribers/send-mails",
-                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html","/api/v1/password/**"
-        };
-        registry.addInterceptor(getPermissionInterceptor())
-                .excludePathPatterns(publicEndpoints);
-    }
+//        registry.addInterceptor(getPermissionInterceptor())
+//                .excludePathPatterns(publicEndpoints);
+//    }
 }
