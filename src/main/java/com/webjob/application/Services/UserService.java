@@ -105,6 +105,11 @@ public class UserService {
         }
         return user;
     }
+    public User getEmailbyGoogle(String email) {
+        User user = this.userRepository.findByEmail(email);
+        return user;
+    }
+
     public User getEmailAndRefreshtoken(String email,String tokenrefresh) {
         User user =userRepository.findByEmailAndRefreshToken(email,tokenrefresh);
         if (user == null) {

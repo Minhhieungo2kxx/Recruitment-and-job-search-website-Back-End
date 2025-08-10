@@ -30,7 +30,7 @@ public class UserDetailCustom implements UserDetailsService {
                 user.getEmail(),
                 user.getPassword(),
                 Collections.singletonList(
-                        new SimpleGrantedAuthority("ROLE_ADMIN"))); // Chuyển đổi role
+                        new SimpleGrantedAuthority("ROLE_"+user.getRole().getName().trim()))); // Chuyển đổi role
         // thành
         // authority
 
