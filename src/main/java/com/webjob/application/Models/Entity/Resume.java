@@ -1,5 +1,6 @@
 package com.webjob.application.Models.Entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.webjob.application.Models.Enums.ResumeStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -43,10 +44,22 @@ public class Resume {
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant createdAt;
 
     @Column(name = "updated_at")
     @LastModifiedDate
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant updatedAt;
 
     @Column(name = "created_by")

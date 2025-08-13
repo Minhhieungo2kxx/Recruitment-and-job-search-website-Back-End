@@ -1,6 +1,7 @@
 package com.webjob.application.Models.Entity;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -42,15 +43,28 @@ public class Role {
 
     @Column(name = "created_at", updatable = false)
     @CreatedDate
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant createdAt;
 
     @Column(name = "created_by")
     @Size(max = 100, message = "Người tạo không được vượt quá 100 ký tự")
     @CreatedBy
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX", timezone = "Asia/Ho_Chi_Minh")
     private String createdBy;
 
     @Column(name = "updated_at")
     @LastModifiedDate
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant updatedAt;
 
     @Column(name = "updated_by")

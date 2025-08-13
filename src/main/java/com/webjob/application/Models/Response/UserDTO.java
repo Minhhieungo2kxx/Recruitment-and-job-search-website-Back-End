@@ -35,9 +35,20 @@ public class UserDTO {
 
     private String address;
 
-
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant createdAt;
 
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant updatedAt;
 
     private String createdBy;

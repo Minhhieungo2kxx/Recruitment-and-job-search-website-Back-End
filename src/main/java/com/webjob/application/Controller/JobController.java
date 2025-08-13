@@ -2,16 +2,22 @@ package com.webjob.application.Controller;
 
 import com.webjob.application.Models.Entity.Company;
 import com.webjob.application.Models.Entity.Job;
+import com.webjob.application.Models.Entity.User;
 import com.webjob.application.Models.Request.JobRequest;
 import com.webjob.application.Models.Request.Search.JobFiltersearch;
 import com.webjob.application.Models.Response.*;
 import com.webjob.application.Models.Entity.Skill;
 import com.webjob.application.Services.CompanyService;
 import com.webjob.application.Services.JobService;
+import com.webjob.application.Services.PaymentService;
+import com.webjob.application.Services.UserService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,6 +25,8 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/jobs") // Base URL chuẩn RESTful
+@CrossOrigin(origins = "*")
+@Slf4j
 public class JobController {
     private final JobService jobService;
 
@@ -26,10 +34,15 @@ public class JobController {
 
     private final CompanyService companyService;
 
-    public JobController(JobService jobService, ModelMapper modelMapper, CompanyService companyService) {
+    private final UserService userService;
+    private final PaymentService paymentService;
+
+    public JobController(JobService jobService, ModelMapper modelMapper, CompanyService companyService, UserService userService, PaymentService paymentService) {
         this.jobService = jobService;
         this.modelMapper = modelMapper;
         this.companyService = companyService;
+        this.userService = userService;
+        this.paymentService = paymentService;
     }
 
     @PostMapping
@@ -113,6 +126,35 @@ public class JobController {
         );
         return ResponseEntity.ok(response);
 
+    }
+    @GetMapping("/{jobId}/applicant-info")
+    public ResponseEntity<?> getJobApplicantInfo(@PathVariable Long jobId) {
+
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            User userHR = userService.getbyEmail(email);
+            Long userId = userHR.getId();
+            JobApplicantInfoResponse response = paymentService.getJobApplicantInfo(userId, jobId);
+
+            ApiResponse<?> apiResponse=new ApiResponse<>(
+                    HttpStatus.OK.value(),
+                    null,
+                    "Lấy thông tin ứng viên thành công",
+                    response
+            );
+            return ResponseEntity.ok(apiResponse);
+
+        } catch (Exception e) {
+            log.error("Error getting job applicant info: {}", e.getMessage());
+            ApiResponse<?> apiResponse=new ApiResponse<>(
+                    HttpStatus.BAD_REQUEST.value(),
+                    e.getMessage(),
+                    "Lỗi lấy thông tin ứng viên",
+                    null
+            );
+            return ResponseEntity.badRequest().body(apiResponse);
+        }
     }
 
 

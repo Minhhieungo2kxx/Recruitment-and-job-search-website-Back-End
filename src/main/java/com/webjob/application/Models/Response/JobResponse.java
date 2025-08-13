@@ -28,7 +28,20 @@ public class JobResponse {
     private int appliedCount;
     private JobCategory jobCategory;
     private String description;
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant startDate;
+
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant endDate;
     private boolean active;
     private String createdBy;

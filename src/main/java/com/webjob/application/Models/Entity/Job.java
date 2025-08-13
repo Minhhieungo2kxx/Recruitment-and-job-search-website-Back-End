@@ -1,5 +1,6 @@
 package com.webjob.application.Models.Entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.webjob.application.Models.Enums.CompetitionLevel;
@@ -72,19 +73,43 @@ public class Job {
     private String description;
 
     @NotNull(message = "Thời hạn bắt đầu không được để trống")
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant startDate;
 
     @NotNull(message = "Thời hạn kết thúc không được để trống")
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant endDate;
 
     private boolean active;
 
     @Column(name = "created_at", updatable = false)
     @CreatedDate
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant createdAt;
 
     @Column(name = "updated_at")
     @LastModifiedDate
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant updatedAt;
 
     @Column(name = "created_by")
@@ -114,6 +139,11 @@ public class Job {
     @OneToMany(mappedBy ="job",fetch =FetchType.LAZY)
     @JsonIgnore
     private List<Resume> resumeList;
+
+    // Quan hệ 1-n với token reset
+    @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Payment> payments;
 
 
 

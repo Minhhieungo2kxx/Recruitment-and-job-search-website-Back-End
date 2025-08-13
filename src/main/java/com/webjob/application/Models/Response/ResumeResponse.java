@@ -1,5 +1,6 @@
 package com.webjob.application.Models.Response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.webjob.application.Models.Enums.ResumeStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -30,10 +31,20 @@ public class ResumeResponse {
 
     private ResumeStatus status;
 
-
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant createdAt;
 
-
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant updatedAt;
 
 

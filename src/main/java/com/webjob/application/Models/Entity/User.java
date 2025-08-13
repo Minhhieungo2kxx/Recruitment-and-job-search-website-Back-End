@@ -1,5 +1,6 @@
 package com.webjob.application.Models.Entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.webjob.application.Models.Entity.Company;
 import com.webjob.application.Models.Entity.Resume;
@@ -66,10 +67,22 @@ public class User {
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant createdAt;
 
     @Column(name = "updated_at")
     @LastModifiedDate
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant updatedAt;
 
     @Column(name = "created_by")
@@ -98,6 +111,11 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<PasswordResetToken> passwordResetTokens;
+
+    // Quan hệ 1-n với token reset
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Payment> payments;
 
 
 

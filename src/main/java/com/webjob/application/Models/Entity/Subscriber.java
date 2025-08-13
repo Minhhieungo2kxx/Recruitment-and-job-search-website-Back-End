@@ -1,5 +1,6 @@
 package com.webjob.application.Models.Entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.webjob.application.Models.Entity.Skill;
 import com.webjob.application.Models.Enums.SubscriberStatus;
@@ -52,10 +53,22 @@ public class Subscriber {
 
     @Column(name = "created_at", updatable = false)
     @CreatedDate
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant createdAt;
 
     @Column(name = "updated_at")
     @LastModifiedDate
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private Instant updatedAt;
 
     @Column(name = "created_by")

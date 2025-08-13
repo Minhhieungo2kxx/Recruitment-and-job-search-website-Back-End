@@ -59,31 +59,6 @@ public class UserController {
 
 
 
-//    @GetMapping
-//    public ResponseEntity<?> getAllUser() {
-//        List<User> list = userService.getAll();
-//        List<UserDTO> userDTOList=new ArrayList<>();
-//        if (list.isEmpty()) {
-//            return ResponseEntity.noContent().build();
-//
-//        }
-//        else {
-//            for(User user:list){
-//                UserDTO userDTO=modelMapper.map(user,UserDTO.class);
-//                userDTOList.add(userDTO);
-//            }
-//            ApiResponse<List<UserDTO>> response = new ApiResponse<>(
-//                    HttpStatus.CREATED.value(),
-//                    null,
-//                    "Get List USER successful",
-//                    userDTOList
-//            );
-//            return ResponseEntity.ok(response);
-//        }
-//
-//    }
-
-
     @PutMapping("/{id}")
     public ResponseEntity<?> editUserById(@PathVariable Long id,@Valid @RequestBody Userrequest userrequest) {
             User user=userService.getbyID(id).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " +id));

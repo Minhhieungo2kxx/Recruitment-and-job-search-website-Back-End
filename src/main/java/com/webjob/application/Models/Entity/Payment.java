@@ -1,10 +1,8 @@
 package com.webjob.application.Models.Entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,26 +14,48 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
-import java.util.List;
 
 @Entity
-@Table(name = "skills")
+@Table(name = "payments")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class Skill {
+
+public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Tên Skill không được để trống")
-    @Size(max = 255, message = "Tên Skill không được vượt quá 255 ký tự")
-    private String name;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(name = "created_at", updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "job_id", nullable = false)
+    private Job job;
+
+    @NotNull(message = "Số tiền không được để trống")
+    @PositiveOrZero(message = "Số tiền phải là số không âm")
+    private Long amount;
+
+    @NotBlank(message = "Trạng thái thanh toán không được để trống")
+    @Pattern(
+            regexp = "PENDING|SUCCESS|FAILED",
+            message = "Trạng thái không hợp lệ. Giá trị hợp lệ: PENDING, SUCCESS, FAILED"
+    )
+    @Column(length = 20)
+    private String status; // PENDING, SUCCESS, FAILED
+
+    @Size(max = 100)
+    private String transactionId; // Mã giao dịch từ VNPAY (vnp_TxnRef)
+
+    @Size(max = 255)
+    private String paymentGatewayResponse; // Thông tin phản hồi từ VNPAY (vnp_ResponseCode, vnp_TransactionStatus...)
+
     @CreatedDate
+    @Column(name = "created_at", updatable = false)
     @JsonFormat(
             shape = JsonFormat.Shape.STRING,
             pattern = "yyyy-MM-dd HH:mm:ss a z",
@@ -55,23 +75,13 @@ public class Skill {
     private Instant updatedAt;
 
     @Column(name = "created_by")
-    @Size(max = 100, message = "Người tạo không được vượt quá 100 ký tự")
+    @Size(max = 100)
     @CreatedBy
     private String createdBy;
 
     @Column(name = "updated_by")
-    @Size(max = 100, message = "Người cập nhật không được vượt quá 100 ký tự")
+    @Size(max = 100)
     @LastModifiedBy
     private String updatedBy;
-
-    @ManyToMany(mappedBy = "skills",fetch = FetchType.LAZY)
-    @JsonIgnore
-    private List<Job> jobs;
-
-    @ManyToMany(fetch = FetchType.LAZY,mappedBy = "skills")
-    @JsonIgnore
-    private List<Subscriber> subscribers;
-
-
 
 }
