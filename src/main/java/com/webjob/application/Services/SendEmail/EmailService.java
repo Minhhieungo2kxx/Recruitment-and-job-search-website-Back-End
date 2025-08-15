@@ -1,4 +1,4 @@
-package com.webjob.application.Services;
+package com.webjob.application.Services.SendEmail;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -71,6 +71,19 @@ public class EmailService {
         context.setVariables(variables);
         return templateEngine.process(templateName, context);
     }
+
+    public void sendTemplateJobapply(String subject, String templateName, Map<String, Object> variables) {
+        String content = generateJobApply(templateName, variables);
+        sendEmail((String) variables.get("email"), subject, content, false, true);
+    }
+
+    private String generateJobApply(String templateName,Map<String, Object> variables) {
+        Context context = new Context();
+        context.setVariables(variables);
+        return templateEngine.process(templateName, context);
+    }
+
+
 
 
 

@@ -2,10 +2,10 @@ package com.webjob.application.Services;
 
 import com.webjob.application.Models.Entity.PasswordResetToken;
 import com.webjob.application.Models.Entity.User;
-import com.webjob.application.Models.Request.ForgotPasswordRequest;
 import com.webjob.application.Models.Request.ResetPasswordRequest;
 import com.webjob.application.Repository.PasswordResetTokenRepository;
 import com.webjob.application.Repository.UserRepository;
+import com.webjob.application.Services.SendEmail.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,7 +26,7 @@ public class PasswordResetService {
     @Autowired
     private  PasswordEncoder passwordEncoder;
     @Autowired
-    private  EmailService emailService;
+    private EmailService emailService;
     @Autowired
     private  UserRepository userRepository;
 

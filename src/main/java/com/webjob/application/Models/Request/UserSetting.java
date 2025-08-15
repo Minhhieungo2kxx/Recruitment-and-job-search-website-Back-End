@@ -10,16 +10,14 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Userrequest {
+public class UserSetting {
+    private Long id;
 
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không đúng định dạng")
     @Size(max = 255, message = "Email không được vượt quá 255 ký tự")
     private String email;
 
-    @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
-    private String password;
 
     @NotBlank(message = "Họ tên không được để trống")
     @Size(max = 100, message = "Họ tên không được vượt quá 100 ký tự")
@@ -41,29 +39,4 @@ public class Userrequest {
     @NotBlank(message = "Địa chỉ không được để trống")
     @Size(max = 500, message = "Địa chỉ không được vượt quá 500 ký tự")
     private String address;
-
-    private Company company;
-
-    private Role role;
-
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Company{
-        private Long id;
-        private String name;
-
-    }
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Role{
-        private Long id;
-
-    }
-
-
-
 }

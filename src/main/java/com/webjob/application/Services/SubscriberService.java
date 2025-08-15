@@ -12,8 +12,10 @@ import com.webjob.application.Repository.SkillRepository;
 import com.webjob.application.Repository.SubscriberRepository;
 
 
+import com.webjob.application.Services.SendEmail.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -86,7 +88,7 @@ public class SubscriberService {
         return get;
     }
 
-//    @Scheduled(fixedDelay = 2592000000L)
+    @Scheduled(fixedDelay = 2592000000L)
     @Async("taskExecutor")
     @Transactional
     public void sendSubscribersEmailJobs() {

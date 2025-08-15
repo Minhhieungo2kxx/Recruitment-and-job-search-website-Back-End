@@ -23,7 +23,7 @@ public class ResumController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createJob(@Valid @RequestBody Resume resume) {
+    public ResponseEntity<?> createResume(@Valid @RequestBody Resume resume) {
         Resume resumeSave=resumService.saveResume(resume);
         ResumeResponse resumeResponse=modelMapper.map(resumeSave,ResumeResponse.class);
         if(resumeSave.getJob()!=null){
@@ -36,7 +36,7 @@ public class ResumController {
 
     }
     @PutMapping("/{id}")
-    public ResponseEntity<?> createJob(@PathVariable Long id, @Valid @RequestBody UpdateResumeDTO dto) {
+    public ResponseEntity<?> editResume(@PathVariable Long id, @Valid @RequestBody UpdateResumeDTO dto) {
         Resume edit=resumService.editResume(id,dto);
         ResumeResponse resumeResponse=modelMapper.map(edit,ResumeResponse.class);
         if(edit.getJob()!=null){

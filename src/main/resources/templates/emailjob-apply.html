@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Xác nhận ứng tuyển thành công</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .header p {
+            margin-top: 10px;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px;
+            color: #333;
+        }
+        .content h2 {
+            font-size: 22px;
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .content p {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .job-card {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-left: 5px solid #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+        .job-card h3 {
+            color: #007bff;
+            font-size: 20px;
+            margin-top: 0;
+        }
+        .job-info {
+            margin-top: 15px;
+        }
+        .job-info p {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        .job-info strong {
+            color: #555;
+            width: 140px;
+            display: inline-block;
+        }
+        .logo-section {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .logo-section img {
+            max-width: 120px;
+            height: auto;
+            border-radius: 8px;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px 30px;
+            background-color: #f0f2f5;
+            font-size: 14px;
+            color: #777;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Chúc mừng bạn đã ứng tuyển!</h1>
+        <p>Chúng tôi đã nhận được hồ sơ của bạn cho vị trí dưới đây.</p>
+    </div>
+    <div class="content">
+        <h2 th:text="'Xin chào, ' + ${username} + '!'"></h2>
+        <p>
+            Cảm ơn bạn đã quan tâm đến cơ hội làm việc tại
+            <strong th:text="${namecompany}">Tên công ty</strong>.
+            Chúng tôi sẽ xem xét cẩn thận hồ sơ của bạn.
+        </p>
+
+        <div class="job-card">
+            <h3 th:text="${nameJob}">Tên công việc</h3>
+            <div class="job-info">
+                <p><strong>Công ty:</strong> <span th:text="${namecompany}">Tên công ty</span></p>
+                <p><strong>Địa điểm:</strong> <span th:text="${location}">Địa điểm</span></p>
+                <p><strong>Mức lương:</strong> <span th:text="${salary}">Lương</span></p>
+                <p><strong>Ngày hết hạn:</strong> <span th:text="${endtime}">Thời gian kết thúc</span></p>
+            </div>
+        </div>
+
+        <div class="logo-section">
+            <img th:src="${logo}" alt="Logo công ty"/>
+        </div>
+
+        <p style="margin-top: 30px;">
+            Mọi thông tin liên hệ và phản hồi sẽ được gửi đến email này. Chúc bạn một ngày tốt lành!
+        </p>
+    </div>
+    <div class="footer">
+        <p>Đây là email tự động, vui lòng không trả lời.</p>
+        <p>Hệ thống tuyển dụng &copy; 2025</p>
+    </div>
+</div>
+</body>
+</html>

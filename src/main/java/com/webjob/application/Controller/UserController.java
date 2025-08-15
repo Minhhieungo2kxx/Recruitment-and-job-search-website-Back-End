@@ -1,5 +1,7 @@
 package com.webjob.application.Controller;
 
+import com.webjob.application.Models.Request.ChangePasswordRequest;
+import com.webjob.application.Models.Request.UserSetting;
 import com.webjob.application.Models.Request.Userrequest;
 import com.webjob.application.Models.Response.ApiResponse;
 import com.webjob.application.Models.Response.ResponseDTO;
@@ -12,6 +14,7 @@ import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
@@ -58,7 +61,6 @@ public class UserController {
 
 
 
-
     @PutMapping("/{id}")
     public ResponseEntity<?> editUserById(@PathVariable Long id,@Valid @RequestBody Userrequest userrequest) {
             User user=userService.getbyID(id).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " +id));
@@ -68,7 +70,7 @@ public class UserController {
             User updatedUser = userService.handleUpdate(user);
             UserDTO userDTO=modelMapper.map(updatedUser, UserDTO.class);
             ApiResponse<UserDTO> response = new ApiResponse<>(
-                    HttpStatus.CREATED.value(),
+                    HttpStatus.OK.value(),
                     null,
                     "Edit USER successful",
                     userDTO
@@ -105,7 +107,7 @@ public class UserController {
             User user=userService.getbyID(id).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " +id));
             UserDTO userDTO=modelMapper.map(user,UserDTO.class);
             ApiResponse<?> response = new ApiResponse<>(
-                    HttpStatus.CREATED.value(),
+                    HttpStatus.OK.value(),
                     null,
                     "Detail USER successful",
                     userDTO
@@ -132,6 +134,33 @@ public class UserController {
         );
         return ResponseEntity.ok(response);
 
+    }
+
+    @PutMapping("/setting")
+    public ResponseEntity<?> SettingUser(@Valid @RequestBody UserSetting userSetting) {
+        // Lấy thông tin người dùng hiện tại từ context
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userService.getbyEmail(userEmail);
+        Instant instant=user.getCreatedAt();
+        modelMapper.map(userSetting,user);
+        user.setCreatedAt(instant);
+        User updatedUser = userService.handleUpdate(user);
+        UserSetting setting=modelMapper.map(updatedUser,UserSetting.class);
+        ApiResponse<UserSetting> response = new ApiResponse<>(HttpStatus.OK.value(), null,
+                "Setting USER successful",
+                setting
+        );
+        return ResponseEntity.ok(response);
+    }
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        userService.changePassword(request);
+        ApiResponse<UserSetting> response = new ApiResponse<>(HttpStatus.OK.value(),
+                null,
+                "Thay doi mat khau successful",
+                null
+        );
+        return ResponseEntity.ok(response);
     }
 
 

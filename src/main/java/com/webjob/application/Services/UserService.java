@@ -1,6 +1,7 @@
 package com.webjob.application.Services;
 
 import com.webjob.application.Models.Entity.Company;
+import com.webjob.application.Models.Request.ChangePasswordRequest;
 import com.webjob.application.Models.Response.*;
 import com.webjob.application.Models.Entity.Resume;
 import com.webjob.application.Models.Entity.Role;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -162,6 +164,25 @@ public class UserService {
         }
         ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,userDTOList);
         return respond;
+    }
+    @Transactional
+    public void changePassword(ChangePasswordRequest request) {
+        // Lấy thông tin người dùng hiện tại từ context
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = getbyEmail(userEmail);
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu cũ không đúng");
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
+            throw new IllegalArgumentException("Xác nhận mật khẩu không khớp");
+        }
+
+        if (request.getOldPassword().equals(request.getNewPassword())) {
+            throw new IllegalArgumentException("Mật khẩu mới không được trùng với mật khẩu cũ");
+        }
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 }
 

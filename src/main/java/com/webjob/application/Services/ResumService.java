@@ -1,30 +1,32 @@
 package com.webjob.application.Services;
 
 
-import com.webjob.application.Models.Entity.Company;
-import com.webjob.application.Models.Entity.Job;
+import com.webjob.application.Models.Entity.*;
 import com.webjob.application.Models.Request.UpdateResumeDTO;
 import com.webjob.application.Models.Response.MetaDTO;
 import com.webjob.application.Models.Response.ResponseDTO;
 import com.webjob.application.Models.Response.ResumeResponse;
-import com.webjob.application.Models.Entity.Resume;
-import com.webjob.application.Models.Entity.User;
 import com.webjob.application.Repository.JobRepository;
 import com.webjob.application.Repository.ResumeRepository;
-import jakarta.transaction.Transactional;
+import com.webjob.application.Services.SendEmail.ApplicationEmailService;
+import com.webjob.application.Services.SendEmail.EmailService;
+import org.springframework.transaction.annotation.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.text.NumberFormat;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Service
 public class ResumService {
@@ -39,15 +41,21 @@ public class ResumService {
     @Autowired
     private JobRepository jobRepository;
 
+    @Autowired
+    private ApplicationEmailService applicationEmailService;
+
     @Transactional
     public Resume saveResume(Resume resume){
-        User user=userService.getbyID(resume.getUser().getId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " +resume.getUser().getId()));
+        // Lấy thông tin người dùng hiện tại từ context
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userService.getbyEmail(userEmail);
         Job job=jobService.getById(resume.getJob().getId());
         resume.setJob(job);
         resume.setUser(user);
         job.setAppliedCount(job.getAppliedCount()+1);
         jobRepository.save(job);
+//send Email
+        applicationEmailService.sendJobApplicate(user, job);
         return resumeRepository.save(resume);
 
     }
@@ -145,6 +153,21 @@ public class ResumService {
         return responseDTO;
     }
 
+
+
+//Spring sử dụng proxy (uỷ quyền) để xử lý các annotation như @Async, @Transactional, @Cacheable, v.v.
+// Các proxy này chỉ có tác dụng khi method được gọi từ bên ngoài class, thông qua Spring Container (ApplicationContext).
+//Proxy sẽ xử lý:
+//
+//Bắt đầu luồng mới (@Async)
+//
+//Mở transaction (@Transactional)
+//
+//Bắt/ghi cache (@Cacheable)
+//
+//v.v...
+//
+//✅ Nhưng điều này chỉ xảy ra nếu method được gọi qua proxy, tức từ một class khác (hoặc một bean khác).
 
 
 

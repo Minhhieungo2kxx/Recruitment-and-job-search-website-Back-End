@@ -1,5 +1,6 @@
 package com.webjob.application.Utils.exceptions;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,6 +16,12 @@ import java.util.Map;
 public class ErrorResponException<T> {
     private int statusCode;
     private String message;
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
     private LocalDateTime timestamp;
     private String error;
     T data;
