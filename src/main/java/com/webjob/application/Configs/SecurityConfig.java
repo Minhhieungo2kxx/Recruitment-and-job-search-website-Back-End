@@ -49,7 +49,8 @@ public class SecurityConfig {
                 "/api/v1/auth/register", "/storage/**","/api/v1/subscribers/send-mails",
                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html","/api/v1/password/**",
                 "/oauth2/**","/login/oauth2/**" // OAuth2 login Google
-                ,"/api/v1/payments/vnpay-return"
+                ,"/api/v1/payments/vnpay-return","/login-chat","/chat",
+                "/js/**", "/css/**", "/img/**","/ws/**","/audio/**"
 
         };
 
@@ -90,6 +91,8 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+
 
 
 }

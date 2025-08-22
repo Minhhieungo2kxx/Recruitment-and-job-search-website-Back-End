@@ -3,7 +3,9 @@ package com.webjob.application.Utils.exceptions;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -81,7 +83,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleGenericException(Exception ex) {
         ErrorResponException<?> errorResponException=new ErrorResponException<>(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Exception Error",
+                "Có lỗi xảy ra, vui lòng thử lại sau",
                 LocalDateTime.now(),
                 ex.getMessage(),
                 null
@@ -137,6 +139,31 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponException, HttpStatus.INTERNAL_SERVER_ERROR);
 
     }
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<?> handleAccessDeniedException(AccessDeniedException ex) {
+        ErrorResponException<?> errorResponException=new ErrorResponException<>(
+                HttpStatus.FORBIDDEN.value(),
+                "Bạn không có quyền thực hiện thao tác này",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+        return new ResponseEntity<>(errorResponException, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<?> handleAuthenticationException(AuthenticationException ex) {
+        ErrorResponException<?> errorResponException=new ErrorResponException<>(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Xác thực thất bại",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(errorResponException);
+    }
+
 
 
 

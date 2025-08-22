@@ -1,17 +1,28 @@
 package com.webjob.application.Controller;
 
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 
-@RestController
+@Controller
 public class HomeController {
     @GetMapping("/")
-    public String getHome(){
+    @ResponseBody
+    public String getHome() {
         return "Welcome SpringBoot RestFul API Beginner";
     }
 
+    @GetMapping("/login-chat")
+    public String getLogin() {
+        return "clients/loginchat";
+    }
 
+    @GetMapping("/chat")
+    public String getChat() {
+        return "clients/chatconversation";
+    }
 
 
 }

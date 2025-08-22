@@ -21,15 +21,17 @@ public class ApplicationEmailService {
     private EmailService emailService;
 
     @Async("taskExecutor")
-    public void sendJobApplicate(User user, Job job) {
+    public void sendJobApplicate(User user, Job job,User hr) {
         Company company = job.getCompany();
 
         Map<String, Object> emailVars = new HashMap<>();
         emailVars.put("email", user.getEmail());
         emailVars.put("username", user.getFullName());
-        emailVars.put("namecompany", company.getName());
+        emailVars.put("usernameHR",hr.getFullName());
+        emailVars.put("namecompany",company.getName());
         emailVars.put("nameJob", job.getName());
-        emailVars.put("logo", company.getLogo());
+        emailVars.put("logo",company.getLogo());
+        http://localhost:8081/storage/company/
         emailVars.put("salary", formatVietnameseCurrency(job.getSalary()));
         emailVars.put("location", job.getLocation());
 
@@ -42,7 +44,7 @@ public class ApplicationEmailService {
 
         emailService.sendTemplateJobapply(
                 "Thông tin Job vừa ứng tuyển",
-                "emailjob-apply",
+                "emails/emailjob-apply",
                 emailVars
         );
     }

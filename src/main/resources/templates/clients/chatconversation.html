@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/chat.css">
+
+
+</head>
+<body>
+<div class="chat-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div>
+                <h5 class="mb-0">Tin nhắn</h5>
+                <small id="userFullName"></small>
+            </div>
+            <div>
+                <button class="btn btn-link text-white p-0" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <div class="position-relative">
+                <input type="text" class="form-control search-input" id="userSearch"
+                       placeholder="Tìm kiếm người dùng...">
+                <div class="user-search-results" id="userSearchResults"></div>
+            </div>
+        </div>
+
+        <div class="conversations-list" id="conversationsList">
+            <!-- Conversations will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-area">
+        <div class="chat-header" id="chatHeader" style="display: none;">
+            <div class="chat-user-info">
+                <div class="avatar" id="chatUserAvatar"></div>
+                <div class="ms-3">
+                    <h6 class="mb-0" id="chatUserName"></h6>
+                    <small class="text-muted" id="chatUserStatus">Offline</small>
+                </div>
+            </div>
+            <div>
+                <button class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-phone"></i>
+                </button>
+
+
+                <!-- Audio tag để nghe âm thanh từ người kia -->
+
+
+                <button class="btn btn-outline-secondary btn-sm ms-2">
+                    <i class="fas fa-video"></i>
+                </button>
+            </div>
+            <!-- Hiển thị khi đang trong cuộc gọi -->
+            <button id="endCallBtn" class="btn btn-danger" style="display:none">
+                <i class="fas fa-phone-slash"></i> Kết thúc cuộc gọi
+            </button>
+            <audio id="remoteAudio" autoplay></audio>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="empty-chat" id="emptyChat">
+                <i class="fas fa-comments"></i>
+                <h5>Chọn một cuộc trò chuyện để bắt đầu</h5>
+                <p>Tìm kiếm và chọn người dùng để bắt đầu nhắn tin</p>
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <i class="fas fa-ellipsis-h"></i> Đang nhập...
+        </div>
+
+        <div class="message-input-container" id="messageInputContainer" style="display: none;">
+            <form id="messageForm">
+                <div class="message-input-group">
+                    <input type="text" class="message-input" id="messageInput"
+                           placeholder="Nhập tin nhắn..." required>
+                    <button type="submit" class="send-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Message Modal -->
+<div class="modal fade" id="editMessageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sửa tin nhắn</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <textarea class="form-control" id="editMessageText" rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveEditedMessage()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- UI hiển thị khi có cuộc gọi đến -->
+<div id="incomingCallModal" class="incoming-call-modal">
+    <div class="incoming-call-box">
+        <div class="caller-info">
+            <div id="callerName" class="caller-name">Người gọi</div>
+            <div class="calling-text">đang gọi cho bạn...</div>
+        </div>
+        <div class="call-buttons">
+            <button id="acceptCallBtn" class="btn btn-success">
+                <i class="fas fa-phone"></i> Chấp nhận
+            </button>
+            <button id="rejectCallBtn" class="btn btn-danger">
+                <i class="fas fa-phone-slash"></i> Từ chối
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script src="/js/chat.js"></script>
+
+
+</body>
+</html>

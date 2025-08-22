@@ -21,7 +21,6 @@ public class CorsConfig {
 
         // Chuyển đổi mảng String thành List<String>
         configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
-
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH")); // Thêm HEAD và PATCH cho đầy đủ
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With","x-no-retry")); // Thêm X-Requested-With
         configuration.setAllowCredentials(true);

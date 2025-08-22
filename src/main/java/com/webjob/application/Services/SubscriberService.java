@@ -88,7 +88,7 @@ public class SubscriberService {
         return get;
     }
 
-    @Scheduled(fixedDelay = 2592000000L)
+//    @Scheduled(fixedDelay = 2592000000L)
     @Async("taskExecutor")
     @Transactional
     public void sendSubscribersEmailJobs() {
@@ -120,7 +120,7 @@ public class SubscriberService {
         emailService.sendTemplateEmail(
                 subscriber.getEmail(),
                 "Cơ hội việc làm hot đang chờ đón bạn, khám phá ngay",
-                "job",
+                "emails/job",
                 subscriber.getName(),
                 jobSummaries
         );

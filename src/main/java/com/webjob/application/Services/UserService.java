@@ -111,6 +111,11 @@ public class UserService {
         User user = this.userRepository.findByEmail(email);
         return user;
     }
+    public User getbyHR(Company company) {
+        User user = this.userRepository.findByCompany(company)
+                .orElseThrow(()->new UsernameNotFoundException("User not found with company: " +company.getName()));
+        return user;
+    }
 
     public User getEmailAndRefreshtoken(String email,String tokenrefresh) {
         User user =userRepository.findByEmailAndRefreshToken(email,tokenrefresh);

@@ -18,7 +18,7 @@ public class WebConfiguration implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/storage/resume/**")
                 .addResourceLocations("file:" + basePath + "/resume/");
-        registry.addResourceHandler("/storage/avatar/**")
+        registry.addResourceHandler("/storage/user/**")
                 .addResourceLocations("file:" + basePath + "/user/");
         registry.addResourceHandler("/storage/company/**")
                 .addResourceLocations("file:" + basePath + "/company/");

@@ -25,6 +25,7 @@ public class LoginResponse {
         private Long id;
         private String email;
         private String fullName;
+        private String avatar;
         private Role role;
 
 

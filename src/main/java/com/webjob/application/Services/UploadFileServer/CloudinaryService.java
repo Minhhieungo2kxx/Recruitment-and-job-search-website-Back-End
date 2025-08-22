@@ -22,17 +22,19 @@ public class CloudinaryService {
     private UploadFile uploadFile;
 
 
+
     public String uploadFile(MultipartFile file, String folderName) throws IOException {
-        uploadFile.vadidateUploadFile(file,folderName);
+        uploadFile.vadidateUploadFile(file, folderName);
         String originalName = file.getOriginalFilename();
         String baseName = originalName.substring(0, originalName.lastIndexOf("."));
-        String uniqueName =System.currentTimeMillis()+"-"+baseName;
+        String uniqueName = System.currentTimeMillis() + "-" + baseName;
         Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
                 "folder", folderName,
-                "public_id",uniqueName,
+                "public_id", uniqueName,
                 "access_mode", "public" // Chỉ định quyền truy cập công khai
         ));
 
         return result.get("secure_url").toString(); // Trả về link trực tiếp tới file trên Cloudinary
     }
+
 }

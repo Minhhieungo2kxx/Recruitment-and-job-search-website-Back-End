@@ -54,8 +54,9 @@ public class ResumService {
         resume.setUser(user);
         job.setAppliedCount(job.getAppliedCount()+1);
         jobRepository.save(job);
+        User hr=userService.getbyHR(job.getCompany());
 //send Email
-        applicationEmailService.sendJobApplicate(user, job);
+        applicationEmailService.sendJobApplicate(user, job,hr);
         return resumeRepository.save(resume);
 
     }

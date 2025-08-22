@@ -58,7 +58,7 @@ public class PasswordResetService {
 
         emailService.sendTemplateResetPassword(
                 "Password Reset Request",
-                "password-reset",
+                "emails/password-reset",
                 emailVars
         );
     }

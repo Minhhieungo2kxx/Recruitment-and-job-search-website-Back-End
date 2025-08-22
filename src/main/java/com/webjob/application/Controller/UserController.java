@@ -9,6 +9,7 @@ import com.webjob.application.Models.Response.UserDTO;
 import com.webjob.application.Models.Entity.User;
 import com.webjob.application.Services.CompanyService;
 import com.webjob.application.Services.RoleService;
+import com.webjob.application.Services.Socket.PresenceService;
 import com.webjob.application.Services.UserService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
@@ -19,6 +20,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -30,14 +33,18 @@ public class UserController {
 
     private final CompanyService companyService;
 
+    private final PresenceService presenceService;
 
 
 
-    public UserController(UserService userService, ModelMapper modelMapper, CompanyService companyService, RoleService roleService) {
+
+
+    public UserController(UserService userService, ModelMapper modelMapper, CompanyService companyService, RoleService roleService, PresenceService presenceService) {
         this.userService = userService;
         this.modelMapper = modelMapper;
         this.companyService = companyService;
 
+        this.presenceService = presenceService;
     }
 
     @PostMapping
@@ -162,6 +169,25 @@ public class UserController {
         );
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/{id}/status")
+    public Map<String, Object> getUserStatus(@PathVariable Long id) {
+        boolean isOnline = presenceService.isUserOnline(id);
+        return Map.of(
+                "userId", id,
+                "online", isOnline
+        );
+    }
+    // API lấy trạng thái nhiều user cùng lúc (nếu cần)
+    @GetMapping("/status")
+    public List<?> getUsersStatus(@RequestParam List<Long> ids) {
+        return ids.stream()
+                .map(uid -> Map.of(
+                        "userId", uid,
+                        "online", presenceService.isUserOnline(uid)
+                ))
+                .toList();
+    }
+
 
 
 
