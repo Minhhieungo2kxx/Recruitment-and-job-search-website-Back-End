@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập thành công</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+<div class="container-fluid vh-100 d-flex justify-content-center align-items-center">
+    <div class="text-center">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Đang xử lý...</span>
+        </div>
+        <h4>Đăng nhập thành công!</h4>
+        <p class="text-muted">Đang chuyển hướng đến trang chat...</p>
+    </div>
+</div>
+
+<script>
+    // Lấy parameters từ URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get('accessToken');
+    const userInfo = urlParams.get('userInfo');
+
+    if (accessToken && userInfo) {
+        try {
+            // Lưu thông tin vào localStorage
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('userInfo', userInfo);
+
+            // Hiển thị thông báo thành công
+            console.log('Đăng nhập Google thành công!');
+
+            // Chuyển hướng đến trang chat sau 2 giây
+            setTimeout(() => {
+                window.location.href = '/chat';
+            }, 2000);
+
+        } catch (error) {
+            console.error('Lỗi xử lý dữ liệu đăng nhập:', error);
+            // Nếu có lỗi, chuyển về trang login
+            setTimeout(() => {
+                window.location.href = '/login-chat?error=processing_failed';
+            }, 2000);
+        }
+    } else {
+        // Nếu không có token, chuyển về trang login
+        console.error('Không nhận được thông tin đăng nhập');
+        setTimeout(() => {
+            window.location.href = '/login-chat?error=missing_token';
+        }, 2000);
+    }
+</script>
+</body>
+</html>

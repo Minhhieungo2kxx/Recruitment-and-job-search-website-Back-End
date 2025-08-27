@@ -200,6 +200,20 @@
         .text-muted a:hover {
             color: var(--secondary-color) !important;
         }
+        .google-btn {
+            background-color: #db4437;
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .google-btn:hover {
+            background-color: #c33d2e;
+            color: white;
+        }
 
     </style>
 </head>
@@ -227,6 +241,18 @@
             </div>
             <div class="d-grid gap-2">
                 <button type="submit" class="btn btn-primary">Đăng nhập</button>
+            </div>
+            <!-- Divider -->
+            <div class="text-center my-3">
+                <span class="text-muted">hoặc</span>
+            </div>
+            <!-- Google Login Button -->
+            <!-- Google Login Button -->
+            <div class="mb-4">
+                <a href="/oauth2/authorization/google" class="btn google-btn w-100" id="googleLoginBtn">
+                    <i class="fab fa-google"></i>
+                    Đăng nhập bằng Google
+                </a>
             </div>
             <div class="mt-4 text-center">
                 <small class="text-muted">
@@ -310,6 +336,48 @@
             console.error('Login error:', error);
         }
     });
+
+    // Kiểm tra và hiển thị lỗi OAuth2 từ URL parameters
+    window.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        const errorDiv = document.getElementById('errorMessage');
+
+        if (error) {
+            errorDiv.classList.remove('alert-success');
+            errorDiv.classList.add('alert-danger');
+
+            let errorMessage = '';
+            switch(error) {
+                case 'oauth_failed':
+                    errorMessage = 'Đăng nhập Google thất bại. Vui lòng thử lại.';
+                    break;
+                case 'processing_failed':
+                    errorMessage = 'Có lỗi xảy ra khi xử lý thông tin đăng nhập. Vui lòng thử lại.';
+                    break;
+                case 'missing_token':
+                    errorMessage = 'Không thể nhận thông tin đăng nhập từ Google. Vui lòng thử lại.';
+                    break;
+                default:
+                    errorMessage = 'Có lỗi không xác định xảy ra. Vui lòng thử lại.';
+            }
+
+            errorDiv.textContent = errorMessage;
+            errorDiv.style.display = 'block';
+
+            // Xóa error parameter khỏi URL
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+    });
+    // Thêm loading state cho nút Google login
+    document.getElementById('googleLoginBtn').addEventListener('click', function(e) {
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang chuyển hướng...';
+        this.style.pointerEvents = 'none';
+    });
+
+
+
 </script>
 </body>
 </html>

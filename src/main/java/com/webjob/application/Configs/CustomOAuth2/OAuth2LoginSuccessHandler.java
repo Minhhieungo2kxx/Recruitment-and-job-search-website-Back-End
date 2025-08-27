@@ -23,6 +23,8 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
@@ -39,37 +41,75 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private ObjectMapper objectMapper;
 
 
-    @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+//    @Override
+//    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+//
+//        // Lấy thông tin user (trong CustomOAuth2UserService đã lưu hoặc trả về)
+//        String email = ((DefaultOAuth2User) authentication.getPrincipal()).getAttribute("email");
+//        User userEntity = userService.getEmailbyGoogle(email);
+//
+//        // Tạo JWT như trong endpoint login
+//        LoginResponse.User userDto = modelMapper.map(userEntity, LoginResponse.User.class);
+//        String accessToken = securityUtil.createacessToken(userEntity.getEmail(), userDto);
+//        String refreshToken = securityUtil.createrefreshToken(userEntity.getEmail(), userDto);
+//        userService.updateRefreshtoken(userEntity.getId(), refreshToken);
+//
+//        // Gửi refresh token qua cookie
+//        ResponseCookie cookie = ResponseCookie.from("refresh", refreshToken)
+//                .httpOnly(true).secure(true).path("/")
+//                .maxAge(jwtrefreshExpiration).build();
+//        response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+//
+//        // Trả về JSON chứa access token (hoặc theo định dạng ApiResponse như login hiện tại)
+//        ApiResponse<LoginResponse> apiResponse = new ApiResponse<>(
+//                HttpStatus.OK.value(),
+//                null,
+//                "Google login successful",
+//                new LoginResponse(accessToken, userDto)
+//        );
+//        response.setStatus(HttpStatus.OK.value());
+//        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+//        objectMapper.writeValue(response.getWriter(), apiResponse);
+//
+//    }
+@Override
+public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+                                    Authentication authentication) throws IOException, ServletException {
 
-        // Lấy thông tin user (trong CustomOAuth2UserService đã lưu hoặc trả về)
+    try {
+        // Lấy thông tin user từ Google OAuth2
         String email = ((DefaultOAuth2User) authentication.getPrincipal()).getAttribute("email");
         User userEntity = userService.getEmailbyGoogle(email);
 
-        // Tạo JWT như trong endpoint login
+        // Tạo JWT tokens
         LoginResponse.User userDto = modelMapper.map(userEntity, LoginResponse.User.class);
         String accessToken = securityUtil.createacessToken(userEntity.getEmail(), userDto);
         String refreshToken = securityUtil.createrefreshToken(userEntity.getEmail(), userDto);
+
+        // Cập nhật refresh token vào database
         userService.updateRefreshtoken(userEntity.getId(), refreshToken);
 
         // Gửi refresh token qua cookie
         ResponseCookie cookie = ResponseCookie.from("refresh", refreshToken)
-                .httpOnly(true).secure(true).path("/")
-                .maxAge(jwtrefreshExpiration).build();
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(jwtrefreshExpiration)
+                .build();
         response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        // Trả về JSON chứa access token (hoặc theo định dạng ApiResponse như login hiện tại)
-        ApiResponse<LoginResponse> apiResponse = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "Google login successful",
-                new LoginResponse(accessToken, userDto)
-        );
-        response.setStatus(HttpStatus.OK.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        objectMapper.writeValue(response.getWriter(), apiResponse);
+        // Chuyển hướng đến trang success với token trong URL parameters
+        String redirectUrl = String.format("/login-success?accessToken=%s&userInfo=%s",
+                accessToken,
+                URLEncoder.encode(objectMapper.writeValueAsString(userDto), StandardCharsets.UTF_8));
 
+        response.sendRedirect(redirectUrl);
+
+    } catch (Exception e) {
+        // Nếu có lỗi, chuyển hướng đến trang login với thông báo lỗi
+        response.sendRedirect("/login-chat?error=oauth_failed");
     }
+}
 
 
 

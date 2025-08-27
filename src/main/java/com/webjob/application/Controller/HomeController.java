@@ -24,5 +24,10 @@ public class HomeController {
         return "clients/chatconversation";
     }
 
+    @GetMapping("/login-success")
+    public String showLoginSuccessPage() {
+        return "clients/login-success"; // Trả về trang xử lý thành công OAuth2
+    }
+
 
 }

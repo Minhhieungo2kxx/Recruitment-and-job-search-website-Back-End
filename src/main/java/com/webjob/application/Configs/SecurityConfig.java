@@ -50,7 +50,7 @@ public class SecurityConfig {
                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html","/api/v1/password/**",
                 "/oauth2/**","/login/oauth2/**" // OAuth2 login Google
                 ,"/api/v1/payments/vnpay-return","/login-chat","/chat",
-                "/js/**", "/css/**", "/img/**","/ws/**","/audio/**"
+                "/js/**", "/css/**", "/img/**","/ws/**","/audio/**","/login-success"
 
         };
 
@@ -58,6 +58,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(publicEndpoints).permitAll()
+                        .requestMatchers("/login-chat").permitAll() // Chắc chắn rằng login-chat là public
                         .requestMatchers(HttpMethod.GET, "/api/v1/companies/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/jobs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/skills/**").permitAll()
