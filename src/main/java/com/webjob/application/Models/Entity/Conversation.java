@@ -23,11 +23,11 @@ public class Conversation {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user1_id", nullable = false)
+    @JoinColumn(name = "user1_id")
     private User user1;
 
     @ManyToOne
-    @JoinColumn(name = "user2_id", nullable = false)
+    @JoinColumn(name = "user2_id")
     private User user2;
 
     @OneToOne

@@ -2,6 +2,8 @@ package com.webjob.application.Repository;
 
 import com.webjob.application.Models.Entity.Message;
 import com.webjob.application.Models.Entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -46,5 +48,13 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Query("UPDATE Message m SET m.status = 'READ' WHERE " +
             "m.receiver.id = :userId AND m.sender.id = :senderId AND m.status != 'read'")
     void markMessagesAsRead(@Param("userId") Long userId, @Param("senderId") Long senderId);
+
+    List<Message> findAllBySenderOrReceiver(User sender, User receiver);
+
+    Page<Message> findAllByStatus(Message.MessageStatus status, Pageable pageable);
+
+    Page<Message> findAllByType(Message.MessageType type, Pageable pageable);
+
+    Page<Message> findAllByIsDeleted(Boolean isDeleted, Pageable pageable);
 
 }

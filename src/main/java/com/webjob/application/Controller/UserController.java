@@ -95,7 +95,7 @@ public class UserController {
                 throw new UsernameNotFoundException("User not found with id: " + id);
             }
             User edit = canfind.get();
-            userService.delete(edit);
+            userService.deleteUser(edit);
             ApiResponse<Object> response = new ApiResponse<>(
                     HttpStatus.NO_CONTENT.value(),
                     null,

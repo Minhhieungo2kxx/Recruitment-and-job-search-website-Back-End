@@ -1,11 +1,10 @@
 package com.webjob.application.Services;
 
-import com.webjob.application.Models.Entity.Company;
+import com.webjob.application.Models.Entity.*;
 import com.webjob.application.Models.Request.ChangePasswordRequest;
 import com.webjob.application.Models.Response.*;
-import com.webjob.application.Models.Entity.Resume;
-import com.webjob.application.Models.Entity.Role;
-import com.webjob.application.Models.Entity.User;
+import com.webjob.application.Repository.ConversationRepository;
+import com.webjob.application.Repository.MessageRepository;
 import com.webjob.application.Repository.ResumeRepository;
 import com.webjob.application.Repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -35,9 +34,16 @@ public class UserService {
     private ResumeRepository resumeRepository;
     @Autowired
     private CompanyService companyService;
-
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private MessageRepository messageRepository;
+
+    @Autowired
+    private ConversationRepository conversationRepository;
+
+
+
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -90,15 +96,28 @@ public class UserService {
     }
 
     @Transactional
-    public void delete(User user){
-        Page<Resume> resumes = resumeRepository.findAllByUser(user,null);
-        List<Resume> resumeList=resumes.getContent();
-        for(Resume resume:resumeList){
-            resume.setUser(null);
+    public void deleteUser(User user) {
+        // Xóa message mà user là sender hoặc receiver
+        List<Message> messages = messageRepository.findAllBySenderOrReceiver(user, user);
+        messageRepository.deleteAll(messages);
+
+        // Xóa conversation mà user là user1 hoặc user2
+        List<Conversation> conversations = conversationRepository.findAllByUser1OrUser2(user, user);
+        conversationRepository.deleteAll(conversations);
+
+        // Nếu có Resume liên quan
+        Page<Resume> resumes = resumeRepository.findAllByUser(user, null);
+        List<Resume> resumeList = resumes.getContent();
+        for (Resume resume : resumeList) {
+            resume.setUser(null); // giữ lại Resume nhưng gỡ liên kết
         }
         resumeRepository.saveAll(resumeList);
+
+        // Cuối cùng xóa user
         userRepository.delete(user);
     }
+
+
 
     public User getbyEmail(String email) {
         User user = this.userRepository.findByEmail(email);

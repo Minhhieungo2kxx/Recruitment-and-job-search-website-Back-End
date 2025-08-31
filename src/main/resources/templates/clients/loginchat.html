@@ -326,7 +326,7 @@
                 errorDiv.classList.remove('alert-success');
                 errorDiv.classList.add('alert-danger');
                 errorDiv.style.display = 'block';
-                errorDiv.textContent = data.message || 'Đăng nhập thất bại';
+                errorDiv.textContent = data.error || 'Đăng nhập thất bại';
             }
         } catch (error) {
             errorDiv.classList.remove('alert-success');
