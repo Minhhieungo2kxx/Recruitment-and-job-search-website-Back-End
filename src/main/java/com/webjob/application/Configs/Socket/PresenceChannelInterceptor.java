@@ -1,6 +1,8 @@
 package com.webjob.application.Configs.Socket;
 
-import com.webjob.application.Models.Enums.PresenceEvent;
+
+import com.webjob.application.Models.Response.PresenceEvent;
+import com.webjob.application.Models.Response.UserPresenceDTO;
 import com.webjob.application.Services.Socket.PresenceService;
 import lombok.RequiredArgsConstructor;
 
@@ -34,13 +36,21 @@ public class PresenceChannelInterceptor implements ChannelInterceptor {
             if (userId != null) {
                 boolean becameOnline = presenceService.addSession(userId, accessor.getSessionId());
                 if (becameOnline) {
-                    eventPublisher.publishEvent(new PresenceEvent(userId, true));
+                    UserPresenceDTO presence = presenceService.getUserPresence(userId);
+                    eventPublisher.publishEvent(new PresenceEvent(presence));
                 }
             }
         } else if (StompCommand.DISCONNECT.equals(cmd)) {
             Long offlineUser = presenceService.removeSession(accessor.getSessionId());
             if (offlineUser != null) {
-                eventPublisher.publishEvent(new PresenceEvent(offlineUser, false));
+                UserPresenceDTO presence = presenceService.getUserPresence(offlineUser);
+                eventPublisher.publishEvent(new PresenceEvent(presence));
+            }
+        } else if (StompCommand.SEND.equals(cmd)) {
+            // Cập nhật activity khi user gửi message
+            String userIdHeader = accessor.getFirstNativeHeader("userId");
+            if (userIdHeader != null) {
+                presenceService.updateActivity(Long.parseLong(userIdHeader));
             }
         }
         return message;

@@ -1,6 +1,8 @@
 package com.webjob.application.Configs.Socket;
 
-import com.webjob.application.Models.Enums.PresenceEvent;
+
+import com.webjob.application.Models.Response.PresenceEvent;
+import com.webjob.application.Models.Response.UserPresenceDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.context.event.EventListener;
@@ -18,17 +20,21 @@ public class PresenceNotifier {
     public void handlePresenceChange(PresenceEvent event) {
         messagingTemplate.convertAndSend(
                 "/topic/presence",
-                Map.of("userId", event.userId(), "online", event.online())
+                event.getPresence()
         );
     }
-    public void notifyStatus(Long userId, boolean isOnline) {
-        messagingTemplate.convertAndSend("/topic/presence",
-                new PresenceStatus(userId, isOnline));
+
+    // Broadcast trạng thái cho specific user
+    public void notifyUserPresence(UserPresenceDTO presence) {
+        messagingTemplate.convertAndSend("/topic/presence", presence);
     }
-    @Data
-    @AllArgsConstructor
-    public static class PresenceStatus {
-        private Long userId;
-        private boolean online;
+
+    // Gửi trạng thái cho user cụ thể
+    public void sendPresenceToUser(Long targetUserId, UserPresenceDTO presence) {
+        messagingTemplate.convertAndSendToUser(
+                targetUserId.toString(),
+                "/queue/presence",
+                presence
+        );
     }
 }

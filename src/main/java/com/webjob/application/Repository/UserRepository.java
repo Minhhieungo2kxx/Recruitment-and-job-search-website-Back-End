@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,5 +37,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 //    List<User> findCandidatesByName(@Param("searchTerm") String searchTerm);
     @Query("SELECT u FROM User u WHERE u.role.name NOT IN ('HR', 'ADMIN') AND u.fullName LIKE %:searchTerm%")
     List<User> findCandidatesByName(@Param("searchTerm") String searchTerm);
+
+    @Query("SELECT u FROM User u WHERE u.isOnline = false AND u.lastSeenAt > :since")
+    List<User> findRecentlyOfflineUsers(@Param("since") Instant since);
 
 }

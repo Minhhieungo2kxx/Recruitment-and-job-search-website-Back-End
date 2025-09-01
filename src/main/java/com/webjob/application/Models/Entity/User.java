@@ -94,6 +94,18 @@ public class User {
     @Size(max = 100, message = "Người cập nhật không được vượt quá 100 ký tự")
     @LastModifiedBy
     private String updatedBy;
+    // THÊM TRƯỜNG MỚI ĐỂ LƯU THỜI GIAN TRUY CẬP CUỐI
+    @Column(name = "last_seen_at")
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss",
+            timezone = "Asia/Ho_Chi_Minh"
+    )
+    private Instant lastSeenAt;
+
+    // THÊM TRƯỜNG TRẠNG THÁI ONLINE
+    @Column(name = "is_online")
+    private boolean isOnline = false;
 
 
 

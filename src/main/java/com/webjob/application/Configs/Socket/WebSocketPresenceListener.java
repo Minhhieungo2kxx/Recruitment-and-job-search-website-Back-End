@@ -14,34 +14,34 @@ public class WebSocketPresenceListener {
     private final PresenceService presenceService;
     private final PresenceNotifier notifier; // 👉 inject notifier để broadcast
 
-    @EventListener
-    public void handleSessionConnected(SessionConnectEvent event) {
-        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-        String userId = accessor.getFirstNativeHeader("userId"); // client gửi userId ở header
+//    @EventListener
+//    public void handleSessionConnected(SessionConnectEvent event) {
+//        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
+//        String userId = accessor.getFirstNativeHeader("userId"); // client gửi userId ở header
+//
+//        if (userId != null) {
+//            Long uid = Long.parseLong(userId);
+//            presenceService.setUserOnline(uid);
+//            System.out.println("User " + uid + " online");
+//
+//            // 👉 Gửi thông báo cho tất cả client
+//            notifier.notifyStatus(uid, true);
+//        }
+//    }
 
-        if (userId != null) {
-            Long uid = Long.parseLong(userId);
-            presenceService.setUserOnline(uid);
-            System.out.println("User " + uid + " online");
-
-            // 👉 Gửi thông báo cho tất cả client
-            notifier.notifyStatus(uid, true);
-        }
-    }
-
-    @EventListener
-    public void handleSessionDisconnected(SessionDisconnectEvent event) {
-        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-        String userId = accessor.getFirstNativeHeader("userId");
-
-        if (userId != null) {
-            Long uid = Long.parseLong(userId);
-            presenceService.setUserOffline(uid);
-            System.out.println("User " + uid + " offline");
-
-            // 👉 Gửi thông báo cho tất cả client
-            notifier.notifyStatus(uid, false);
-        }
-    }
+//    @EventListener
+//    public void handleSessionDisconnected(SessionDisconnectEvent event) {
+//        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
+//        String userId = accessor.getFirstNativeHeader("userId");
+//
+//        if (userId != null) {
+//            Long uid = Long.parseLong(userId);
+//            presenceService.setUserOffline(uid);
+//            System.out.println("User " + uid + " offline");
+//
+//            // 👉 Gửi thông báo cho tất cả client
+//            notifier.notifyStatus(uid, false);
+//        }
+//    }
 
 }

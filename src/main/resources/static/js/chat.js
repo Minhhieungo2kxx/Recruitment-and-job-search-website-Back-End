@@ -7,6 +7,10 @@ class ChatApp {
         this.isInCall = false;         // Đánh dấu đang trong cuộc gọi
         this.currentCallUserId = null; // Đánh dấu đang gọi với ai
 
+
+        // Thêm cho presence system
+        this.userPresences = new Map();
+        this.presenceUpdateInterval = null;
         this.init();
     }
 
@@ -41,6 +45,9 @@ class ChatApp {
 
             // Setup event listeners
             this.setupEventListeners();
+
+            // Khởi động cập nhật presence định kỳ
+            this.startPresenceUpdates();
         } catch (error) {
             console.error('Init error:', error);
             // this.logout();
@@ -115,10 +122,11 @@ class ChatApp {
                         const signal = JSON.parse(message.body);
                         this.handleCallSignal(signal);
                     });
-                    // subscribe presence
+
+                    // SUBSCRIBE PRESENCE - CẬP NHẬT MỚI
                     this.stompClient.subscribe("/topic/presence", (statusMsg) => {
-                        const status = JSON.parse(statusMsg.body);
-                        this.updateUserStatus(status.userId, status.online);
+                        const presence = JSON.parse(statusMsg.body);
+                        this.handlePresenceUpdate(presence);
                     });
 
 
@@ -130,6 +138,297 @@ class ChatApp {
                 }
             );
         });
+    }
+// XỬ LÝ CẬP NHẬT PRESENCE
+    handlePresenceUpdate(presence) {
+        this.userPresences.set(presence.userId, presence);
+        this.updateUserStatusUI(presence);
+    }
+
+    // CẬP NHẬT UI TRẠNG THÁI
+    updateUserStatusUI(presence) {
+        const { userId, isOnline, statusText, statusType, lastSeenAt } = presence;
+
+        // Cập nhật trong danh sách conversation
+        const convItem = document.querySelector(`[data-user-id="${userId}"]`);
+        if (convItem) {
+            // Cập nhật tên với màu sắc
+            const nameEl = convItem.querySelector('.conversation-name');
+            if (nameEl) {
+                // Giữ nguyên tên, chỉ thêm indicator
+                const currentName = nameEl.textContent.replace(/\s*●.*/, ''); // Xóa indicator cũ nếu có
+                nameEl.innerHTML = `${currentName} ${this.getStatusIndicator(statusType)}`;
+            }
+
+
+
+            // Cập nhật avatar indicator
+            let avatarIndicator = convItem.querySelector('.avatar-status-indicator');
+            if (!avatarIndicator) {
+                avatarIndicator = document.createElement('span');
+                avatarIndicator.className = 'avatar-status-indicator';
+                const avatarEl = convItem.querySelector('.avatar');
+                if (avatarEl && avatarEl.style.position !== 'relative') {
+                    avatarEl.style.position = 'relative';
+                    avatarEl.appendChild(avatarIndicator);
+                }
+            }
+            avatarIndicator.className = `avatar-status-indicator indicator-${statusType}`;
+        }
+
+        // Cập nhật header nếu đang chat với user này
+        if (this.currentConversation && this.currentConversation.id === userId) {
+            this.updateChatHeaderStatus(statusText, statusType);
+        }
+    }
+
+    // Lấy indicator cho status
+    getStatusIndicator(statusType) {
+        switch(statusType) {
+            case 'online':
+                return '<span style="color: #4CAF50;">●</span>';
+            case 'recently':
+                return '<span style="color: #FFC107;">●</span>';
+            case 'away':
+                return '<span style="color: #FF9800;">●</span>';
+            default:
+                return '<span style="color: #9E9E9E;">●</span>';
+        }
+    }
+
+    // Cập nhật header chat với status
+    updateChatHeaderStatus(statusText, statusType) {
+        const statusEl = document.getElementById('chatUserStatus');
+        if (statusEl) {
+            statusEl.innerHTML = `
+                ${this.getStatusIndicator(statusType)} ${statusText}
+            `;
+            statusEl.className = `status-${statusType}`;
+        }
+    }
+
+    // Fetch presence từ API
+    async fetchUserPresence(userId) {
+        try {
+            const response = await this.apiCall(`/api/presence/user/${userId}`);
+            if (response) {
+                this.handlePresenceUpdate(response);
+                return response;
+            }
+        } catch (error) {
+            console.error('Error fetching user presence:', error);
+        }
+    }
+
+    // Fetch nhiều users presence
+    async fetchMultipleUsersPresence(userIds) {
+        try {
+            const params = new URLSearchParams();
+            userIds.forEach(id => params.append('userIds', id));
+
+            const response = await this.apiCall(`/api/presence/users?${params}`);
+            if (response) {
+                response.forEach(presence => {
+                    this.handlePresenceUpdate(presence);
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching users presence:', error);
+        }
+    }
+
+    // Cập nhật presence định kỳ
+    startPresenceUpdates() {
+        // Clear interval cũ nếu có
+        if (this.presenceUpdateInterval) {
+            clearInterval(this.presenceUpdateInterval);
+        }
+
+        // Cập nhật mỗi phút cho offline users
+        this.presenceUpdateInterval = setInterval(() => {
+            this.userPresences.forEach((presence, userId) => {
+                if (!presence.isOnline && presence.lastSeenAt) {
+                    // Recalculate status text
+                    presence.statusText = this.formatRelativeTime(presence.lastSeenAt);
+                    this.updateUserStatusUI(presence);
+                }
+            });
+        }, 30000); // 1 phút
+    }
+
+    // Format thời gian tương đối tiếng Việt
+    formatRelativeTime(lastSeenAt) {
+        if (!lastSeenAt) return 'Chưa từng truy cập';
+
+        let lastSeen;
+
+        // Nếu là số (epoch giây), chuyển thành milliseconds
+        if (typeof lastSeenAt === 'number') {
+            lastSeen = new Date(lastSeenAt * 1000); // ✅ Nhân 1000 ở đây
+        } else if (typeof lastSeenAt === 'string') {
+            lastSeen = new Date(lastSeenAt);
+        } else {
+            return 'Không rõ thời gian truy cập';
+        }
+
+        if (isNaN(lastSeen.getTime())) {
+            return 'Không rõ thời gian truy cập';
+        }
+
+        const now = new Date();
+        const diffMs = now - lastSeen;
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
+        const diffHour = Math.floor(diffMin / 60);
+        const diffDay = Math.floor(diffHour / 24);
+        const diffWeek = Math.floor(diffDay / 7);
+        const diffMonth = Math.floor(diffDay / 30);
+        const diffYear = Math.floor(diffDay / 365);
+
+        if (diffSec < 60) {
+            return 'Vừa truy cập';
+        } else if (diffMin < 5) {
+            return `Hoạt động ${diffMin} phút trước`;
+        } else if (diffMin < 60) {
+            return `Hoạt động ${diffMin} phút trước`;
+        } else if (diffHour < 24) {
+            return `Hoạt động ${diffHour} giờ trước`;
+        } else if (diffDay < 7) {
+            return `Hoạt động ${diffDay} ngày trước`;
+        } else if (diffWeek < 4) {
+            return `Hoạt động ${diffWeek} tuần trước`;
+        } else if (diffMonth < 12) {
+            return `Hoạt động ${diffMonth} tháng trước`;
+        } else {
+            return `Hoạt động ${diffYear} năm trước`;
+        }
+    }
+
+
+    // CẬP NHẬT METHOD renderConversations
+    renderConversations(conversations) {
+        const container = document.getElementById('conversationsList');
+        container.innerHTML = '';
+
+        // Lấy presence cho tất cả users trong conversations
+        const userIds = conversations.map(c => c.otherUser.id);
+        this.fetchMultipleUsersPresence(userIds);
+
+        conversations.forEach(conversation => {
+            const div = document.createElement('div');
+            div.className = 'conversation-item';
+            div.dataset.userId = conversation.otherUser.id;
+
+            const initials = this.getInitials(conversation.otherUser.fullName);
+            const lastMessageText = conversation.lastMessage ?
+                conversation.lastMessage.content : 'Chưa có tin nhắn';
+
+
+            div.innerHTML = `
+                <div class="avatar" id="chatUser-Search">
+                    ${initials}
+                    <span class="avatar-status-indicator"></span>
+                </div>
+                <div class="conversation-info">
+                    <div class="conversation-name">${conversation.otherUser.fullName}</div>
+                     
+                     <div class="last-message">${lastMessageText}</div>
+                </div>
+                <div class="conversation-meta">
+                    
+                    ${conversation.unreadCount > 0 ?
+                `<div class="unread-count">${conversation.unreadCount}</div>` : ''}
+                    <button 
+                        onclick="chatApp.initiateCall('${conversation.otherUser.id}')" 
+                        class="btn btn-outline-secondary btn-sm call-button" title="Gọi điện"
+                        ${this.isInCall ? 'disabled' : ''}>
+                        <i class="fas fa-phone"></i>
+                    </button>
+                </div>
+            `;
+
+            div.addEventListener('click', () => this.selectConversation(conversation.otherUser));
+            container.appendChild(div);
+        });
+    }
+
+    // CẬP NHẬT METHOD selectConversation
+    async selectConversation(user) {
+        this.currentConversation = user;
+
+        // Update UI
+        document.querySelectorAll('.conversation-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        const element = document.querySelector(`[data-user-id="${user.id}"]`);
+        if (element) {
+            element.classList.add('active');
+        }
+
+        const emptyChat = document.getElementById('emptyChat');
+        if (emptyChat) emptyChat.style.display = 'none';
+
+        const chatHeader = document.getElementById('chatHeader');
+        if (chatHeader) chatHeader.style.display = 'flex';
+
+        const inputContainer = document.getElementById('messageInputContainer');
+        if (inputContainer) inputContainer.style.display = 'block';
+
+        const chatUserNameEl = document.getElementById('chatUserName');
+        if (chatUserNameEl) {
+            chatUserNameEl.textContent = user.fullName;
+        }
+
+        const chatUserAvatarEl = document.getElementById('chatUserAvatar');
+        if (chatUserAvatarEl) {
+            chatUserAvatarEl.innerHTML = '';
+            if (user.avatar) {
+                const img = document.createElement('img');
+                img.src = 'http://localhost:8081/storage/user/' + user.avatar;
+                img.alt = user.fullName;
+                img.className = 'avatar-img';
+                chatUserAvatarEl.appendChild(img);
+            } else {
+                chatUserAvatarEl.textContent = this.getInitials(user.fullName);
+            }
+        }
+
+        const chatUser = document.getElementById('chatUser-Search');
+        if (chatUser) {
+            chatUser.innerHTML = '';
+            if (user.avatar) {
+                const img = document.createElement('img');
+                img.src = 'http://localhost:8081/storage/user/' + user.avatar;
+                img.alt = user.fullName;
+                img.className = 'avatar-img';
+                chatUser.appendChild(img);
+            } else {
+                chatUser.textContent = this.getInitials(user.fullName);
+            }
+        }
+
+        // Fetch và hiển thị presence status
+        const chatUserStatusEl = document.getElementById('chatUserStatus');
+        if (chatUserStatusEl) {
+            chatUserStatusEl.textContent = "Đang kiểm tra...";
+        }
+
+        try {
+            const presence = await this.fetchUserPresence(user.id);
+            if (presence) {
+                this.updateChatHeaderStatus(presence.statusText, presence.statusType);
+            }
+        } catch (err) {
+            console.error("Check status error:", err);
+            if (chatUserStatusEl) {
+                chatUserStatusEl.textContent = "Offline";
+                chatUserStatusEl.className = "text-muted";
+            }
+        }
+
+        // Load messages
+        await this.loadMessages(user.id);
     }
 
     initiateCall(receiverId) {
@@ -425,132 +724,8 @@ class ChatApp {
     }
 
 
-    renderConversations(conversations) {
-        const container = document.getElementById('conversationsList');
-        container.innerHTML = '';
-
-        conversations.forEach(conversation => {
-            const div = document.createElement('div');
-            div.className = 'conversation-item';
-            div.dataset.userId = conversation.otherUser.id;
-
-            const initials = this.getInitials(conversation.otherUser.fullName);
-            const lastMessageText = conversation.lastMessage ?
-                conversation.lastMessage.content : 'Chưa có tin nhắn';
-            const timestamp = conversation.lastMessage ?
-                this.formatTime(conversation.lastMessage.createdAt) : '';
-
-            div.innerHTML = `
-                <div class="avatar" id="chatUser-Search">${initials}</div>
-                <div class="conversation-info">
-                    <div class="conversation-name">${conversation.otherUser.fullName}</div>
-                    <div class="last-message">${lastMessageText}</div>
-                </div>
-                <div class="conversation-meta">
-                    <div class="timestamp">${timestamp}</div>
-                    ${conversation.unreadCount > 0 ?
-                `<div class="unread-count">${conversation.unreadCount}</div>` : ''}
-                    <button 
-                        onclick="chatApp.initiateCall('${conversation.otherUser.id}')" 
-                             class="btn btn-outline-secondary btn-sm call-button"   title="Gọi điện"
-                          ${this.isInCall ? 'disabled' : ''}>
-                        <i class="fas fa-phone"></i>
-                    </button>
-
-                </div>
-            `;
-
-            div.addEventListener('click', () => this.selectConversation(conversation.otherUser));
-            container.appendChild(div);
-        });
-    }
-
-    async selectConversation(user) {
-        this.currentConversation = user;
-
-        // Update UI
-        document.querySelectorAll('.conversation-item').forEach(item => {
-            item.classList.remove('active');
-        });
-
-        const element = document.querySelector(`[data-user-id="${user.id}"]`);
-        if (element) {
-            element.classList.add('active');
-        } else {
-            console.warn(`Không tìm thấy phần tử với data-user-id="${user.id}"`);
-        }
 
 
-        const emptyChat = document.getElementById('emptyChat');
-        if (emptyChat) emptyChat.style.display = 'none';
-
-        // document.getElementById('chatHeader').style.display = 'flex';
-        const chatHeader = document.getElementById('chatHeader');
-        if (chatHeader) chatHeader.style.display = 'flex';
-        // document.getElementById('messageInputContainer').style.display = 'block';
-        const inputContainer = document.getElementById('messageInputContainer');
-        if (inputContainer) inputContainer.style.display = 'block';
-
-
-        const chatUserNameEl = document.getElementById('chatUserName');
-        if (chatUserNameEl) {
-            chatUserNameEl.textContent = user.fullName;
-        }
-
-
-        const chatUserAvatarEl = document.getElementById('chatUserAvatar');
-        if (chatUserAvatarEl) {
-            chatUserAvatarEl.innerHTML = ''; // Xóa nội dung cũ
-
-            if (user.avatar) {
-                const img = document.createElement('img');
-                img.src = 'http://localhost:8081/storage/user/' + user.avatar;
-                img.alt = user.fullName;
-                img.className = 'avatar-img';  // Thêm class để style ảnh đẹp
-
-                chatUserAvatarEl.appendChild(img);
-            } else {
-                chatUserAvatarEl.textContent = this.getInitials(user.fullName);
-            }
-        }
-        const chatUser = document.getElementById('chatUser-Search');
-        if (chatUser) {
-            chatUser.innerHTML = ''; // Xóa nội dung cũ
-            if (user.avatar) {
-                const img = document.createElement('img');
-                img.src = 'http://localhost:8081/storage/user/' + user.avatar;
-                img.alt = user.fullName;
-                img.className = 'avatar-img';  // Thêm class để style ảnh đẹp
-                chatUser.appendChild(img);
-            } else {
-                chatUser.textContent = this.getInitials(user.fullName);
-            }
-        }
-        const chatUserStatusEl = document.getElementById('chatUserStatus');
-        if (chatUserStatusEl) {
-            chatUserStatusEl.textContent = "Đang kiểm tra...";
-        }
-        // ✅ gọi API check online
-        try {
-            const res = await this.apiCall(`/api/v1/users/${user.id}/status`);
-            if (res.online) {
-                chatUserStatusEl.textContent = "Online";
-                chatUserStatusEl.className = "text-success";
-            } else {
-                chatUserStatusEl.textContent = "Offline";
-                chatUserStatusEl.className = "text-muted";
-            }
-        } catch (err) {
-            console.error("Check status error:", err);
-            chatUserStatusEl.textContent = "Offline";
-            chatUserStatusEl.className = "text-muted";
-        }
-
-
-
-        // Load messages
-        await this.loadMessages(user.id);
-    }
 
     async loadMessages(userId) {
         try {
@@ -858,15 +1033,11 @@ class ChatApp {
     }
 
     formatTime(timestamp) {
-        // Nếu là string thì ép sang số
-        let ts = Number(timestamp);
+        const date = new Date(timestamp); // timestamp là ISO string
 
-        // Nếu là epoch giây (10 số) thì nhân 1000 để thành mili giây
-        if (ts < 1000000000000) {
-            ts *= 1000;
+        if (isNaN(date.getTime())) {
+            return 'Không rõ thời gian'; // fallback nếu lỗi
         }
-
-        const date = new Date(ts);
 
         return date.toLocaleString('vi-VN', {
             day: '2-digit',
@@ -874,8 +1045,9 @@ class ChatApp {
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
-        }).replace(',', ''); // bỏ dấu phẩy mặc định
+        }).replace(',', '');
     }
+
 
 
     logout() {

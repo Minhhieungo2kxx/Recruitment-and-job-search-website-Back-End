@@ -169,24 +169,24 @@ public class UserController {
         );
         return ResponseEntity.ok(response);
     }
-    @GetMapping("/{id}/status")
-    public Map<String, Object> getUserStatus(@PathVariable Long id) {
-        boolean isOnline = presenceService.isUserOnline(id);
-        return Map.of(
-                "userId", id,
-                "online", isOnline
-        );
-    }
+//    @GetMapping("/{id}/status")
+//    public Map<String, Object> getUserStatus(@PathVariable Long id) {
+//        boolean isOnline = presenceService.isUserOnline(id);
+//        return Map.of(
+//                "userId", id,
+//                "online", isOnline
+//        );
+//    }
     // API lấy trạng thái nhiều user cùng lúc (nếu cần)
-    @GetMapping("/status")
-    public List<?> getUsersStatus(@RequestParam List<Long> ids) {
-        return ids.stream()
-                .map(uid -> Map.of(
-                        "userId", uid,
-                        "online", presenceService.isUserOnline(uid)
-                ))
-                .toList();
-    }
+//    @GetMapping("/status")
+//    public List<?> getUsersStatus(@RequestParam List<Long> ids) {
+//        return ids.stream()
+//                .map(uid -> Map.of(
+//                        "userId", uid,
+//                        "online", presenceService.isUserOnline(uid)
+//                ))
+//                .toList();
+//    }
 
 
 
