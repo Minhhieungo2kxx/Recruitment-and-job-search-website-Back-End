@@ -52,9 +52,6 @@ class ChatApp {
             console.error('Init error:', error);
             // this.logout();
         }
-        // if ("Notification" in window && Notification.permission !== "granted") {
-        //     Notification.requestPermission();
-        // }
         if (navigator.permissions) {
             navigator.permissions.query({name: 'notifications'}).then(function (result) {
                 if (result.state === 'granted') {
@@ -140,7 +137,7 @@ class ChatApp {
         });
     }
 // XỬ LÝ CẬP NHẬT PRESENCE
-    handlePresenceUpdate(presence) {
+    handlePresenceUpdate(presence)    {
         this.userPresences.set(presence.userId, presence);
         this.updateUserStatusUI(presence);
     }
@@ -159,6 +156,18 @@ class ChatApp {
                 const currentName = nameEl.textContent.replace(/\s*●.*/, ''); // Xóa indicator cũ nếu có
                 nameEl.innerHTML = `${currentName} ${this.getStatusIndicator(statusType)}`;
             }
+            // Thêm/cập nhật status text
+            let statusEl = convItem.querySelector('.user-status-text');
+            if (!statusEl) {
+                statusEl = document.createElement('div');
+                statusEl.className = 'user-status-text';
+                const infoEl = convItem.querySelector('.conversation-info');
+                if (infoEl) {
+                    infoEl.appendChild(statusEl);
+                }
+            }
+            statusEl.textContent = statusText;
+            statusEl.className = `user-status-text status-${statusType}`;
 
 
 
@@ -253,7 +262,7 @@ class ChatApp {
                     this.updateUserStatusUI(presence);
                 }
             });
-        }, 30000); // 1 phút
+        }, 50000); // 1 phút
     }
 
     // Format thời gian tương đối tiếng Việt
@@ -331,8 +340,9 @@ class ChatApp {
                 </div>
                 <div class="conversation-info">
                     <div class="conversation-name">${conversation.otherUser.fullName}</div>
+                     <div class="user-status-text"></div>
+                    <div class="last-message">${lastMessageText}</div>
                      
-                     <div class="last-message">${lastMessageText}</div>
                 </div>
                 <div class="conversation-meta">
                     
@@ -665,7 +675,7 @@ class ChatApp {
         const response = await fetch(url, {...defaultOptions, ...options});
 
         if (response.status === 401) {
-            // this.logout();
+            this.logout();
             return;
         }
 
@@ -722,10 +732,6 @@ class ChatApp {
             endCallBtn.style.display = "none"; // ⬅️ Quan trọng: luôn ẩn nút endCallBtn
         }
     }
-
-
-
-
 
     async loadMessages(userId) {
         try {

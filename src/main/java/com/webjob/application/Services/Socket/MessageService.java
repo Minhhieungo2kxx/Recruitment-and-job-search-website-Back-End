@@ -81,8 +81,6 @@ public class MessageService {
         if (message.getSender().getId() != user.getId()) {
             throw new RuntimeException("Bạn chỉ có thể sửa tin nhắn của mình");
         }
-
-
         message.setContent(updateDTO.getContent());
         message.setIsEdited(true);
         Message updatedMessage = messageRepository.save(message);

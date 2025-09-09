@@ -26,26 +26,25 @@ import java.util.Optional;
 @Service
 public class UserService {
     private final UserRepository userRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private RoleService roleService;
-    @Autowired
-    private ResumeRepository resumeRepository;
-    @Autowired
-    private CompanyService companyService;
-    @Autowired
-    private ModelMapper modelMapper;
-    @Autowired
-    private MessageRepository messageRepository;
-
-    @Autowired
-    private ConversationRepository conversationRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final RoleService roleService;
+    private final ResumeRepository resumeRepository;
+    private final CompanyService companyService;
+    private final ModelMapper modelMapper;
+    private final MessageRepository messageRepository;
+    private final ConversationRepository conversationRepository;
 
 
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleService roleService, ResumeRepository resumeRepository, CompanyService companyService, ModelMapper modelMapper, MessageRepository messageRepository, ConversationRepository conversationRepository) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.roleService = roleService;
+        this.resumeRepository = resumeRepository;
+        this.companyService = companyService;
+        this.modelMapper = modelMapper;
+        this.messageRepository = messageRepository;
+        this.conversationRepository = conversationRepository;
     }
     @Transactional
     public User handle(User user){
