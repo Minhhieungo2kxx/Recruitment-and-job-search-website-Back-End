@@ -29,11 +29,6 @@ public class CompanyService {
     private final UserRepository userRepository;
 
 
-
-
-
-
-
     public CompanyService(CompanyRepository companyRepository, ModelMapper modelMapper, UserRepository userRepository) {
         this.companyRepository = companyRepository;
         this.modelMapper = modelMapper;

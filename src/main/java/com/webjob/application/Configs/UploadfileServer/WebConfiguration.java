@@ -36,6 +36,7 @@ public class WebConfiguration implements WebMvcConfigurer {
                 "/api/v1/companies/**", "/api/v1/skills/**", "/api/v1/resumes/by-user",
                 "/api/v1/subscribers/**","/api/v1/subscribers/send-mails",
                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html","/api/v1/password/**"
+                ,"/login-chat"
         };
         registry.addInterceptor(getPermissionInterceptor())
                 .excludePathPatterns(publicEndpoints);
