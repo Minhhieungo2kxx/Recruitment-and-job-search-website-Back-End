@@ -7,8 +7,10 @@ import com.webjob.application.Models.Request.LoginDTO;
 import com.webjob.application.Models.Response.LoginResponse;
 import com.webjob.application.Models.Response.UserDTO;
 import com.webjob.application.Models.Entity.User;
+import com.webjob.application.Services.Redis.TokenBlacklistService;
 import com.webjob.application.Services.SecurityUtil;
 import com.webjob.application.Services.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,14 +37,17 @@ public class AuthController {
     private final UserService userService;
 
     private final JwtDecoder jwtDecoder;
+    private  final TokenBlacklistService tokenBlacklistService;
+
     @Autowired
     private ModelMapper modelMapper;
 
-    public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil, UserService userService, JwtDecoder jwtDecoder) {
+    public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil, UserService userService, JwtDecoder jwtDecoder, TokenBlacklistService tokenBlacklistService) {
         this.authenticationManagerBuilder = authenticationManagerBuilder;
         this.securityUtil = securityUtil;
         this.userService = userService;
         this.jwtDecoder = jwtDecoder;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
 
@@ -142,13 +147,21 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
+    public ResponseEntity<?> logout(HttpServletRequest request) {
         // Lấy thông tin xác thực hiện tại từ context
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // Kiểm tra xác thực có hợp lệ không
         if (authentication == null || !authentication.isAuthenticated()
                 || authentication instanceof AnonymousAuthenticationToken) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
+        // Lấy token hiện tại từ header
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            String token = header.substring(7);
+            // Lấy thời gian hết hạn còn lại
+            long remaining = securityUtil.getRemainingValidity(token);
+            tokenBlacklistService.blacklistToken(token, remaining);
         }
         // Lấy email từ token
         String email = authentication.getName();

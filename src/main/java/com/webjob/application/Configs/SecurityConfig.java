@@ -2,6 +2,7 @@ package com.webjob.application.Configs;
 
 import com.webjob.application.Configs.CustomOAuth2.OAuth2LoginFailureHandler;
 import com.webjob.application.Configs.CustomOAuth2.OAuth2LoginSuccessHandler;
+import com.webjob.application.Configs.Redis.JwtBlacklistFilter;
 import com.webjob.application.Services.OAuth2.CustomOAuth2UserService;
 import com.webjob.application.Utils.exceptions.CustomAuthenticationEntryPoint;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
 import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -40,11 +42,8 @@ public class SecurityConfig {
 
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        String[] paths = {"/", "/auth/login", "/auth/refresh", "/storage/**"
-//                ,"/api/jobs/**","/api/companies/**","/api/skill/**","/auth/register"
-//                ,"/resumes/by-user"
-//        };
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtBlacklistFilter jwtBlacklistFilter) throws Exception {
+
         String[] publicEndpoints = {"/", "/api/v1/auth/login", "/api/v1/auth/refresh",
                 "/api/v1/auth/register", "/storage/**","/api/v1/subscribers/send-mails",
                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html","/api/v1/password/**",
@@ -56,6 +55,7 @@ public class SecurityConfig {
 
 
         http
+                .addFilterBefore(jwtBlacklistFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(publicEndpoints).permitAll()
                         .requestMatchers("/login-chat").permitAll() // Chắc chắn rằng login-chat là public

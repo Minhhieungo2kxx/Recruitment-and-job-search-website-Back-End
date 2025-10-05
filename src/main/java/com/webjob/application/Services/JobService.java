@@ -27,14 +27,20 @@ import java.util.stream.Collectors;
 
 @Service
 public class JobService {
-    @Autowired
-    private SkillRepository skillRepository;
-    @Autowired
-    private JobRepository jobRepository;
-    @Autowired
-    private ModelMapper modelMapper;
-    @Autowired
-    private CompanyRepository companyRepository;
+
+    private final SkillRepository skillRepository;
+    private final JobRepository jobRepository;
+
+    private final ModelMapper modelMapper;
+    private final CompanyRepository companyRepository;
+
+    public JobService(SkillRepository skillRepository, JobRepository jobRepository, ModelMapper modelMapper, CompanyRepository companyRepository) {
+        this.skillRepository = skillRepository;
+        this.jobRepository = jobRepository;
+        this.modelMapper = modelMapper;
+        this.companyRepository = companyRepository;
+    }
+
 
     @Transactional
     public Job createJob(JobRequest request) {
@@ -170,10 +176,10 @@ public class JobService {
 //
 //|             Tình huống                             | Quan tâm bên nào?                     | Ghi chú                                                 |
 //        | -------------------------------------- | ------------------------------------- | ------------------------------------------------------- |
-//        | Xóa bản ghi "cha" (1)                  | ⚠️ Rất nên kiểm tra bên "nhiều" (con) | Tránh lỗi khóa ngoại (`FK constraint`) hoặc mất dữ liệu |
-//        | Xóa bản ghi "con" (nhiều)              | ✅ Chủ yếu kiểm tra bên đó             | Có thể cần cập nhật quan hệ, hoặc làm mềm (soft delete) |
-//        | Liên kết `@ManyToMany`                 | ⚠️ Kiểm tra cả hai bên                | Xóa ở bảng trung gian (join table) là quan trọng        |
-//        | Sử dụng `cascade = CascadeType.REMOVE` | ✅ Quan trọng                          | Cho phép tự động xóa các bản ghi liên quan              |
+//        | Xóa bản ghi "cha" (1)                  |  Rất nên kiểm tra bên "nhiều" (con) | Tránh lỗi khóa ngoại (`FK constraint`) hoặc mất dữ liệu |
+//        | Xóa bản ghi "con" (nhiều)              |  Chủ yếu kiểm tra bên đó             | Có thể cần cập nhật quan hệ, hoặc làm mềm (soft delete) |
+//        | Liên kết `@ManyToMany`                 | ️ Kiểm tra cả hai bên                | Xóa ở bảng trung gian (join table) là quan trọng        |
+//        | Sử dụng `cascade = CascadeType.REMOVE` |  Quan trọng                          | Cho phép tự động xóa các bản ghi liên quan              |
 
 
 //|              Tình huống                | Xử lý                      | Ghi vào DB                                    |

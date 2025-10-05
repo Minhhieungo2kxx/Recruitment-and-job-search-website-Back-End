@@ -94,7 +94,7 @@ public class AppConfig {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
 
-        // ✅ Cấu hình quan trọng để serialize Instant dưới dạng ISO string
+        //Cấu hình quan trọng để serialize Instant dưới dạng ISO string
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         return mapper;

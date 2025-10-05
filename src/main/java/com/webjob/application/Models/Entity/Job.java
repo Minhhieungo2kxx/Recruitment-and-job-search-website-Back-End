@@ -54,6 +54,7 @@ public class Job {
             message = "Cấp độ không hợp lệ. Giá trị hợp lệ: INTERN, FRESHER, JUNIOR, MIDDLE, SENIOR"
     )
     private String level;
+
     @Column(name = "applied_count")
     @Min(value = 0, message = "Số lượng ứng viên đã ứng tuyển không được âm")
     private int appliedCount;
