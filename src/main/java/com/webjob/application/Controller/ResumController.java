@@ -1,5 +1,6 @@
 package com.webjob.application.Controller;
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Models.Request.UpdateResumeDTO;
 import com.webjob.application.Models.Response.*;
 import com.webjob.application.Models.Entity.Resume;
@@ -22,6 +23,7 @@ public class ResumController {
         this.modelMapper = modelMapper;
     }
 
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping
     public ResponseEntity<?> createResume(@Valid @RequestBody Resume resume) {
         Resume resumeSave=resumService.saveResume(resume);
@@ -35,6 +37,8 @@ public class ResumController {
         return new ResponseEntity<>(apiResponse,HttpStatus.CREATED);
 
     }
+
+    @RateLimit(maxRequests = 7, timeWindowSeconds = 60, keyType = "TOKEN")
     @PutMapping("/{id}")
     public ResponseEntity<?> editResume(@PathVariable Long id, @Valid @RequestBody UpdateResumeDTO dto) {
         Resume edit=resumService.editResume(id,dto);
@@ -48,6 +52,8 @@ public class ResumController {
         return ResponseEntity.ok(apiResponse);
 
     }
+
+    @RateLimit(maxRequests = 7, timeWindowSeconds = 60, keyType = "TOKEN")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteResumebyId(@PathVariable Long id) {
         Resume resume=resumService.getById(id);
@@ -61,6 +67,7 @@ public class ResumController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/{id}")
     public ResponseEntity<?> detailResumebyId(@PathVariable Long id) {
         Resume resume=resumService.getById(id);
@@ -76,6 +83,8 @@ public class ResumController {
         );
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping
     public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
 
@@ -87,6 +96,8 @@ public class ResumController {
         return ResponseEntity.ok(response);
 
     }
+
+    @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/by-user")
     public ResponseEntity<?> GetallResumebyUser(@RequestParam(value ="page") String pageparam){
         ResponseDTO<?> respond=resumService.getPaginatedResumes(pageparam,"by-user");
@@ -96,6 +107,8 @@ public class ResumController {
         );
         return ResponseEntity.ok(response);
     }
+
+    @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/by-companyHR")
     public ResponseEntity<?> GetallResumeHRcompany(@RequestParam(value ="page") String pageparam){
 

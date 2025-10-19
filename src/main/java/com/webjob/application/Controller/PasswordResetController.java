@@ -1,5 +1,6 @@
 package com.webjob.application.Controller;
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Models.Entity.User;
 import com.webjob.application.Models.Request.ForgotPasswordRequest;
 import com.webjob.application.Models.Request.ResetPasswordRequest;
@@ -27,6 +28,7 @@ public class PasswordResetController {
         this.userService = userService;
     }
 
+    @RateLimit(maxRequests = 3, timeWindowSeconds = 300, keyType = "IP")
     @PostMapping("/forgot")
     public ResponseEntity<?> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
         User user=userService.getbyEmail(request.getEmail());
@@ -37,6 +39,7 @@ public class PasswordResetController {
         return ResponseEntity.ok(apiResponse);
     }
 
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "IP")
     @PostMapping("/reset")
     public ResponseEntity<?> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
         passwordResetService.resetPassword(request);

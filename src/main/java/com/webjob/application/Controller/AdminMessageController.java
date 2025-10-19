@@ -1,5 +1,6 @@
 package com.webjob.application.Controller;
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Configs.Socket.MessageMapper;
 import com.webjob.application.Models.Entity.Job;
 import com.webjob.application.Models.Request.Search.MessageFilterRequest;
@@ -24,6 +25,7 @@ public class AdminMessageController {
         this.messageService = messageService;
     }
 
+    @RateLimit(maxRequests = 20, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping
     public ResponseEntity<?> getAllMessages(@ModelAttribute MessageFilterRequest filterRequest) {
         ResponseDTO<?> respond=messageService.getPaginated(filterRequest);
@@ -33,7 +35,7 @@ public class AdminMessageController {
         );
         return ResponseEntity.ok(response);
     }
-
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMessage(@PathVariable Long id) {
         boolean deleted = messageService.softDeleteMessage(id);

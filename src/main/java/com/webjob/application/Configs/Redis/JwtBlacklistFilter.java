@@ -59,8 +59,6 @@ public class JwtBlacklistFilter extends OncePerRequestFilter {
 
         }
 
-
-
         // Tiếp tục xử lý các filter khác
         filterChain.doFilter(request, response);
     }

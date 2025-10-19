@@ -1,12 +1,14 @@
 package com.webjob.application.Controller;
 
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Models.Request.Userrequest;
 import com.webjob.application.Models.Response.ApiResponse;
 import com.webjob.application.Models.Request.LoginDTO;
 import com.webjob.application.Models.Response.LoginResponse;
 import com.webjob.application.Models.Response.UserDTO;
 import com.webjob.application.Models.Entity.User;
+import com.webjob.application.Services.AuthService;
 import com.webjob.application.Services.Redis.TokenBlacklistService;
 import com.webjob.application.Services.SecurityUtil;
 import com.webjob.application.Services.UserService;
@@ -37,166 +39,53 @@ public class AuthController {
     private final UserService userService;
 
     private final JwtDecoder jwtDecoder;
-    private  final TokenBlacklistService tokenBlacklistService;
+    private final TokenBlacklistService tokenBlacklistService;
 
-    @Autowired
-    private ModelMapper modelMapper;
+    private final AuthService authService;
 
-    public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil, UserService userService, JwtDecoder jwtDecoder, TokenBlacklistService tokenBlacklistService) {
+
+    private final ModelMapper modelMapper;
+
+    public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil, UserService userService, JwtDecoder jwtDecoder, TokenBlacklistService tokenBlacklistService, AuthService authService, ModelMapper modelMapper) {
         this.authenticationManagerBuilder = authenticationManagerBuilder;
         this.securityUtil = securityUtil;
         this.userService = userService;
         this.jwtDecoder = jwtDecoder;
         this.tokenBlacklistService = tokenBlacklistService;
+        this.authService = authService;
+        this.modelMapper = modelMapper;
     }
 
-
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "IP")
     @PostMapping("/login")
     public ResponseEntity<?> formlogin(@Valid @RequestBody LoginDTO loginDTO) {
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword());
-
-        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-//        set thong tin authencation thanh cong
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-//        get authentication thanh cong
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String getEmail = auth.getName();
-        User respon = userService.getbyEmail(getEmail);
-
-//        LoginResponse.User user=new LoginResponse.User(respon.getId(),respon.getEmail(),respon.getFullName());
-        LoginResponse.User user = modelMapper.map(respon, LoginResponse.User.class);
-
-        String acess_token = securityUtil.createacessToken(respon.getEmail(), user);
-        LoginResponse loginResponse = new LoginResponse(acess_token, user);
-        String refresh_token = securityUtil.createrefreshToken(respon.getEmail(), user);
-        userService.updateRefreshtoken(respon.getId(), refresh_token);
-        ResponseCookie responseCookie = ResponseCookie.from("refresh", refresh_token)
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .maxAge(jwtrefreshExpiration)
-                .build();
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set(HttpHeaders.SET_COOKIE, responseCookie.toString());
-        ApiResponse<LoginResponse> response = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "Call API Login successful",
-                loginResponse
-        );
-
-        return ResponseEntity.ok().headers(httpHeaders).body(response);
-
+        return authService.handleLogin(loginDTO);
     }
 
-    //    Lay ra thong tin nguoi dung khi da gui kem access-token khi yeu cau den server
-//    server se giai ma token do roi phan hoi lai client-->ta co authencaition nen get duoc email
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/account")
     public ResponseEntity<?> getAccount() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // Kiểm tra xác thực có hợp lệ không
-        if (authentication == null || !authentication.isAuthenticated()
-                || authentication instanceof AnonymousAuthenticationToken) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-        }
-
-        String email = authentication.getName();
-        User user = userService.getbyEmail(email);
-//        LoginResponse.User responseUser = new LoginResponse.User(user.getId(), user.getEmail(),user.getFullName());
-        LoginResponse.User responseUser = modelMapper.map(user, LoginResponse.User.class);
-        ApiResponse<LoginResponse.User> response = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "get Account successful",
-                responseUser
-        );
-        return ResponseEntity.ok(response);
+        return authService.getCurrentUserInfo();
     }
 
-    @GetMapping("/token/refresh")
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "IP")
+    @GetMapping("/refresh")
     public ResponseEntity<?> getRefreshToken(@CookieValue(name = "refresh", defaultValue = "default") String refreshToken) {
-        if ("default".equals(refreshToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No refresh token found.");
-        }
-        Jwt decodedJwt = jwtDecoder.decode(refreshToken);
-        String username = decodedJwt.getSubject();
-        User getbyuser = userService.getEmailAndRefreshtoken(username, refreshToken);
-
-//            LoginResponse.User user=new LoginResponse.User(getbyuser.getId(),getbyuser.getEmail(),getbyuser.getFullName());
-        LoginResponse.User user = modelMapper.map(getbyuser, LoginResponse.User.class);
-
-        String acess_token = securityUtil.createacessToken(getbyuser.getEmail(), user);
-        LoginResponse loginResponse = new LoginResponse(acess_token, user);
-
-        String refresh_token = securityUtil.createrefreshToken(getbyuser.getEmail(), user);
-        userService.updateRefreshtoken(getbyuser.getId(), refresh_token);
-        ResponseCookie responseCookie = ResponseCookie.from("refresh", refresh_token)
-                .httpOnly(true).secure(true).path("/").maxAge(jwtrefreshExpiration).build();
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set(HttpHeaders.SET_COOKIE, responseCookie.toString());
-        ApiResponse<LoginResponse> response = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "Get User by refresh token",
-                loginResponse
-        );
-        return ResponseEntity.ok().headers(httpHeaders).body(response);
+        return authService.refreshToken(refreshToken);
 
     }
 
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request) {
-        // Lấy thông tin xác thực hiện tại từ context
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // Kiểm tra xác thực có hợp lệ không
-        if (authentication == null || !authentication.isAuthenticated()
-                || authentication instanceof AnonymousAuthenticationToken) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-        }
-        // Lấy token hiện tại từ header
-        String header = request.getHeader("Authorization");
-        if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
-            // Lấy thời gian hết hạn còn lại
-            long remaining = securityUtil.getRemainingValidity(token);
-            tokenBlacklistService.blacklistToken(token, remaining);
-        }
-        // Lấy email từ token
-        String email = authentication.getName();
-        User user = userService.getbyEmail(email);
-        // Xoá refresh_token trong DB (set null)
-        userService.updateRefreshtoken(user.getId(), null); // cần thêm method này nếu chưa có
-        // Xoá cookie "refresh" bằng cách đặt maxAge = 0
-        ResponseCookie deleteCookie = ResponseCookie.from("refresh", "")
-                .httpOnly(true).secure(true).path("/").maxAge(0).build();
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.SET_COOKIE, deleteCookie.toString());
-        ApiResponse<Object> response = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "Logout User",
-                null
-        );
-
-        return ResponseEntity.ok().headers(headers).body(response);
+        return authService.logout(request);
     }
 
+
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "IP")
     @PostMapping("/register")
     public ResponseEntity<?> createRegister(@Valid @RequestBody Userrequest userrequest) {
-        // Tạo user và ánh xạ dữ liệu
-        User user = modelMapper.map(userrequest, User.class);
-        // Xử lý và phản hồi
-        User userSaved = userService.handle(user);
-        UserDTO userDTO = modelMapper.map(userSaved, UserDTO.class);
-        ApiResponse<UserDTO> response = new ApiResponse<>(
-                HttpStatus.CREATED.value(),
-                null,
-                "Register Account successful",
-                userDTO
-        );
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return authService.register(userrequest);
     }
 
 }

@@ -1,6 +1,7 @@
 package com.webjob.application.Controller;
 
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Models.Request.SkillRequest;
 import com.webjob.application.Models.Response.ApiResponse;
 import com.webjob.application.Models.Response.ResponseDTO;
@@ -26,6 +27,7 @@ public class SkillController {
         this.modelMapper = modelMapper;
     }
 
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping
     public ResponseEntity<?> createSkill(@Valid @RequestBody Skill skill) {
         skillService.checkNameskill(skill.getName());
@@ -40,6 +42,8 @@ public class SkillController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
 
     }
+
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PutMapping("/{id}")
     public ResponseEntity<?> EditSkill(@PathVariable Long id,@Valid @RequestBody SkillRequest skillRequest) {
         Skill canfind=skillService.getbyID(id).orElseThrow(() -> new IllegalArgumentException("Skill not found with ID: " + id));
@@ -55,6 +59,8 @@ public class SkillController {
         return new ResponseEntity<>(response, HttpStatus.OK);
 
     }
+
+    @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping
     public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
 
@@ -68,6 +74,8 @@ public class SkillController {
         return ResponseEntity.ok(response);
 
     }
+
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSkill(@PathVariable Long id) {
         skillService.deleteSkill(id);

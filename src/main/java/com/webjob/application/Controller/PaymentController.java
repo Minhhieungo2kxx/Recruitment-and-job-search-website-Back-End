@@ -1,5 +1,6 @@
 package com.webjob.application.Controller;
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Models.Entity.User;
 import com.webjob.application.Models.Enums.PaymentStatus;
 import com.webjob.application.Models.Request.PaymentCallbackRequest;
@@ -34,52 +35,53 @@ public class PaymentController {
         this.userService = userService;
     }
 
-@PostMapping("/create")
-public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(
-        @Valid @RequestBody PaymentCreateRequest request,
-        HttpServletRequest httpRequest) {
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
+    @PostMapping("/create")
+    public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(
+            @Valid @RequestBody PaymentCreateRequest request,
+            HttpServletRequest httpRequest) {
 
-    try {
-        // Lấy thông tin người dùng hiện tại từ context
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userService.getbyEmail(userEmail);
+        try {
+            // Lấy thông tin người dùng hiện tại từ context
+            String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+            User currentUser = userService.getbyEmail(userEmail);
 
-        // Gọi service để tạo payment
-        PaymentResponse paymentResponse = paymentService.createPaymentForJobView(
-                currentUser.getId(), request, httpRequest
-        );
+            // Gọi service để tạo payment
+            PaymentResponse paymentResponse = paymentService.createPaymentForJobView(
+                    currentUser.getId(), request, httpRequest
+            );
 
-        // Tạo phản hồi thành công
-        ApiResponse<PaymentResponse> apiResponse = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "Tạo payment thành công",
-                paymentResponse
-        );
+            // Tạo phản hồi thành công
+            ApiResponse<PaymentResponse> apiResponse = new ApiResponse<>(
+                    HttpStatus.OK.value(),
+                    null,
+                    "Tạo payment thành công",
+                    paymentResponse
+            );
 
-        return ResponseEntity.ok(apiResponse);
+            return ResponseEntity.ok(apiResponse);
 
-    } catch (Exception ex) {
-        log.error("Error creating payment: {}", ex.getMessage(), ex);
+        } catch (Exception ex) {
+            log.error("Error creating payment: {}", ex.getMessage(), ex);
 
-        // Tạo phản hồi lỗi
-        ApiResponse<PaymentResponse> errorResponse = new ApiResponse<>(
-                HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage(),
-                "Lỗi tạo payment",
-                null
-        );
+            // Tạo phản hồi lỗi
+            ApiResponse<PaymentResponse> errorResponse = new ApiResponse<>(
+                    HttpStatus.BAD_REQUEST.value(),
+                    ex.getMessage(),
+                    "Lỗi tạo payment",
+                    null
+            );
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
     }
-}
 
-
+    @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping("/vnpay-return")
     public ResponseEntity<ApiResponse<PaymentResponse>> handleVNPayReturn(HttpServletRequest request) {
         try {
             // Parse VNPay callback parameters
-            PaymentCallbackRequest callbackRequest =paymentService.extractVNPayCallbackParams(request);
+            PaymentCallbackRequest callbackRequest = paymentService.extractVNPayCallbackParams(request);
 
             // Xử lý callback
             PaymentResponse response = paymentService.handlePaymentCallback(callbackRequest, request);
@@ -113,6 +115,7 @@ public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(
     }
 
 
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/history")
     public ResponseEntity<?> getPaymentHistory() {
 
@@ -120,10 +123,9 @@ public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(
             // Lấy user ID từ authentication (giả sử có getUserId method)
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String email = authentication.getName();
-            User userHR = userService.getbyEmail(email);
-            Long userId = userHR.getId();
-            List<PaymentResponse> history = paymentService.getUserPaymentHistory(userId);
-            ApiResponse<?> apiResponse=new ApiResponse<>(
+            User user = userService.getbyEmail(email);
+            List<PaymentResponse> history = paymentService.getUserPaymentHistory(user.getId());
+            ApiResponse<?> apiResponse = new ApiResponse<>(
                     HttpStatus.OK.value(),
                     null,
                     "Lấy lịch sử thanh toán thành công",
@@ -134,7 +136,7 @@ public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(
 
         } catch (Exception e) {
             log.error("Error getting payment history: {}", e.getMessage());
-            ApiResponse<?> apiResponse=new ApiResponse<>(
+            ApiResponse<?> apiResponse = new ApiResponse<>(
                     HttpStatus.BAD_REQUEST.value(),
                     e.getMessage(),
                     "Lỗi lấy lịch sử thanh toán: ",
@@ -143,7 +145,6 @@ public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(
             return ResponseEntity.badRequest().body(apiResponse);
         }
     }
-
 
 }
 

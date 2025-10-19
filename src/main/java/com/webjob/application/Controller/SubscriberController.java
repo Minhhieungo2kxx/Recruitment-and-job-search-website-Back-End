@@ -1,5 +1,6 @@
 package com.webjob.application.Controller;
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Models.Entity.Subscriber;
 import com.webjob.application.Models.Request.SubscriberRequest;
 import com.webjob.application.Models.Response.ApiResponse;
@@ -20,6 +21,7 @@ public class SubscriberController {
     private UserService userService;
 
 
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "IP")
     @PostMapping
     public ResponseEntity<?> createSubcriber(@Valid @RequestBody Subscriber subscriber) {
         Subscriber save=subscriberService.createSubciber(subscriber);
@@ -29,6 +31,8 @@ public class SubscriberController {
         return new ResponseEntity<>(apiResponse,HttpStatus.CREATED);
 
     }
+
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @PutMapping("/{id}")
     public ResponseEntity<?> editSubcriber(@PathVariable Long id, @RequestBody SubscriberRequest request) {
         Subscriber edit=subscriberService.updateSubciber(request);
@@ -39,6 +43,8 @@ public class SubscriberController {
 
     }
 
+
+    @RateLimit(maxRequests = 30, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping("/skills")
     public ResponseEntity<?> GetSkillSubcriber() {
         Subscriber subscriber=subscriberService.getbySkillSub();
@@ -49,6 +55,7 @@ public class SubscriberController {
     }
 
 
+    @RateLimit(maxRequests = 3, timeWindowSeconds = 300, keyType = "TOKEN")
     @GetMapping("/send-mails")
     public ResponseEntity<?> SendEmail() {
             subscriberService.sendSubscribersEmailJobs();

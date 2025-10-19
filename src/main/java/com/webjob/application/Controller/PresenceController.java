@@ -1,5 +1,6 @@
 package com.webjob.application.Controller;
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Models.Response.UserPresenceDTO;
 import com.webjob.application.Services.Socket.PresenceService;
 import lombok.RequiredArgsConstructor;
@@ -16,12 +17,15 @@ import java.util.stream.Collectors;
 public class PresenceController {
     private final PresenceService presenceService;
 
+
+    @RateLimit(maxRequests = 30, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getUserPresence(@PathVariable Long userId) {
         UserPresenceDTO presence = presenceService.getUserPresence(userId);
         return ResponseEntity.ok(presence);
     }
 
+    @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/users")
     public ResponseEntity<?> getMultipleUsersPresence(@RequestParam List<Long> userIds) {
         List<UserPresenceDTO> presences = userIds.stream()

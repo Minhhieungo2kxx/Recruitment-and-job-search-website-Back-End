@@ -1,5 +1,6 @@
 package com.webjob.application.Controller;
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Models.Entity.Company;
 import com.webjob.application.Models.Entity.Job;
 import com.webjob.application.Models.Entity.User;
@@ -45,6 +46,7 @@ public class JobController {
         this.paymentService = paymentService;
     }
 
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping
     public ResponseEntity<?> createJob(@Valid @RequestBody JobRequest request) {
         jobService.checkNameJob(request.getName());
@@ -66,6 +68,7 @@ public class JobController {
         return new ResponseEntity<>(apiResponse,HttpStatus.CREATED);
 
     }
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PutMapping("/{id}")
     public ResponseEntity<?> editJob(@PathVariable Long id, @Valid @RequestBody JobRequest request) {
 
@@ -86,6 +89,7 @@ public class JobController {
         return new ResponseEntity<>(apiResponse,HttpStatus.OK);
 
     }
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping
     public ResponseEntity<?> GetallPageList(@ModelAttribute JobFiltersearch jobFiltersearch){
         ResponseDTO<?> respond=jobService.getPaginated(jobFiltersearch,"default");
@@ -97,6 +101,7 @@ public class JobController {
 
     }
 
+    @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping("/{id}")
     public ResponseEntity<?> detailJob(@PathVariable Long id) {
         Job job=jobService.getById(id);
@@ -105,6 +110,8 @@ public class JobController {
                 job);
         return new ResponseEntity<>(apiResponse,HttpStatus.OK);
     }
+
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteJobbyId(@PathVariable Long id) {
            Job job=jobService.getById(id);
@@ -117,6 +124,8 @@ public class JobController {
             );
             return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping("/search")
     public ResponseEntity<?> GetallSearch(@ModelAttribute JobFiltersearch jobFiltersearch){
         ResponseDTO<?> respond=jobService.getPaginated(jobFiltersearch,"filter-job");
@@ -127,6 +136,8 @@ public class JobController {
         return ResponseEntity.ok(response);
 
     }
+
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/{jobId}/applicant-info")
     public ResponseEntity<?> getJobApplicantInfo(@PathVariable Long jobId) {
 

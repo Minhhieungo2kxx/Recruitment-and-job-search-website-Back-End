@@ -1,5 +1,6 @@
 package com.webjob.application.Controller;
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Configs.Socket.MessageMapper;
 import com.webjob.application.Models.Entity.Conversation;
 import com.webjob.application.Models.Request.Search.ConversationFilter;
@@ -23,7 +24,7 @@ public class ConversationController {
         this.conversationService = conversationService;
         this.messageMapper = messageMapper;
     }
-
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping
     public ResponseEntity<?> getAllConversations(ConversationFilter filter) {
         ResponseDTO<?> respond = conversationService.getPaginated(filter);
@@ -34,6 +35,7 @@ public class ConversationController {
         return ResponseEntity.ok(response);
     }
 
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping("/{id}")
     public ResponseEntity<?> getConversationById(@PathVariable Long id) {
         Conversation conversation = conversationService.getbyID(id);
@@ -46,7 +48,7 @@ public class ConversationController {
 
 
     }
-
+    @RateLimit(maxRequests = 3, timeWindowSeconds = 60, keyType = "TOKEN")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteConversation(@PathVariable Long id) {
         conversationService.deleteConversation(id);

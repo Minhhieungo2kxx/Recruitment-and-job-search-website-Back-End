@@ -163,6 +163,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(errorResponException);
     }
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<?> handleTooManyRequests(TooManyRequestsException ex) {
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                "Exception Error",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
 
 
 

@@ -1,5 +1,6 @@
 package com.webjob.application.Controller;
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Models.Entity.Role;
 import com.webjob.application.Models.Response.*;
 import com.webjob.application.Services.RoleService;
@@ -16,6 +17,7 @@ public class RoleController {
     private RoleService roleService;
 
 
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping
     public ResponseEntity<?> createRole(@Valid @RequestBody Role role) {
         Role save=roleService.createRole(role);
@@ -24,6 +26,8 @@ public class RoleController {
                 save);
         return new ResponseEntity<>(apiResponse,HttpStatus.CREATED);
     }
+
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PutMapping("/{id}")
     public ResponseEntity<?> editRole(@PathVariable Long id, @Valid @RequestBody Role role) {
         Role edit=roleService.EditRole(id,role);
@@ -32,6 +36,8 @@ public class RoleController {
                 edit);
         return new ResponseEntity<>(apiResponse,HttpStatus.OK);
     }
+
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping
     public ResponseEntity<?> GetallPageList(@RequestParam(value ="page") String pageparam){
         ResponseDTO<?> respond=roleService.getPaginated(pageparam,"default");
@@ -42,6 +48,7 @@ public class RoleController {
         return ResponseEntity.ok(response);
 
     }
+    @RateLimit(maxRequests = 3, timeWindowSeconds = 60, keyType = "TOKEN")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteRolebyId(@PathVariable Long id) {
         roleService.deleteRole(id);
@@ -53,6 +60,8 @@ public class RoleController {
         );
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/{id}")
     public ResponseEntity<?> detailRolebyId(@PathVariable Long id) {
         Role role=roleService.getByid(id).orElseThrow(()->new IllegalArgumentException("Role not found with "+id));

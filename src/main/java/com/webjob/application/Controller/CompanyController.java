@@ -1,6 +1,7 @@
 package com.webjob.application.Controller;
 
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Models.Entity.Company;
 import com.webjob.application.Models.Request.CompanyDTO;
 import com.webjob.application.Models.Request.Search.SearchCompanyDTO;
@@ -29,6 +30,8 @@ public class CompanyController {
         this.modelMapper = modelMapper;
         this.userService = userService;
     }
+
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CompanyDTO companyDTO){
         Company company=modelMapper.map(companyDTO,Company.class);
@@ -44,6 +47,7 @@ public class CompanyController {
 
     }
 
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PutMapping("/{id}")
     public ResponseEntity<?> EditCompany(@PathVariable Long id,@Valid @RequestBody CompanyDTO companyDTO){
         try {
@@ -66,6 +70,8 @@ public class CompanyController {
 
         }
     }
+
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping("/{id}")
     public ResponseEntity<?> getCompanybyID(@PathVariable Long id){
         try {
@@ -89,6 +95,7 @@ public class CompanyController {
 
 
     }
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCompanybyId(@PathVariable Long id) {
         try {
@@ -103,6 +110,7 @@ public class CompanyController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
         }
     }
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping
     public ResponseEntity<?> getallPageList(@RequestParam(value ="page",defaultValue = "0")String pageparam){
         ResponseDTO<?> responseDTO =companyService.getPaginated(pageparam,"default",null);
@@ -116,6 +124,7 @@ public class CompanyController {
 
         return ResponseEntity.ok(response);
     }
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping("/search")
     public ResponseEntity<?> searchCompanies(@ModelAttribute SearchCompanyDTO searchCompanyDTO) {
         ResponseDTO<?> responseDTO =companyService.getPaginated(searchCompanyDTO.getPage(),"search",searchCompanyDTO);

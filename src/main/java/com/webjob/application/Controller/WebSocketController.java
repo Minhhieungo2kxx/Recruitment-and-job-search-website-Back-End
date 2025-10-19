@@ -1,5 +1,6 @@
 package com.webjob.application.Controller;
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Models.Entity.Message;
 import com.webjob.application.Models.Entity.User;
 import com.webjob.application.Models.Request.Websockets.MessageRequestDTO;
@@ -34,14 +35,14 @@ public class WebSocketController {
         this.messagingTemplate = messagingTemplate;
         this.userService = userService;
     }
-
+    @RateLimit(maxRequests = 20, timeWindowSeconds = 60, keyType = "TOKEN")
     @MessageMapping("/chat.sendMessage")
     @SendTo("/topic/public")
     public MessageResponseDTO sendMessage(@Payload MessageRequestDTO messageRequest,
                                           Principal principal) {
         return messageService.sendMessage(principal.getName(), messageRequest);
     }
-
+    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "IP")
     @MessageMapping("/chat.addUser")
     @SendTo("/topic/public")
     public MessageResponseDTO addUser(@Payload MessageRequestDTO messageRequest,
@@ -70,6 +71,7 @@ public class WebSocketController {
             messagingTemplate.convertAndSend("/topic/public", leaveMessage);
         }
     }
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @MessageMapping("/call.signal")
     public void handleCallSignal(@Payload Map<String, Object> signal, Principal principal) {
         String receiverId = (String) signal.get("receiverId");
@@ -85,7 +87,7 @@ public class WebSocketController {
         System.out.println("Sending call signal to user: " + receiverId);
 
     }
-
+    @RateLimit(maxRequests = 30, timeWindowSeconds = 60, keyType = "TOKEN")
     @MessageMapping("/call.candidate")
     public void handleCallCandidate(@Payload Map<String, Object> candidate, Principal principal) {
         String receiverId = (String) candidate.get("receiverId");

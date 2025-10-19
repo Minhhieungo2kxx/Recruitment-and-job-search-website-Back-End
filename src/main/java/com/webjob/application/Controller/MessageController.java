@@ -1,5 +1,6 @@
 package com.webjob.application.Controller;
 
+import com.webjob.application.Annotation.RateLimit;
 import com.webjob.application.Models.Request.Websockets.ConversationResponseDTO;
 import com.webjob.application.Models.Request.Websockets.MessageRequestDTO;
 import com.webjob.application.Models.Request.Websockets.MessageUpdateDTO;
@@ -29,6 +30,7 @@ public class MessageController {
         this.messagingTemplate = messagingTemplate;
     }
 
+    @RateLimit(maxRequests = 30, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(
             @Valid @RequestBody MessageRequestDTO requestDTO,
@@ -52,6 +54,7 @@ public class MessageController {
         return ResponseEntity.ok(ApiResponseSocket.success(message));
     }
 
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @PutMapping("/update")
     public ResponseEntity<?> updateMessage(
             @Valid @RequestBody MessageUpdateDTO updateDTO,
@@ -74,6 +77,7 @@ public class MessageController {
         return ResponseEntity.ok(ApiResponseSocket.success(updatedMessage));
     }
 
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @DeleteMapping("/{messageId}")
     public ResponseEntity<?> deleteMessage(
             @PathVariable Long messageId,
@@ -84,6 +88,7 @@ public class MessageController {
         return ResponseEntity.ok(ApiResponseSocket.success("Đã xóa tin nhắn thành công"));
     }
 
+    @RateLimit(maxRequests = 20, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/conversation/{otherUserId}")
     public ResponseEntity<?> getConversation(
             @PathVariable Long otherUserId,
@@ -95,6 +100,7 @@ public class MessageController {
         return ResponseEntity.ok(ApiResponseSocket.success(messages));
     }
 
+    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/conversations")
     public ResponseEntity<?> getConversations(
             Authentication authentication) {
@@ -104,6 +110,7 @@ public class MessageController {
         return ResponseEntity.ok(ApiResponseSocket.success(conversations));
     }
 
+    @RateLimit(maxRequests = 25, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping("/search-users")
     public ResponseEntity<?> searchUsers(
             @RequestParam String searchTerm,
