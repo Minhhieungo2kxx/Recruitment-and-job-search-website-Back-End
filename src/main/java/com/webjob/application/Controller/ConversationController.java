@@ -1,15 +1,13 @@
 package com.webjob.application.Controller;
 
 import com.webjob.application.Annotation.RateLimit;
-import com.webjob.application.Configs.Socket.MessageMapper;
-import com.webjob.application.Models.Entity.Conversation;
-import com.webjob.application.Models.Request.Search.ConversationFilter;
-import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Models.Response.ConversationDTO;
-import com.webjob.application.Models.Response.ResponseDTO;
-import com.webjob.application.Services.ConversationService;
-import com.webjob.application.Services.Socket.MessageService;
-import org.springframework.data.domain.Page;
+import com.webjob.application.Config.Socket.MessageMapper;
+import com.webjob.application.Model.Entity.Conversation;
+import com.webjob.application.Dto.Request.Search.ConversationFilter;
+import com.webjob.application.Dto.Response.ApiResponse;
+import com.webjob.application.Dto.Response.ConversationDTO;
+import com.webjob.application.Dto.Response.ResponseDTO;
+import com.webjob.application.Service.ConversationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,13 +1,13 @@
 package com.webjob.application.Controller;
 
 import com.webjob.application.Annotation.RateLimit;
-import com.webjob.application.Models.Request.Websockets.ConversationResponseDTO;
-import com.webjob.application.Models.Request.Websockets.MessageRequestDTO;
-import com.webjob.application.Models.Request.Websockets.MessageUpdateDTO;
-import com.webjob.application.Models.Request.Websockets.UserInfoDTO;
-import com.webjob.application.Models.Response.Messensage.ApiResponseSocket;
-import com.webjob.application.Models.Response.Messensage.MessageResponseDTO;
-import com.webjob.application.Services.Socket.MessageService;
+import com.webjob.application.Dto.Request.Websockets.ConversationResponseDTO;
+import com.webjob.application.Dto.Request.Websockets.MessageRequestDTO;
+import com.webjob.application.Dto.Request.Websockets.MessageUpdateDTO;
+import com.webjob.application.Dto.Request.Websockets.UserInfoDTO;
+import com.webjob.application.Dto.Response.Messensage.ApiResponseSocket;
+import com.webjob.application.Dto.Response.Messensage.MessageResponseDTO;
+import com.webjob.application.Service.Socket.MessageService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

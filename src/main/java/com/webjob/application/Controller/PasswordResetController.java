@@ -1,12 +1,12 @@
 package com.webjob.application.Controller;
 
 import com.webjob.application.Annotation.RateLimit;
-import com.webjob.application.Models.Entity.User;
-import com.webjob.application.Models.Request.ForgotPasswordRequest;
-import com.webjob.application.Models.Request.ResetPasswordRequest;
-import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Services.PasswordResetService;
-import com.webjob.application.Services.UserService;
+import com.webjob.application.Model.Entity.User;
+import com.webjob.application.Dto.Request.ForgotPasswordRequest;
+import com.webjob.application.Dto.Request.ResetPasswordRequest;
+import com.webjob.application.Dto.Response.ApiResponse;
+import com.webjob.application.Service.PasswordResetService;
+import com.webjob.application.Service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,9 +1,11 @@
 package com.webjob.application.Controller;
 
 import com.webjob.application.Annotation.RateLimit;
-import com.webjob.application.Models.Entity.Role;
-import com.webjob.application.Models.Response.*;
-import com.webjob.application.Services.RoleService;
+import com.webjob.application.Dto.Response.ApiResponse;
+import com.webjob.application.Dto.Response.ResponseDTO;
+import com.webjob.application.Model.Entity.Role;
+
+import com.webjob.application.Service.RoleService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

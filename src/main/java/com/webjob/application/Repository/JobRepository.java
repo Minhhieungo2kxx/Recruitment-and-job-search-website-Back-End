@@ -1,11 +1,9 @@
 package com.webjob.application.Repository;
 
-import com.webjob.application.Models.Entity.Job;
-import com.webjob.application.Models.Entity.Skill;
+import com.webjob.application.Model.Entity.Job;
+import com.webjob.application.Model.Entity.Skill;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;

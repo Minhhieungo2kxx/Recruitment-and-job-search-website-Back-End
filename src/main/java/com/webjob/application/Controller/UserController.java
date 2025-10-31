@@ -1,17 +1,17 @@
 package com.webjob.application.Controller;
 
 import com.webjob.application.Annotation.RateLimit;
-import com.webjob.application.Models.Request.ChangePasswordRequest;
-import com.webjob.application.Models.Request.UserSetting;
-import com.webjob.application.Models.Request.Userrequest;
-import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Models.Response.ResponseDTO;
-import com.webjob.application.Models.Response.UserDTO;
-import com.webjob.application.Models.Entity.User;
-import com.webjob.application.Services.CompanyService;
-import com.webjob.application.Services.RoleService;
-import com.webjob.application.Services.Socket.PresenceService;
-import com.webjob.application.Services.UserService;
+import com.webjob.application.Dto.Request.ChangePasswordRequest;
+import com.webjob.application.Dto.Request.UserSetting;
+import com.webjob.application.Dto.Request.Userrequest;
+import com.webjob.application.Dto.Response.ApiResponse;
+import com.webjob.application.Dto.Response.ResponseDTO;
+import com.webjob.application.Dto.Response.UserDTO;
+import com.webjob.application.Model.Entity.User;
+import com.webjob.application.Service.CompanyService;
+import com.webjob.application.Service.RoleService;
+import com.webjob.application.Service.Socket.PresenceService;
+import com.webjob.application.Service.UserService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -21,8 +21,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController

@@ -2,12 +2,11 @@ package com.webjob.application.Controller;
 
 
 import com.webjob.application.Annotation.RateLimit;
-import com.webjob.application.Models.Entity.Permission;
-import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Models.Response.ResponseDTO;
-import com.webjob.application.Services.PermissionService;
+import com.webjob.application.Model.Entity.Permission;
+import com.webjob.application.Dto.Response.ApiResponse;
+import com.webjob.application.Dto.Response.ResponseDTO;
+import com.webjob.application.Service.PermissionService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

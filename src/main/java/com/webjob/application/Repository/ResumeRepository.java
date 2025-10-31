@@ -1,14 +1,15 @@
 package com.webjob.application.Repository;
 
-import com.webjob.application.Models.Entity.Resume;
-import com.webjob.application.Models.Entity.User;
+import com.webjob.application.Model.Entity.Resume;
+import com.webjob.application.Model.Entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ResumeRepository extends JpaRepository<Resume,Long> {
+public interface ResumeRepository extends JpaRepository<Resume,Long>, JpaSpecificationExecutor<Resume> {
     Page<Resume> findAllByUser(User user, Pageable pageable);
 
 //    SELECT *

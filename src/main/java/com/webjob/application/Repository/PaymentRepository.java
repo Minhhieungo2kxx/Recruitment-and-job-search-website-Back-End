@@ -1,7 +1,7 @@
 package com.webjob.application.Repository;
 
-import com.webjob.application.Models.Entity.Payment;
-import com.webjob.application.Models.Entity.User;
+import com.webjob.application.Model.Entity.Payment;
+import com.webjob.application.Model.Entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

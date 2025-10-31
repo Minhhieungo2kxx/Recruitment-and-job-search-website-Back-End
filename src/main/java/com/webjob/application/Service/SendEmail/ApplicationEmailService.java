@@ -1,0 +1,56 @@
+package com.webjob.application.Service.SendEmail;
+
+
+import com.webjob.application.Model.Entity.Company;
+import com.webjob.application.Model.Entity.Job;
+import com.webjob.application.Model.Entity.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
+import java.text.NumberFormat;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+@Service
+public class ApplicationEmailService {
+    @Autowired
+    private EmailService emailService;
+
+    @Async("taskExecutor")
+    public void sendJobApplicate(User user, Job job,User hr) {
+        Company company = job.getCompany();
+
+        Map<String, Object> emailVars = new HashMap<>();
+        emailVars.put("email", user.getEmail());
+        emailVars.put("username", user.getFullName());
+        emailVars.put("usernameHR",hr.getFullName());
+        emailVars.put("namecompany",company.getName());
+        emailVars.put("nameJob", job.getName());
+        emailVars.put("logo",company.getLogo());
+        http://localhost:8081/storage/company/
+        emailVars.put("salary", formatVietnameseCurrency(job.getSalary()));
+        emailVars.put("location", job.getLocation());
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+        String startDateFormatted = formatter.format(job.getStartDate());
+        String endDateFormatted = formatter.format(job.getEndDate());
+        emailVars.put("starttime", startDateFormatted);
+        emailVars.put("endtime", endDateFormatted);
+
+        emailService.sendTemplateJobapply(
+                "Thông tin Job vừa ứng tuyển",
+                "emails/emailjob-apply",
+                emailVars
+        );
+    }
+
+    private String formatVietnameseCurrency(double amount) {
+        NumberFormat vndFormat = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        return vndFormat.format(amount);
+    }
+}

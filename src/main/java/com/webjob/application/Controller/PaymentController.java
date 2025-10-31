@@ -1,23 +1,21 @@
 package com.webjob.application.Controller;
 
 import com.webjob.application.Annotation.RateLimit;
-import com.webjob.application.Models.Entity.User;
-import com.webjob.application.Models.Enums.PaymentStatus;
-import com.webjob.application.Models.Request.PaymentCallbackRequest;
-import com.webjob.application.Models.Request.PaymentCreateRequest;
-import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Models.Response.PaymentResponse;
-import com.webjob.application.Services.PaymentService;
-import com.webjob.application.Services.UserService;
+import com.webjob.application.Model.Entity.User;
+import com.webjob.application.Model.Enums.PaymentStatus;
+import com.webjob.application.Dto.Request.PaymentCallbackRequest;
+import com.webjob.application.Dto.Request.PaymentCreateRequest;
+import com.webjob.application.Dto.Response.ApiResponse;
+import com.webjob.application.Dto.Response.PaymentResponse;
+import com.webjob.application.Service.PaymentService;
+import com.webjob.application.Service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

@@ -2,28 +2,18 @@ package com.webjob.application.Controller;
 
 
 import com.webjob.application.Annotation.RateLimit;
-import com.webjob.application.Models.Request.Userrequest;
-import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Models.Request.LoginDTO;
-import com.webjob.application.Models.Response.LoginResponse;
-import com.webjob.application.Models.Response.UserDTO;
-import com.webjob.application.Models.Entity.User;
-import com.webjob.application.Services.AuthService;
-import com.webjob.application.Services.Redis.TokenBlacklistService;
-import com.webjob.application.Services.SecurityUtil;
-import com.webjob.application.Services.UserService;
+import com.webjob.application.Dto.Request.Userrequest;
+import com.webjob.application.Dto.Request.LoginDTO;
+import com.webjob.application.Service.AuthService;
+import com.webjob.application.Service.Redis.TokenBlacklistService;
+import com.webjob.application.Service.SecurityUtil;
+import com.webjob.application.Service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.web.bind.annotation.*;
 

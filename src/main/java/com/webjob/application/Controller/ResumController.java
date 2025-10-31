@@ -1,10 +1,14 @@
 package com.webjob.application.Controller;
 
 import com.webjob.application.Annotation.RateLimit;
-import com.webjob.application.Models.Request.UpdateResumeDTO;
-import com.webjob.application.Models.Response.*;
-import com.webjob.application.Models.Entity.Resume;
-import com.webjob.application.Services.ResumService;
+import com.webjob.application.Dto.Response.ApiResponse;
+import com.webjob.application.Dto.Response.ResponseDTO;
+import com.webjob.application.Dto.Response.ResumeResponse;
+import com.webjob.application.Model.Enums.ResumeStatus;
+import com.webjob.application.Dto.Request.UpdateResumeDTO;
+
+import com.webjob.application.Model.Entity.Resume;
+import com.webjob.application.Service.ResumService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -117,6 +121,20 @@ public class ResumController {
                 "Fetch all Resumes from Company Successful",
                 respond
         );
+        return ResponseEntity.ok(response);
+    }
+
+    @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "TOKEN")
+    @GetMapping("/history-applied")
+    public ResponseEntity<?> getResumeHistory(
+            @RequestParam(defaultValue = "0") String page,
+            @RequestParam(required = false) ResumeStatus status){
+        ResponseDTO<?> respond=resumService.getUserResumeHistory(page,status);
+        ApiResponse<?> response=ApiResponse.builder().statusCode(HttpStatus.OK.value())
+                .error(null)
+                .message("Fetch all History Applied Resumes Apply Successful")
+                .data(respond)
+                .build();
         return ResponseEntity.ok(response);
     }
 

@@ -1,17 +1,21 @@
 package com.webjob.application.Controller;
 
 import com.webjob.application.Annotation.RateLimit;
-import com.webjob.application.Models.Entity.Company;
-import com.webjob.application.Models.Entity.Job;
-import com.webjob.application.Models.Entity.User;
-import com.webjob.application.Models.Request.JobRequest;
-import com.webjob.application.Models.Request.Search.JobFiltersearch;
-import com.webjob.application.Models.Response.*;
-import com.webjob.application.Models.Entity.Skill;
-import com.webjob.application.Services.CompanyService;
-import com.webjob.application.Services.JobService;
-import com.webjob.application.Services.PaymentService;
-import com.webjob.application.Services.UserService;
+import com.webjob.application.Dto.Response.ApiResponse;
+import com.webjob.application.Dto.Response.JobApplicantInfoResponse;
+import com.webjob.application.Dto.Response.JobResponse;
+import com.webjob.application.Dto.Response.ResponseDTO;
+import com.webjob.application.Model.Entity.Company;
+import com.webjob.application.Model.Entity.Job;
+import com.webjob.application.Model.Entity.User;
+import com.webjob.application.Dto.Request.JobRequest;
+import com.webjob.application.Dto.Request.Search.JobFiltersearch;
+
+import com.webjob.application.Model.Entity.Skill;
+import com.webjob.application.Service.CompanyService;
+import com.webjob.application.Service.JobService;
+import com.webjob.application.Service.PaymentService;
+import com.webjob.application.Service.UserService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;

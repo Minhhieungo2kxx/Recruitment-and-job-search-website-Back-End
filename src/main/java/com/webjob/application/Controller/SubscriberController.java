@@ -1,11 +1,11 @@
 package com.webjob.application.Controller;
 
 import com.webjob.application.Annotation.RateLimit;
-import com.webjob.application.Models.Entity.Subscriber;
-import com.webjob.application.Models.Request.SubscriberRequest;
-import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Services.SubscriberService;
-import com.webjob.application.Services.UserService;
+import com.webjob.application.Model.Entity.Subscriber;
+import com.webjob.application.Dto.Request.SubscriberRequest;
+import com.webjob.application.Dto.Response.ApiResponse;
+import com.webjob.application.Service.SubscriberService;
+import com.webjob.application.Service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

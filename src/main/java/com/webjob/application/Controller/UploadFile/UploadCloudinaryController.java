@@ -1,9 +1,9 @@
 package com.webjob.application.Controller.UploadFile;
 
 
-import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Models.Response.UploadFileResponse;
-import com.webjob.application.Services.UploadFileServer.CloudinaryService;
+import com.webjob.application.Dto.Response.ApiResponse;
+import com.webjob.application.Dto.Response.UploadFileResponse;
+import com.webjob.application.Service.UploadFileServer.CloudinaryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

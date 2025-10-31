@@ -2,11 +2,11 @@ package com.webjob.application.Controller;
 
 
 import com.webjob.application.Annotation.RateLimit;
-import com.webjob.application.Models.Request.SkillRequest;
-import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Models.Response.ResponseDTO;
-import com.webjob.application.Models.Entity.Skill;
-import com.webjob.application.Services.SkillService;
+import com.webjob.application.Dto.Request.SkillRequest;
+import com.webjob.application.Dto.Response.ApiResponse;
+import com.webjob.application.Dto.Response.ResponseDTO;
+import com.webjob.application.Model.Entity.Skill;
+import com.webjob.application.Service.SkillService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;

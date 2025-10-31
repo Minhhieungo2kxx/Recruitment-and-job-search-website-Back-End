@@ -1,8 +1,8 @@
 package com.webjob.application.Controller.UploadFile;
 
-import com.webjob.application.Configs.UploadfileServer.UploadFile;
-import com.webjob.application.Models.Response.ApiResponse;
-import com.webjob.application.Models.Response.UploadFileResponse;
+import com.webjob.application.Config.UploadfileServer.UploadFile;
+import com.webjob.application.Dto.Response.ApiResponse;
+import com.webjob.application.Dto.Response.UploadFileResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,8 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/files")

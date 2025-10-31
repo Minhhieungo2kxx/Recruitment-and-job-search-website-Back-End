@@ -1,7 +1,7 @@
 package com.webjob.application.Repository;
 
-import com.webjob.application.Models.Entity.Message;
-import com.webjob.application.Models.Entity.User;
+import com.webjob.application.Model.Entity.Message;
+import com.webjob.application.Model.Entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

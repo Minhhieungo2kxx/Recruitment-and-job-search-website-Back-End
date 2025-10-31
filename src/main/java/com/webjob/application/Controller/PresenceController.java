@@ -1,8 +1,8 @@
 package com.webjob.application.Controller;
 
 import com.webjob.application.Annotation.RateLimit;
-import com.webjob.application.Models.Response.UserPresenceDTO;
-import com.webjob.application.Services.Socket.PresenceService;
+import com.webjob.application.Dto.Response.UserPresenceDTO;
+import com.webjob.application.Service.Socket.PresenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
