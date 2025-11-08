@@ -35,7 +35,7 @@ public class PasswordResetService {
     @Transactional
     public void forgotPassword(User user) {
         // Generate token
-        // 🔁 Xoá token cũ nếu tồn tại
+        //  Xoá token cũ nếu tồn tại
         tokenRepository.findByUser(user).ifPresent(tokenRepository::delete);
 
 //        dat lai PasswordResetToken new

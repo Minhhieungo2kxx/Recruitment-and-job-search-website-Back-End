@@ -10,6 +10,8 @@ import com.webjob.application.Repository.ConversationRepository;
 import com.webjob.application.Repository.MessageRepository;
 import com.webjob.application.Repository.ResumeRepository;
 import com.webjob.application.Repository.UserRepository;
+import com.webjob.application.Service.Redis.TokenBlacklistService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -35,10 +37,11 @@ public class UserService {
     private final ModelMapper modelMapper;
     private final MessageRepository messageRepository;
     private final ConversationRepository conversationRepository;
+    private final TokenBlacklistService tokenBlacklistService;
 
 
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleService roleService, ResumeRepository resumeRepository, CompanyService companyService, ModelMapper modelMapper, MessageRepository messageRepository, ConversationRepository conversationRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleService roleService, ResumeRepository resumeRepository, CompanyService companyService, ModelMapper modelMapper, MessageRepository messageRepository, ConversationRepository conversationRepository,TokenBlacklistService tokenBlacklistService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleService = roleService;
@@ -47,6 +50,7 @@ public class UserService {
         this.modelMapper = modelMapper;
         this.messageRepository = messageRepository;
         this.conversationRepository = conversationRepository;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
     @Transactional
     public User handle(User user){
@@ -191,7 +195,7 @@ public class UserService {
         return respond;
     }
     @Transactional
-    public void changePassword(ChangePasswordRequest request) {
+    public void changePassword(ChangePasswordRequest request, HttpServletRequest httpRequest) {
         // Lấy thông tin người dùng hiện tại từ context
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = getbyEmail(userEmail);
@@ -208,7 +212,20 @@ public class UserService {
         }
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+        AddBlacklistToken(httpRequest);
+
+
     }
+    private void AddBlacklistToken(HttpServletRequest httpRequest) {
+        String token = tokenBlacklistService.extractBearerToken(httpRequest);
+        if (token != null) {
+            long remaining =tokenBlacklistService.getRemainingValidity(token);
+            tokenBlacklistService.blacklistToken(token, remaining);
+        }
+
+    }
+
+
 }
 
 

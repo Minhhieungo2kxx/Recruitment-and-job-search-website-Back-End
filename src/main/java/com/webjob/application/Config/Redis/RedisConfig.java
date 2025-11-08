@@ -22,10 +22,10 @@ import java.time.Duration;
 @Configuration
 @EnableCaching
 public class RedisConfig {
-    @Value("${spring.redis.host}")
+    @Value("${spring.data.redis.standalone.host}")
     private String host;
 
-    @Value("${spring.redis.port}")
+    @Value("${spring.data.redis.standalone.port}")
     private int port;
 
     @Bean

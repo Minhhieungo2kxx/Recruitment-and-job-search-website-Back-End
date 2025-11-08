@@ -145,7 +145,7 @@ public class AuthService {
     private boolean isAuthenticated(Authentication auth) {
         return auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken);
     }
-    private String extractBearerToken(HttpServletRequest request) {
+    public String extractBearerToken(HttpServletRequest request) {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             return header.substring(7);

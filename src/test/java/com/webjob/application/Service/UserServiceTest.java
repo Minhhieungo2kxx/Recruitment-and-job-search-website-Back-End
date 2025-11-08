@@ -6,6 +6,8 @@ import com.webjob.application.Dto.Response.ResponseDTO;
 import com.webjob.application.Dto.Response.UserDTO;
 import com.webjob.application.Repository.*;
 
+import com.webjob.application.Service.Redis.TokenBlacklistService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,7 @@ public class UserServiceTest {
     @Mock private ModelMapper modelMapper;
     @Mock private MessageRepository messageRepository;
     @Mock private ConversationRepository conversationRepository;
+    @Mock private TokenBlacklistService tokenBlacklistService;
 
     @InjectMocks
     private UserService userService;
@@ -99,6 +102,9 @@ public class UserServiceTest {
         when(passwordEncoder.matches("oldPass", "encodedOldPass")).thenReturn(true);
         when(passwordEncoder.encode("newPass")).thenReturn("encodedNewPass");
         when(userRepository.findByEmail(user.getEmail())).thenReturn(user);
+        when(tokenBlacklistService.extractBearerToken(any())).thenReturn("dummyToken"); // <-- thêm dòng này
+        when(tokenBlacklistService.getRemainingValidity(any())).thenReturn(3L); // <-- thêm dòng này
+
 
         SecurityContextHolder.getContext().setAuthentication(
                 new TestingAuthenticationToken(user.getEmail(), null));
@@ -108,12 +114,15 @@ public class UserServiceTest {
         request.setNewPassword("newPass");
         request.setConfirmNewPassword("newPass");
 
+        HttpServletRequest httpRequest = mock(HttpServletRequest.class);
+
         // when
-        userService.changePassword(request);
+        userService.changePassword(request,httpRequest);
 
         // then
         assertThat(user.getPassword()).isEqualTo("encodedNewPass");
         verify(userRepository).save(user);
+        verify(tokenBlacklistService).blacklistToken("dummyToken",3L); // kiểm tra token bị chặn
     }
     @Test
     void getbyEmail_ShouldThrow_WhenUserNotFound() {

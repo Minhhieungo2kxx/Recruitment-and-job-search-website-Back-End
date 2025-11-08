@@ -14,8 +14,12 @@ import java.util.Set;
 public class UploadFile {
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "jpg", "jpeg", "png", "doc", "docx");
 
-    @Autowired
-    private UploadProperties uploadProperties;
+
+    private final UploadProperties uploadProperties;
+
+    public UploadFile(UploadProperties uploadProperties) {
+        this.uploadProperties = uploadProperties;
+    }
 
 
     public String getnameFile(MultipartFile file, String nameFolder) throws IOException {
@@ -39,7 +43,7 @@ public class UploadFile {
     public void vadidateUploadFile(MultipartFile file, String nameFolder) throws IOException, IllegalStateException {
         if (file != null && !file.isEmpty()) {
             // Kiểm tra kích thước file
-            if (file.getSize() > uploadProperties.getMaxFileSize()) {
+            if (file.getSize() >uploadProperties.getMaxFileSize().toBytes()) {
                 throw new IllegalStateException("File vượt quá kích thước tối đa cho phép.");
             }
             String originalFileName = file.getOriginalFilename();

@@ -29,8 +29,6 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.*;
 
-
-
 @ExtendWith(MockitoExtension.class)
 public class JobServiceTest {
     @Mock private SkillRepository skillRepository;

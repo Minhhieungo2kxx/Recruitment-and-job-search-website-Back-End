@@ -12,6 +12,7 @@ import com.webjob.application.Service.CompanyService;
 import com.webjob.application.Service.RoleService;
 import com.webjob.application.Service.Socket.PresenceService;
 import com.webjob.application.Service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -161,12 +162,13 @@ public class UserController {
 
     @RateLimit(maxRequests = 3, timeWindowSeconds = 300, keyType = "TOKEN")
     @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
-        userService.changePassword(request);
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest request,HttpServletRequest httprequest) {
+        userService.changePassword(request,httprequest);
         ApiResponse<UserSetting> response = new ApiResponse<>(HttpStatus.OK.value(),
                 null,
-                "Thay doi mat khau successful",
+                "Thay doi mat khau successful,Vui long dang nhap lai",
                 null
+                
         );
         return ResponseEntity.ok(response);
     }
