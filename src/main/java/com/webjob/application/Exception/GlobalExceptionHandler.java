@@ -107,10 +107,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException ex) {
         ErrorResponException<?> errorResponException=new ErrorResponException<>(
-                HttpStatus.CONFLICT.value(),
-                "Exception Error",
+                HttpStatus.UNAUTHORIZED.value(),
+                "Authentication Error",
                 LocalDateTime.now(),
-                "Sai tai khoan hoac mat khau",
+                "Sai tài khoản hoặc mật khẩu.",
                 null
         );
         return new ResponseEntity<>(errorResponException, HttpStatus.CONFLICT);

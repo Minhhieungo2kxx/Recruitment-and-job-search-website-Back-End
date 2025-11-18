@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thông Báo Đăng Nhập Hệ Thống TopWork</title>
+    <div style="display: none; max-height: 0px; overflow: hidden">
+        TopWork: Thông báo đăng nhập thành công vào tài khoản của bạn.
+    </div>
+    <div
+            style="
+        display: none;
+        max-height: 0px;
+        overflow: hidden;
+        mso-hide: all;
+        font-family: Arial, sans-serif;
+      "
+    >
+        &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+    </div>
+</head>
+<body
+        style="
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      font-family: Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      width: 100% !important;
+    "
+>
+<table
+        width="100%"
+        border="0"
+        cellpadding="0"
+        cellspacing="0"
+        style="background-color: #f4f4f4"
+>
+    <tr>
+        <td align="center" style="padding: 20px 0">
+            <table
+                    width="600"
+                    border="0"
+                    cellpadding="0"
+                    cellspacing="0"
+                    style="
+              border-collapse: collapse;
+              background-color: #ffffff;
+              border-radius: 8px;
+              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            "
+            >
+                <tr>
+                    <td
+                            align="center"
+                            style="
+                  padding: 25px 30px;
+                  background-color: #2b74e1;
+                  border-top-left-radius: 8px;
+                  border-top-right-radius: 8px;
+                "
+                    >
+                        <h1
+                                style="
+                    margin: 0;
+                    color: #ffffff;
+                    font-size: 24px;
+                    font-weight: bold;
+                  "
+                        >
+                            Hệ thống tuyển dụng việc làm TopWork
+                        </h1>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 30px; color: #333333">
+
+
+                        <h2
+                                style="
+                    margin-top: 0;
+                    font-size: 20px;
+                    color: #2b74e1;
+                    text-align: center;
+                  "
+                        >
+                            Thông Báo Đăng Nhập Hệ Thống
+                        </h2>
+
+                        <p style="margin-bottom: 20px; line-height: 1.6">
+                            Xin chào
+                            <b style="color: #2b74e1" th:text="${email}"
+                            >[Email Người Dùng]</b
+                            >,
+                        </p>
+
+                        <p style="margin-bottom: 25px; line-height: 1.6">
+                            Bạn vừa đăng nhập thành công vào hệ thống TopWork. Dưới đây là
+                            chi tiết về phiên đăng nhập này:
+                        </p>
+
+                        <table
+                                width="100%"
+                                border="0"
+                                cellpadding="0"
+                                cellspacing="0"
+                                style="
+                    border-collapse: collapse;
+                    margin-bottom: 30px;
+                    border: 1px solid #eeeeee;
+                    border-radius: 4px;
+                  "
+                        >
+                            <tr>
+                                <td
+                                        style="
+                        padding: 10px 15px;
+                        background-color: #f9f9f9;
+                        border-bottom: 1px solid #eeeeee;
+                        font-weight: bold;
+                        width: 30%;
+                      "
+                                >
+                                    Email:
+                                </td>
+                                <td
+                                        style="
+                        padding: 10px 15px;
+                        background-color: #ffffff;
+                        border-bottom: 1px solid #eeeeee;
+                      "
+                                        th:text="${email}"
+                                >
+                                    [Email Người Dùng]
+                                </td>
+                            </tr>
+                            <tr>
+                                <td
+                                        style="
+                        padding: 10px 15px;
+                        background-color: #f9f9f9;
+                        border-bottom: 1px solid #eeeeee;
+                        font-weight: bold;
+                      "
+                                >
+                                    Thời gian:
+                                </td>
+                                <td
+                                        style="
+                        padding: 10px 15px;
+                        background-color: #ffffff;
+                        border-bottom: 1px solid #eeeeee;
+                      "
+                                        th:text="${time}"
+                                >
+                                    [Thời Gian]
+                                </td>
+                            </tr>
+                            <tr>
+                                <td
+                                        style="
+                        padding: 10px 15px;
+                        background-color: #f9f9f9;
+                        border-bottom: 1px solid #eeeeee;
+                        font-weight: bold;
+                      "
+                                >
+                                    Vị trí (IP):
+                                </td>
+                                <td
+                                        style="
+                        padding: 10px 15px;
+                        background-color: #ffffff;
+                        border-bottom: 1px solid #eeeeee;
+                      "
+                                        th:text="${location}"
+                                >
+                                    [Vị Trí]
+                                </td>
+                            </tr>
+                            <tr>
+                                <td
+                                        style="
+                        padding: 10px 15px;
+                        background-color: #f9f9f9;
+                        font-weight: bold;
+                      "
+                                >
+                                    Thiết bị:
+                                </td>
+                                <td
+                                        style="padding: 10px 15px; background-color: #ffffff"
+                                        th:text="${device}"
+                                >
+                                    [Thiết Bị]
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="font-weight: bold; color: #d9534f; line-height: 1.6">
+
+                            🚨 Cảnh báo bảo mật: Nếu **bạn không thực hiện** thao tác đăng
+                            nhập này, vui lòng
+                            <a
+                                    th:href="${changePasswordUrl}"
+                                    style="color: #d9534f; text-decoration: underline"
+                            >đổi mật khẩu ngay lập tức</a
+                            >
+                            và liên hệ với bộ phận hỗ trợ của **TopWork**.
+                        </p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td
+                            align="center"
+                            style="
+                  padding: 20px 30px;
+                  background-color: #f9f9f9;
+                  border-bottom-left-radius: 8px;
+                  border-bottom-right-radius: 8px;
+                  border-top: 1px solid #eeeeee;
+                "
+                    >
+                        <p style="margin: 0 0 10px 0">
+                            <a
+                                    th:href="${homeUrl}"
+                                    style="color: #2b74e1; text-decoration: none"
+                            >
+                                <img
+                                        src="https://httttmdt.tmu.edu.vn/upload/tmu_old/httttmdt/news/2021_04/newlogo-01-1.png"
+                                        alt="Logo TopWork"
+                                        width="120"
+                                        style="display: block; border: 0"
+                                />
+                            </a>
+                        </p>
+
+                        <p style="margin: 0; font-size: 12px; color: #777777">
+                            Trân trọng,<br />
+                            **Đội ngũ Hỗ trợ TopWork**<br />
+                            <a
+                                    th:href="${homeUrl}"
+                                    style="color: #2b74e1; text-decoration: none"
+                                    th:text="${webName}"
+                            >TopWork</a
+                            >
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

@@ -141,13 +141,21 @@ public class UserService {
         return user;
     }
 
-    public User getEmailAndRefreshtoken(String email,String tokenrefresh) {
-        User user =userRepository.findByEmailAndRefreshToken(email,tokenrefresh);
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found with email or Refreshtoken,Please Check again");
-        }
-        return user;
+//    public User getEmailAndRefreshtoken(String email,String tokenrefresh) {
+//        User user =userRepository.findByEmailAndRefreshToken(email,tokenrefresh);
+//        if (user == null) {
+//            throw new UsernameNotFoundException("User not found with email or Refreshtoken,Please Check again");
+//        }
+//        return user;
+//    }
+public User getUserByRefreshToken(String refreshToken) {
+    User user = userRepository.findByRefreshToken(refreshToken);
+    if (user == null) {
+        throw new UsernameNotFoundException("Invalid refresh token or not found");
     }
+    return user;
+}
+
 
 
     public Page<User> getAllPage(int page,int size){

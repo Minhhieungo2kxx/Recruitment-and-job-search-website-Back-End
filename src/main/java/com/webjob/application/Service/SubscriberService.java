@@ -3,7 +3,7 @@ package com.webjob.application.Service;
 
 import com.webjob.application.Model.Entity.Job;
 import com.webjob.application.Dto.Request.SubscriberRequest;
-import com.webjob.application.Dto.Response.ResponEmailJob;
+import com.webjob.application.Dto.Response.RespondEmailJob;
 import com.webjob.application.Model.Entity.Skill;
 import com.webjob.application.Model.Entity.Subscriber;
 import com.webjob.application.Model.Entity.User;
@@ -12,15 +12,24 @@ import com.webjob.application.Repository.SkillRepository;
 import com.webjob.application.Repository.SubscriberRepository;
 
 
+import com.webjob.application.Service.SendEmail.ApplicationEmailService;
 import com.webjob.application.Service.SendEmail.EmailService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.NumberFormat;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -31,18 +40,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
+@Slf4j
 public class SubscriberService {
-    @Autowired
-    private SubscriberRepository subscriberRepository;
-    @Autowired
-    private SkillRepository skillRepository;
-    @Autowired
-    private EmailService emailService;
-    @Autowired
-    private JobRepository jobRepository;
-    @Autowired
-    private UserService userService;
-    private static final Logger log = LoggerFactory.getLogger(SubscriberService.class);
+
+    private final SubscriberRepository subscriberRepository;
+
+    private final SkillRepository skillRepository;
+
+    private final EmailService emailService;
+
+    private final JobRepository jobRepository;
+
+    private final UserService userService;
+
+    private final ApplicationEmailService applicationEmailService;
+
+    public SubscriberService(SubscriberRepository subscriberRepository, SkillRepository skillRepository, EmailService emailService, JobRepository jobRepository, UserService userService, ApplicationEmailService applicationEmailService) {
+        this.subscriberRepository = subscriberRepository;
+        this.skillRepository = skillRepository;
+        this.emailService = emailService;
+        this.jobRepository = jobRepository;
+        this.userService = userService;
+        this.applicationEmailService = applicationEmailService;
+    }
 
     @Transactional
     public Subscriber createSubciber(Subscriber subscriber) {
@@ -87,69 +107,55 @@ public class SubscriberService {
         return get;
     }
 
-//    @Scheduled(fixedDelay = 2592000000L)
-    @Async("taskExecutor")
-    @Transactional
+    @Scheduled(cron = "0 0 8 1 * *") // 8h sáng ngày 1 mỗi tháng
+//    @Scheduled(cron = "0 * * * * *") // chạy mỗi phút
     public void sendSubscribersEmailJobs() {
-        System.out.println("Send email");
+        log.info("Start sending job emails to subscribers...");
 
-        List<Subscriber> subscribers = subscriberRepository.findAll();
-        if (subscribers == null || subscribers.isEmpty()) return;
+        int pageSize = 500; // xử lý 500 subscriber mỗi batch
+        Pageable pageable = PageRequest.of(0, pageSize);
 
-        for (Subscriber subscriber : subscribers) {
-            List<Skill> skills = subscriber.getSkills();
+        Page<Long> idPage;
 
-            if (skills == null || skills.isEmpty()) continue;
+        do {
+            // Query 1: lấy 1 trang ID subscriber
+            idPage = subscriberRepository.findPageIds(pageable);
 
-            List<Job> matchedJobs = jobRepository.findAllBySkillsIn(skills);
+            if (idPage.isEmpty()) break;
 
-            if (matchedJobs == null || matchedJobs.isEmpty()) continue;
+            log.info("Processing subscriber ID page {} with {} ids",
+                    pageable.getPageNumber(), idPage.getContent().size());
 
-            sendJobEmail(subscriber, matchedJobs);
-        }
+            // Query 2: fetch đầy đủ subscriber + skills cho IDs
+            List<Subscriber> subscribers =
+                    subscriberRepository.findAllWithSkillsByIds(idPage.getContent());
 
+            log.info("Fetched {} subscribers with skills", subscribers.size());
+
+            for (Subscriber subscriber : subscribers) {
+
+                List<Skill> skills = Optional.ofNullable(subscriber.getSkills())
+                        .orElse(Collections.emptyList());
+
+                if (skills.isEmpty()) continue;
+
+                // Lấy TOP 10 job mới nhất theo skills
+                List<Job> matchedJobs = jobRepository.findTop10BySkills(skills, PageRequest.of(0, 10));
+
+                if (matchedJobs.isEmpty()) continue;
+
+                applicationEmailService.sendJobEmail(subscriber, matchedJobs);
+            }
+
+            // chuyển sang trang tiếp theo
+            pageable = idPage.nextPageable();
+
+        } while (idPage.hasNext());
+
+        log.info("Finish sending job emails.");
     }
 
 
-    private void sendJobEmail(Subscriber subscriber, List<Job> jobs) {
-        List<ResponEmailJob> jobSummaries = jobs.stream()
-                .map(this::convertJobToSendEmail)
-                .collect(Collectors.toList());
-
-        emailService.sendTemplateEmail(
-                subscriber.getEmail(),
-                "Cơ hội việc làm hot đang chờ đón bạn, khám phá ngay",
-                "emails/job",
-                subscriber.getName(),
-                jobSummaries
-        );
-
-    }
-
-    public ResponEmailJob convertJobToSendEmail(Job job) {
-        if (job == null) {
-            throw new IllegalArgumentException("Job must not be null");
-        }
-
-        String jobName = job.getName();
-//        double salary = job.getSalary();
-
-        String companyName = job.getCompany() != null ? job.getCompany().getName() : "Unknown";
-
-        List<ResponEmailJob.SkillEmail> skillEmails = Optional.ofNullable(job.getSkills())
-                .orElse(Collections.emptyList())
-                .stream()
-                .map(skill -> new ResponEmailJob.SkillEmail(skill.getName()))
-                .collect(Collectors.toList());
-
-        ResponEmailJob response = new ResponEmailJob();
-        response.setName(jobName);
-        response.setFormattedSalary(formatVietnameseCurrency(job.getSalary()));
-        response.setCompany(new ResponEmailJob.CompanyEmail(companyName));
-        response.setSkills(skillEmails);
-
-        return response;
-    }
 
     public String formatVietnameseCurrency(double amount) {
         NumberFormat vndFormat = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
@@ -166,3 +172,11 @@ public class SubscriberService {
 
 
 }
+//    Với cải tiến này:
+//
+// ✔ Không load tất cả subscriber vào RAM
+//✔ Chạy batch rất lớn (10k – 1M subscriber) vẫn ổn
+//✔ Email đúng người đúng kỹ năng
+//✔ Mỗi subscriber chỉ nhận TOP 10 job mới nhất
+//✔ Tối ưu hiệu năng, giảm thời gian chạy scheduled
+//✔ Code sạch & dễ mở rộng

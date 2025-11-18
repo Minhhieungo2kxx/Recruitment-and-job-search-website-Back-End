@@ -63,25 +63,30 @@ public class EmailService {
         return templateEngine.process(templateName, context);
     }
     public void sendTemplateResetPassword(String subject, String templateName,Map<String, Object> variables) {
-        String content =generateResetPassword(templateName,variables);
+        String content =generate(templateName,variables);
         sendEmail((String) variables.get("username"), subject, content, false, true);
     }
-    private String generateResetPassword(String templateName,Map<String, Object> variables) {
-        Context context = new Context();
-        context.setVariables(variables);
-        return templateEngine.process(templateName, context);
-    }
+
+
 
     public void sendTemplateJobapply(String subject, String templateName, Map<String, Object> variables) {
-        String content = generateJobApply(templateName, variables);
+        String content = generate(templateName, variables);
         sendEmail((String) variables.get("email"), subject, content, false, true);
     }
 
-    private String generateJobApply(String templateName,Map<String, Object> variables) {
+
+    public void sendLoginNotification(String subject, String templateName, Map<String, Object> variables) {
+        String content = generate(templateName, variables);
+        sendEmail((String) variables.get("email"), subject, content, false, true);
+    }
+
+    private String generate(String templateName,Map<String, Object> variables) {
         Context context = new Context();
         context.setVariables(variables);
         return templateEngine.process(templateName, context);
     }
+
+
 
 
 

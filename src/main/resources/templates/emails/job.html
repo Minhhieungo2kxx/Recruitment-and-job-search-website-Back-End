@@ -1,53 +1,228 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="vi">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Cơ hội việc làm dành cho bạn từ VietNamwork</title>
+    <style>
+        /* Đảm bảo email responsive trên mọi thiết bị */
+        @media only screen and (max-width: 600px) {
+            .container {
+                width: 100% !important;
+            }
+            .content-padding {
+                padding: 20px 15px !important;
+            }
+            .job-title {
+                font-size: 18px !important;
+            }
+            .cta-button {
+                padding: 12px 25px !important;
+                font-size: 16px !important;
+            }
+        }
+    </style>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5;">
 
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0f2f5; padding: 40px 0;">
+<body
+        style="
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
+    "
+>
+<table
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        style="background-color: #f0f2f5; padding: 20px 0"
+>
     <tr>
         <td align="center">
-            <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-
+            <table
+                    class="container"
+                    width="600"
+                    cellpadding="0"
+                    cellspacing="0"
+                    style="
+              background-color: #ffffff;
+              border-radius: 12px;
+              overflow: hidden;
+              box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            "
+            >
                 <tr>
-                    <td colspan="2" style="background-color: #003366; padding: 25px; text-align: center;">
-                        <a href="https://www.topcv.vn/" target="_blank" style="text-decoration: none;">
-                            <h2 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">VietNamwork</h2>
+                    <td
+                            colspan="2"
+                            style="
+                  background-color: #ffffff;
+                  padding: 20px 30px;
+                  text-align: center;
+                "
+                    >
+                        <a
+                                href="https://www.topcv.vn/"
+                                target="_blank"
+                                style="text-decoration: none"
+                        >
+                            <img
+                                    src="https://httttmdt.tmu.edu.vn/upload/tmu_old/httttmdt/news/2021_04/newlogo-01-1.png"
+                                    alt="Logo VietNamwork"
+                                    width="150"
+                                    style="
+                      display: block;
+                      margin: 0 auto;
+                      max-width: 100%;
+                      height: auto;
+                    "
+                            />
                         </a>
-                        <p style="margin: 5px 0 0 0; color: #a4c6e9; font-size: 16px;">Nền tảng tuyển dụng hàng đầu Việt Nam</p>
+                        <h1
+                                style="
+                    margin: 10px 0 0 0;
+                    color: #003366;
+                    font-size: 24px;
+                    font-weight: bold;
+                  "
+                        >
+                            Cơ hội việc làm dành cho bạn
+                        </h1>
                     </td>
                 </tr>
 
                 <tr>
-                    <td colspan="2" style="padding: 40px 30px 20px 30px;">
-                        <p style="font-size: 18px; color: #333333; margin: 0;">Chào <strong th:text="${name}">bạn</strong>,</p>
-                        <p style="font-size: 16px; color: #555555; line-height: 1.6; margin: 15px 0 0 0;">
-                            Cảm ơn bạn đã tin tưởng VietNamwork. Chúng tôi đã tìm thấy một số **cơ hội việc làm hấp dẫn** rất phù hợp với kỹ năng và kinh nghiệm của bạn. Hãy cùng khám phá ngay!
+                    <td
+                            colspan="2"
+                            class="content-padding"
+                            style="padding: 30px 30px 20px 30px"
+                    >
+                        <p style="font-size: 18px; color: #333333; margin: 0">
+                            Chào <strong th:text="${name}">bạn</strong>,
+                        </p>
+
+                        <p
+                                style="
+                    font-size: 16px;
+                    color: #555555;
+                    line-height: 1.6;
+                    margin: 15px 0 0 0;
+                    border-bottom: 2px solid #e0e0e0;
+                    padding-bottom: 15px;
+                  "
+                        >
+                            Dựa trên kỹ năng và kinh nghiệm của bạn, chúng tôi đã chọn lọc
+                            những cơ hội việc làm đột phá và phù hợp nhất. Khám phá ngay
+                            Top 10 vị trí mới nhất vừa được cập nhật!
                         </p>
                     </td>
                 </tr>
 
                 <tr th:each="job : ${listjob}">
-                    <td colspan="2" style="padding: 0 30px;">
-                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+                    <td colspan="2" style="padding: 0 30px">
+                        <table
+                                width="100%"
+                                cellpadding="0"
+                                cellspacing="0"
+                                style="
+                    margin-bottom: 25px;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                  "
+                        >
                             <tr>
-                                <td style="padding: 20px; background-color: #f9f9f9;">
-                                    <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: bold;">
-                                        <a th:href="@{'https://www.topcv.vn/'}"
-                                           th:text="${job.name}"
-                                           style="color: #003366; text-decoration: none;" target="_blank">Tên công việc</a>
+                                <td style="padding: 20px; background-color: #ffffff">
+                                    <h3
+                                            class="job-title"
+                                            style="
+                          margin: 0 0 8px 0;
+                          font-size: 20px;
+                          font-weight: bold;
+                        "
+                                    >
+                                        <a
+                                                th:href="@{'https://www.topcv.vn/'}"
+                                                th:text="${job.name}"
+                                                style="color: #003366; text-decoration: none"
+                                                target="_blank"
+                                        >
+                                            Tên công việc
+                                        </a>
                                     </h3>
-                                    <p style="margin: 0; font-size: 16px; color: #555555;" th:text="${job.company.name}">Tên công ty</p>
-                                    <p style="margin: 5px 0 15px 0; font-size: 16px; font-weight: bold; color: #ea1e30;" th:text="${job.formattedSalary}">Mức lương</p>
 
-                                    <div style="margin-top: 10px;">
-                                        <span th:each="skill : ${job.skills}"
-                                              th:text="${skill.name}"
-                                              style="display: inline-block; background-color: #e3f2fd; color: #1e88e5; border-radius: 20px; padding: 6px 12px; margin: 4px; font-size: 13px; font-weight: 500;">
-                                            Kỹ năng
-                                        </span>
+                                    <p
+                                            style="
+                          margin: 0;
+                          font-size: 16px;
+                          color: #555555;
+                          font-weight: 500;
+                        "
+                                            th:text="${job.company.name}"
+                                    >
+                                        Tên công ty
+                                    </p>
+
+                                    <div
+                                            style="
+                          margin: 10px 0 15px 0;
+                          padding: 10px 0;
+                          border-top: 1px dashed #e0e0e0;
+                        "
+                                    >
+                                        <p
+                                                style="
+                            margin: 0 0 5px 0;
+                            font-size: 17px;
+                            font-weight: bold;
+                            color: #ea1e30;
+                          "
+                                        >
+                                            💰 Mức lương:
+                                            <span th:text="${job.formattedSalary}"
+                                            >Mức lương</span
+                                            >
+                                        </p>
+
+                                        <p style="margin: 5px 0">
+                                            ⏰ **Bắt đầu:**
+                                            <span
+                                                    style="color: #007bff"
+                                                    th:text="${job.startDate}"
+                                            >2024-01-01</span
+                                            >
+                                        </p>
+                                        <p style="margin: 5px 0 0 0">
+                                            📅 **Kết thúc:**
+                                            <span style="color: #007bff" th:text="${job.endDate}"
+                                            >2024-12-31</span
+                                            >
+                                        </p>
+                                    </div>
+                                    <div
+                                            style="
+                          margin-top: 15px;
+                          border-top: 1px dashed #e0e0e0;
+                          padding-top: 10px;
+                        "
+                                    >
+                        <span
+                                th:each="skill : ${job.skills}"
+                                th:text="${skill.name}"
+                                style="
+                            display: inline-block;
+                            background-color: #e3f2fd;
+                            color: #1e88e5;
+                            border-radius: 20px;
+                            padding: 6px 12px;
+                            margin: 4px;
+                            font-size: 13px;
+                            font-weight: 500;
+                            white-space: nowrap; /* Ngăn skill bị ngắt dòng */
+                          "
+                        >
+                          Kỹ năng
+                        </span>
                                     </div>
                                 </td>
                             </tr>
@@ -56,29 +231,60 @@
                 </tr>
 
                 <tr>
-                    <td colspan="2" style="padding: 20px 30px 40px 30px; text-align: center;">
-                        <a href="https://www.topcv.vn/" target="_blank"
-                           style="display: inline-block; background-color: #ea1e30; color: white; text-decoration: none; padding: 15px 30px; border-radius: 8px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 10px rgba(234,30,48,0.3);">
-                            Khám phá tất cả việc làm phù hợp
+                    <td
+                            colspan="2"
+                            style="padding: 10px 30px 40px 30px; text-align: center"
+                    >
+                        <a
+                                href="https://www.topcv.vn/"
+                                target="_blank"
+                                style="
+                    display: inline-block;
+                    background-color: #003366; /* Đổi màu xanh đậm */
+                    color: white;
+                    text-decoration: none;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    font-size: 18px;
+                    font-weight: bold;
+                    box-shadow: 0 4px 10px rgba(0, 51, 102, 0.3);
+                  "
+                        >
+                            👉 Xem chi tiết & Ứng tuyển ngay
                         </a>
                     </td>
                 </tr>
 
                 <tr>
-                    <td colspan="2" style="background-color: #f0f2f5; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
-                        <p style="margin: 0 0 10px 0; font-size: 14px; color: #777777;">
-                            Chúc bạn thành công trên con đường sự nghiệp của mình!
+                    <td
+                            colspan="2"
+                            style="
+                  background-color: #e9ecef; /* Màu nền footer nhạt hơn */
+                  padding: 30px;
+                  text-align: center;
+                  border-top: 1px solid #d0d3d7;
+                  border-radius: 0 0 12px 12px;
+                "
+                    >
+                        <p style="margin: 0 0 10px 0; font-size: 14px; color: #777777">
+                            Bạn nhận được email này vì bạn đã đăng ký trên VietNamwork.
                         </p>
-                        <p style="margin: 0; font-size: 14px; color: #777777;">
-                            VietNamwork | Nơi tìm kiếm và tuyển dụng số 1 Việt Nam
+
+                        <p style="margin: 0; font-size: 14px; color: #777777">
+                            &copy; 2025 VietNamwork | Nền tảng tuyển dụng hàng đầu Việt
+                            Nam
+                        </p>
+
+                        <p style="margin: 10px 0 0 0; font-size: 13px">
+                            <a href="#" style="color: #003366; text-decoration: underline"
+                            >Hủy đăng ký</a
+                            >
                         </p>
                     </td>
                 </tr>
-
             </table>
         </td>
     </tr>
 </table>
-
 </body>
 </html>

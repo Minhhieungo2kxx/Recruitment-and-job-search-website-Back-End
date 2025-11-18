@@ -52,7 +52,7 @@ public class PresenceService {
 
     // Cập nhật trạng thái online/offline trong database
     @Transactional
-    public void updateUserOnlineStatus(Long userId, boolean isOnline) {
+    public void updateUserOnlineStatus(Long userId, Boolean isOnline) {
         userRepository.findById(userId).ifPresent(user -> {
             user.setOnline(isOnline);
             user.setLastSeenAt(Instant.now());
