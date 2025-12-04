@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Xác Nhận Thanh Toán Thành Công</title>
+</head>
+
+<body style="font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #eef1f5; margin: 0; padding: 0;">
+
+<div style="max-width: 600px; margin: 30px auto; background-color: #ffffff;
+            border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border: 1px solid #e0e0e0;">
+
+    <div style="background-color: #007bff; padding: 25px; border-top-left-radius: 12px; border-top-right-radius: 12px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 0.5px;">
+            ✅ THANH TOÁN THÀNH CÔNG
+        </h1>
+        <p style="color: #c9e2ff; margin-top: 5px; font-size: 14px;">Chi tiết giao dịch của bạn</p>
+    </div>
+
+    <div style="padding: 30px;">
+        <p style="font-size: 16px; color: #333333;">Xin chào <strong th:text="${userName}">Người dùng</strong>,</p>
+
+        <p style="font-size: 16px; color: #555555;">
+            Hệ thống **WebJob** xác nhận đã nhận được khoản thanh toán của bạn. Cảm ơn bạn đã tin tưởng sử dụng dịch vụ!
+        </p>
+
+        <div style="background-color: #eaf6ff; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center; border: 1px dashed #007bff;">
+            <p style="font-size: 14px; color: #007bff; margin-bottom: 5px;">SỐ TIỀN ĐÃ THANH TOÁN</p>
+            <p style="font-size: 32px; font-weight: bold; color: #28a745; margin: 0;">
+                <span th:text="${amount}">1,000,000</span>
+            </p>
+        </div>
+
+        <h3 style="color: #0056b3; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-top: 30px; font-size: 18px;">
+            📝 Chi Tiết Giao Dịch
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr>
+                <td style="padding: 8px 0; color: #777777; width: 35%;">**Tên công việc:**</td>
+                <td style="padding: 8px 0; color: #333333; font-weight: bold;" th:text="${jobName}">Dịch vụ A</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; color: #777777;">**Mã giao dịch:**</td>
+                <td style="padding: 8px 0; color: #333333;" th:text="${transactionId}">TXN123456789</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; color: #777777;">**Trạng thái:**</td>
+                <td style="padding: 8px 0; color: #28a745; font-weight: bold;" th:text="${status}">THÀNH CÔNG</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; color: #777777;">**Ngày thanh toán:**</td>
+                <td style="padding: 8px 0; color: #333333;" th:text="${payDate}">2025-01-01 10:30:00</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; color: #777777;">**Cổng thanh toán:**</td>
+                <td style="padding: 8px 0; color: #333333;" th:text="${gateway}">VNPAY</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; color: #777777;">**Mã ngân hàng:**</td>
+                <td style="padding: 8px 0; color: #333333;" th:text="${bankCode}">NCB</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; color: #777777;">**Order Info:**</td>
+                <td style="padding: 8px 0; color: #333333;" th:text="${orderInfo}">Thanh toan cong viec</td>
+            </tr>
+        </table>
+
+        <p style="font-size: 14px; color: #888; margin-top: 30px; text-align: center;">
+            <span style="font-weight: bold; color: #dc3545;">Lưu ý:</span> Nếu bạn không thực hiện giao dịch này, vui lòng <a href="#" style="color: #dc3545; text-decoration: none;">liên hệ hỗ trợ ngay lập tức</a>.
+        </p>
+
+    </div>
+
+    <div style="border-top: 1px solid #e0e0e0; padding: 20px 30px; text-align: center; background-color: #f7f9fc; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+        <img src="https://httttmdt.tmu.edu.vn/upload/tmu_old/httttmdt/news/2021_04/newlogo-01-1.png"
+             alt="Logo WebJob" width="100" style="border-radius: 6px; display: block; margin: 0 auto 10px;">
+
+        <p style="color: #999; font-size: 12px; margin: 0;">
+            Trân trọng,
+        </p>
+        <p style="color: #666; font-size: 14px; font-weight: bold; margin: 5px 0 0;">
+            Đội ngũ WebJob
+        </p>
+    </div>
+
+</div>
+
+</body>
+</html>

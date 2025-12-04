@@ -50,6 +50,18 @@ public class Payment {
 
     @Size(max = 100)
     private String transactionId; // Mã giao dịch từ VNPAY (vnp_TxnRef)
+    @Size(max = 100)
+    private String orderCode;
+
+    @Column(length = 20)
+    private String provider; // VNPAY, MOMO, ZALOPAY
+    @Column(length = 20)
+    private String bankCode;
+    private Instant payDate;
+    @Column(length = 255)
+    private String secureHash;
+    private String ResponseCode;
+    private String orderInfo;
 
     @Size(max = 255)
     private String paymentGatewayResponse; // Thông tin phản hồi từ VNPAY (vnp_ResponseCode, vnp_TransactionStatus...)

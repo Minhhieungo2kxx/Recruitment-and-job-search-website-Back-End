@@ -2,7 +2,9 @@ package com.webjob.application.Repository;
 
 import com.webjob.application.Model.Entity.Payment;
 import com.webjob.application.Model.Entity.User;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -11,8 +13,7 @@ import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
-   Optional<Payment> findByUser(User user);
-
+    Optional<Payment>findByTransactionId(String transactionRef);
 
     List<Payment> findByUserIdAndStatus(Long userId, String status);
 
@@ -23,4 +24,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findPaymentsByUserAndJob(@Param("userId") Long userId, @Param("jobId") Long jobId);
 
     boolean existsByUserIdAndJobIdAndStatus(Long userId, Long jobId, String status);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<Payment> findByOrderCode(String orderCode);
+
 }

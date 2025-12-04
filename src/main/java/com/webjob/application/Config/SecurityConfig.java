@@ -48,7 +48,6 @@ public class SecurityConfig {
                 "/oauth2/**","/login/oauth2/**" // OAuth2 login Google
                 ,"/api/v1/payments/vnpay-return","/login-chat","/chat",
                 "/js/**", "/css/**", "/img/**","/ws/**","/audio/**","/login-success"
-
         };
 
 
@@ -60,6 +59,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/companies/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/jobs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/skills/**").permitAll()
+                        .requestMatchers("/payment-result", "/payment-result/**").permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())

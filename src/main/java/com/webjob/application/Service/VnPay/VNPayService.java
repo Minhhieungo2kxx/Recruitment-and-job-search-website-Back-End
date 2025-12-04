@@ -15,11 +15,9 @@ import java.util.*;
 public class VNPayService {
     @Autowired
     private VNPayConfig vnPayConfig;
-    public String createOrder(HttpServletRequest request, int amount, String orderInfor, String urlReturn,Long userId) {
+    public String createOrder(HttpServletRequest request,Map<String, Object> dataMap) {
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
-
-        String txnRef = "UID_" + userId + "_" + System.currentTimeMillis();
         String vnp_IpAddr = vnPayConfig.getIpAddress(request);
         String vnp_TmnCode =vnPayConfig.getVnp_TmnCode();
         String orderType = "order-type";
@@ -28,19 +26,17 @@ public class VNPayService {
         vnp_Params.put("vnp_Version", vnp_Version);
         vnp_Params.put("vnp_Command", vnp_Command);
         vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
-        long vnpAmount = (long) amount;
+        Number amountNumber = (Number) dataMap.get("amount");
+        long vnpAmount = amountNumber.longValue();    // an toàn tuyệt đối
         vnp_Params.put("vnp_Amount", String.valueOf(vnpAmount * 100));
         vnp_Params.put("vnp_CurrCode", "VND");
-
-        vnp_Params.put("vnp_TxnRef",txnRef);
-        vnp_Params.put("vnp_OrderInfo", orderInfor);
+        vnp_Params.put("vnp_TxnRef",(String)dataMap.get("txnRef"));
+        vnp_Params.put("vnp_OrderInfo",(String) dataMap.get("orderInfo"));
         vnp_Params.put("vnp_OrderType", orderType);
 
         String locate = "vn";
         vnp_Params.put("vnp_Locale", locate);
-
-        urlReturn +=vnPayConfig.getVnp_ReturnUrl();
-        vnp_Params.put("vnp_ReturnUrl", urlReturn);
+        vnp_Params.put("vnp_ReturnUrl",vnPayConfig.getVnp_ReturnUrl());
         vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
         Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
@@ -104,9 +100,9 @@ public class VNPayService {
             fields.remove("vnp_SecureHash");
         }
         String signValue =vnPayConfig.hashAllFields(fields);
-        System.out.println("🔐 Chữ ký hệ thống tạo: " + signValue);
-        System.out.println("🔐 Chữ ký VNPAY gửi về: " + vnp_SecureHash);
-        System.out.println("✅ Trạng thái giao dịch: " + request.getParameter("vnp_TransactionStatus"));
+        System.out.println(" Chữ ký hệ thống tạo: " + signValue);
+        System.out.println(" Chữ ký VNPAY gửi về: " + vnp_SecureHash);
+        System.out.println(" Trạng thái giao dịch: " + request.getParameter("vnp_TransactionStatus"));
 
         if (signValue.equals(vnp_SecureHash)) {
             if ("00".equals(request.getParameter("vnp_TransactionStatus"))) {
@@ -119,6 +115,10 @@ public class VNPayService {
         }
 
     }
+    public String generateTxnRef(Long paymentId) {
+        return "PAY" + paymentId + System.currentTimeMillis();
+    }
+
 
 
 }

@@ -23,3 +23,19 @@ public class PaymentCallbackRequest {
     private String vnp_TxnRef;
     private String vnp_SecureHash;
 }
+
+//| Trường                    | Ý nghĩa                         |
+//        | ------------------------- | ------------------------------- |
+//        | **vnp_TxnRef**            | Mã đơn của bạn                  |
+//        | **vnp_TransactionNo**     | Mã giao dịch VNPay              |
+//        | **vnp_Amount**            | Số tiền ×100                    |
+//        | **vnp_ResponseCode**      | Trạng thái VNPay                |
+//        | **vnp_TransactionStatus** | Trạng thái ngân hàng            |
+//        | **vnp_PayDate**           | Thời gian thanh toán thành công |
+//        | **vnp_SecureHash**        | Chữ ký xác thực                 |
+//        | vnp_BankCode              | Mã ngân hàng                    |
+//        | vnp_BankTranNo            | Mã giao dịch ngân hàng          |
+//        | vnp_CardType              | Loại thẻ                        |
+//        | vnp_OrderInfo             | Nội dung thanh toán             |
+//        | vnp_TmnCode               | Merchant ID của bạn             |
+

@@ -1,9 +1,14 @@
 package com.webjob.application.Controller;
 
+
 import com.webjob.application.Annotation.RateLimit;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.Map;
 
 
 @Controller
@@ -34,5 +39,11 @@ public class HomeController {
         return "clients/login-success"; // Trả về trang xử lý thành công OAuth2
     }
 
+    @GetMapping("/payment-result")
+    public String paymentResult(@RequestParam Map<String, String> params, Model model) {
+        // Add tất cả key-value param vào model
+        params.forEach(model::addAttribute);
+        return "clients/payment-result";  // tên file Thymeleaf
+    }
 
 }

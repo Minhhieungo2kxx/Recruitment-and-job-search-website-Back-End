@@ -2,11 +2,9 @@ package com.webjob.application.Service.SendEmail;
 
 
 import com.webjob.application.Dto.Response.RespondEmailJob;
-import com.webjob.application.Model.Entity.Company;
-import com.webjob.application.Model.Entity.Job;
-import com.webjob.application.Model.Entity.Subscriber;
-import com.webjob.application.Model.Entity.User;
+import com.webjob.application.Model.Entity.*;
 import com.webjob.application.Service.SubscriberService;
+import com.webjob.application.Util.UtilFormat;
 import eu.bitwalker.useragentutils.DeviceType;
 import eu.bitwalker.useragentutils.UserAgent;
 import jakarta.servlet.http.HttpServletRequest;
@@ -163,6 +161,28 @@ public class ApplicationEmailService {
         }
 
         return deviceTypeVN + " - " + os + " - " + browser;
+    }
+    @Async("taskExecutor")
+    public void sendPaymentEmail(Payment payment) {
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("email",payment.getUser().getEmail()); // cần có
+        vars.put("userName",payment.getUser().getFullName());
+        vars.put("jobName", payment.getJob().getName());
+        vars.put("amount", UtilFormat.formatAmount(payment.getAmount()));
+        vars.put("status", payment.getStatus());
+        vars.put("transactionId",payment.getTransactionId());
+        vars.put("payDate",UtilFormat.formatTime(payment.getPayDate()));
+        vars.put("gateway", payment.getProvider());
+        vars.put("bankCode", payment.getBankCode());
+        vars.put("responseCode",payment.getResponseCode());
+        vars.put("orderInfo",payment.getOrderInfo());
+        emailService.sendPaymentNotification(
+                "Xác Nhận Thanh Toán WebJob",
+                "emails/payment-notification",
+                vars
+        );
+
+
     }
 
     private String formatVietnameseCurrency(double amount) {

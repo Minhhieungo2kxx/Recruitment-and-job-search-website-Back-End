@@ -79,6 +79,11 @@ public class EmailService {
         String content = generate(templateName, variables);
         sendEmail((String) variables.get("email"), subject, content, false, true);
     }
+    public void sendPaymentNotification(String subject, String templateName, Map<String, Object> variables) {
+        String content = generate(templateName, variables);
+        sendEmail((String) variables.get("email"), subject, content, false, true);
+    }
+
 
     private String generate(String templateName,Map<String, Object> variables) {
         Context context = new Context();

@@ -12,13 +12,20 @@ import com.webjob.application.Dto.Response.PaymentResponse;
 import com.webjob.application.Repository.JobRepository;
 import com.webjob.application.Repository.PaymentRepository;
 import com.webjob.application.Repository.UserRepository;
+import com.webjob.application.Service.SendEmail.ApplicationEmailService;
 import com.webjob.application.Service.VnPay.VNPayService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -32,6 +39,7 @@ public class PaymentService {
     private final VNPayService vnPayService;
 
     private final UserService userService;
+    private final ApplicationEmailService applicationEmailService;
 
     // Giá cố định để xem thông tin ứng viên
     private static final Long COMPETITION_VIEW_PRICE =20000L; // 20,000 VND
@@ -39,12 +47,13 @@ public class PaymentService {
     public PaymentService(PaymentRepository paymentRepository,
                           JobRepository jobRepository,
                           UserRepository userRepository,
-                          VNPayService vnPayService, UserService userService) {
+                          VNPayService vnPayService, UserService userService, ApplicationEmailService applicationEmailService) {
         this.paymentRepository = paymentRepository;
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.vnPayService = vnPayService;
         this.userService = userService;
+        this.applicationEmailService = applicationEmailService;
     }
 
     public PaymentResponse createPaymentForJobView(Long userId, PaymentCreateRequest request, HttpServletRequest httpRequest) {
@@ -60,31 +69,39 @@ public class PaymentService {
         if (job.getCompetitionLevel() != CompetitionLevel.HIGH) {
             throw new RuntimeException("Công việc này không yêu cầu thanh toán để xem thông tin ứng viên");
         }
-
+        boolean hasPending = paymentRepository.existsByUserIdAndJobIdAndStatus(
+                userId, job.getId(), PaymentStatus.PENDING.name()
+        );
+        if (hasPending) {
+            throw new RuntimeException("Bạn đang có giao dịch đang xử lý cho công việc này. Vui lòng chờ.");
+        }
         // Kiểm tra xem user đã thanh toán thành công cho job này chưa
         boolean hasPaid = paymentRepository.existsByUserIdAndJobIdAndStatus(userId, job.getId(), PaymentStatus.SUCCESS.name());
         if (hasPaid) {
             throw new RuntimeException("Bạn đã thanh toán để xem thông tin ứng viên của công việc này");
         }
-
+        // Tạo link thanh toán VNPay
+        String orderInfo = String.format("Thanh toán xem thông tin ứng viên - Công việc: %s", job.getName());
         // Tạo bản ghi thanh toán
         Payment payment = new Payment();
         payment.setUser(user);
         payment.setJob(job);
         payment.setAmount(COMPETITION_VIEW_PRICE);
         payment.setStatus(PaymentStatus.PENDING.name());
-
+        // Tạo txnRef duy nhất dựa trên paymentId
+        String txnRef = vnPayService.generateTxnRef(user.getId());
+        payment.setOrderCode(txnRef);
+        payment.setProvider(request.getGateway());
+        payment.setOrderInfo(orderInfo);
         payment = paymentRepository.save(payment);
 
-        // Tạo link thanh toán VNPay
-        String orderInfo = String.format("Thanh toán xem thông tin ứng viên - Công việc: %s", job.getName());
-        String paymentUrl = vnPayService.createOrder(
-                httpRequest,
-                COMPETITION_VIEW_PRICE.intValue(),
-                orderInfo,
-                "", // Return URL hoặc extra params nếu có
-                userId
-        );
+
+        Map<String, Object> dataMap = new HashMap<>();
+        dataMap.put("amount", COMPETITION_VIEW_PRICE.intValue());
+        dataMap.put("orderInfo", orderInfo);
+        dataMap.put("userId", userId);
+        dataMap.put("txnRef", txnRef);
+        String paymentUrl = vnPayService.createOrder(httpRequest,dataMap);
 
         // Tạo response
         PaymentResponse response = new PaymentResponse();
@@ -103,21 +120,27 @@ public class PaymentService {
     }
 
 
+    @Transactional
     public PaymentResponse handlePaymentCallback(PaymentCallbackRequest callbackRequest, HttpServletRequest request) {
-        String transactionRef = callbackRequest.getVnp_TxnRef();
-        log.info("Processing VNPay callback for transactionRef: {}", transactionRef);
-
         // 1. Validate chữ ký từ VNPay
         int validationResult = vnPayService.orderReturn(request);
         if (validationResult == -1) {
             throw new RuntimeException("Chữ ký không hợp lệ từ VNPay");
         }
 
-        // 2. Parse userId từ transactionRef
-        User user = extractUserFromTransactionRef(transactionRef);
-
         // 3. Tìm payment record liên quan
-        Payment payment = findPaymentByUser(user);
+        Payment payment = paymentRepository.findByOrderCode(callbackRequest.getVnp_TxnRef())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy payment cho Ordercode: " + callbackRequest.getVnp_TxnRef()));
+        // 3. Nếu đã success → KHÔNG xử lý lại
+        if (payment.getStatus().equals(PaymentStatus.SUCCESS.name())) {
+            log.info("Callback duplicated - ignoring");
+            return buildPaymentResponse(payment);
+        }
+        // 4. Kiểm tra số tiền
+        long paidAmount = Long.parseLong(callbackRequest.getVnp_Amount()) / 100;
+        if (!payment.getAmount().equals(paidAmount)) {
+            throw new RuntimeException("Amount mismatch");
+        }
 
         // 4. Cập nhật trạng thái thanh toán
         String status = (validationResult == 1)
@@ -125,25 +148,32 @@ public class PaymentService {
                 : PaymentStatus.FAILED.name();
 
         payment.setStatus(status);
-        payment.setTransactionId(transactionRef);
+        payment.setTransactionId(callbackRequest.getVnp_TransactionNo()); // Mã giao dịch thật từ VNPay
+        payment.setBankCode(callbackRequest.getVnp_BankCode());
+        payment.setSecureHash(callbackRequest.getVnp_SecureHash());
+        String payDateStr = callbackRequest.getVnp_PayDate(); // "20251203143025"
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+                .withZone(ZoneId.of("Asia/Ho_Chi_Minh")); // múi giờ VN
+        Instant payDate = LocalDateTime.parse(payDateStr, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+                .atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
+                .toInstant();
+        payment.setPayDate(payDate);
         payment.setPaymentGatewayResponse("ResponseCode: " + callbackRequest.getVnp_ResponseCode() +
                 ", TransactionStatus: " + callbackRequest.getVnp_TransactionStatus());
+        payment.setResponseCode(callbackRequest.getVnp_ResponseCode());
         payment = paymentRepository.save(payment);
 
-        log.info("Payment {} for transactionRef: {}", status.toLowerCase(), transactionRef);
-
+        log.info("Payment {} for transactionRef: {}", status.toLowerCase(),callbackRequest.getVnp_TransactionNo());
+        if(payment.getStatus().equals("SUCCESS")){
+            applicationEmailService.sendPaymentEmail(payment);
+        }
         // 5. Tạo và trả về response
         return buildPaymentResponse(payment);
     }
 
 
-    private Payment findPaymentByUser(User user) {
-        Optional<Payment> payment = paymentRepository.findByUser(user);
-        if (payment.isPresent()) {
-            return payment.get();
-        }
-        throw new RuntimeException("Không tìm thấy payment với User la: " +user.getFullName());
-    }
+
 
     public JobApplicantInfoResponse getJobApplicantInfo(Long userId, Long jobId) {
         // Kiểm tra job tồn tại
@@ -212,20 +242,6 @@ public class PaymentService {
         callbackRequest.setVnp_SecureHash(request.getParameter("vnp_SecureHash"));
         return callbackRequest;
     }
-    private User extractUserFromTransactionRef(String transactionRef) {
-        if (transactionRef == null || !transactionRef.startsWith("UID_")) {
-            throw new IllegalArgumentException("Mã giao dịch không hợp lệ: " + transactionRef);
-        }
-
-        String[] parts = transactionRef.split("_");
-        if (parts.length < 2) {
-            throw new IllegalArgumentException("Không thể trích xuất userId từ transactionRef: " + transactionRef);
-        }
-
-        Long userId = Long.parseLong(parts[1]);
-        return userService.getbyID(userId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + userId));
-    }
     private PaymentResponse buildPaymentResponse(Payment payment) {
         PaymentResponse response = new PaymentResponse();
         response.setId(payment.getId());
@@ -236,8 +252,20 @@ public class PaymentService {
         response.setStatus(payment.getStatus());
         response.setTransactionId(payment.getTransactionId());
         response.setCreatedAt(payment.getCreatedAt());
+        response.setPayDate(payment.getPayDate());
+        response.setGateway(payment.getProvider());
+        response.setBankCode(payment.getBankCode());
+        response.setPaymentGatewayResponse(payment.getPaymentGatewayResponse());
+        response.setResponseCode(payment.getResponseCode());
+        response.setOrderInfo(payment.getOrderInfo());
+
         return response;
     }
+
+
+
+
+
 
 
 
