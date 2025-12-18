@@ -39,11 +39,6 @@ public class HomeController {
         return "clients/login-success"; // Trả về trang xử lý thành công OAuth2
     }
 
-    @GetMapping("/payment-result")
-    public String paymentResult(@RequestParam Map<String, String> params, Model model) {
-        // Add tất cả key-value param vào model
-        params.forEach(model::addAttribute);
-        return "clients/payment-result";  // tên file Thymeleaf
-    }
+
 
 }

@@ -48,6 +48,7 @@ public class SecurityConfig {
                 "/oauth2/**","/login/oauth2/**" // OAuth2 login Google
                 ,"/api/v1/payments/vnpay-return","/login-chat","/chat",
                 "/js/**", "/css/**", "/img/**","/ws/**","/audio/**","/login-success"
+                ,"/api/v1/payments/momo-return"
         };
 
 

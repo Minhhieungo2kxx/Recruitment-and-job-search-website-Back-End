@@ -2,7 +2,7 @@ package com.webjob.application.Config.Aspect;
 
 import com.webjob.application.Annotation.RateLimit;
 
-import com.webjob.application.Exception.TooManyRequestsException;
+import com.webjob.application.Exception.Customs.TooManyRequestsException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

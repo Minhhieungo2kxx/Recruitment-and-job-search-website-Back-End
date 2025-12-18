@@ -1,4 +1,4 @@
-package com.webjob.application.Exception;
+package com.webjob.application.Exception.Customs;
 
 public class TooManyRequestsException extends RuntimeException{
     public TooManyRequestsException(String message) {

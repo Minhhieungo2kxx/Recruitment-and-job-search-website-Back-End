@@ -35,31 +35,41 @@
             📝 Chi Tiết Giao Dịch
         </h3>
         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-            <tr>
+            <tr th:if="${jobName != null}">
                 <td style="padding: 8px 0; color: #777777; width: 35%;">**Tên công việc:**</td>
                 <td style="padding: 8px 0; color: #333333; font-weight: bold;" th:text="${jobName}">Dịch vụ A</td>
             </tr>
-            <tr>
+            <tr th:if="${transactionId != null}" >
                 <td style="padding: 8px 0; color: #777777;">**Mã giao dịch:**</td>
                 <td style="padding: 8px 0; color: #333333;" th:text="${transactionId}">TXN123456789</td>
             </tr>
-            <tr>
+
+            <tr th:if="${status != null}">
                 <td style="padding: 8px 0; color: #777777;">**Trạng thái:**</td>
                 <td style="padding: 8px 0; color: #28a745; font-weight: bold;" th:text="${status}">THÀNH CÔNG</td>
             </tr>
-            <tr>
+            <tr th:if="${payDate != null}">
                 <td style="padding: 8px 0; color: #777777;">**Ngày thanh toán:**</td>
                 <td style="padding: 8px 0; color: #333333;" th:text="${payDate}">2025-01-01 10:30:00</td>
             </tr>
-            <tr>
+            <tr th:if="${gateway != null}">
                 <td style="padding: 8px 0; color: #777777;">**Cổng thanh toán:**</td>
                 <td style="padding: 8px 0; color: #333333;" th:text="${gateway}">VNPAY</td>
             </tr>
-            <tr>
+            <tr th:if="${bankCode != null}">
                 <td style="padding: 8px 0; color: #777777;">**Mã ngân hàng:**</td>
                 <td style="padding: 8px 0; color: #333333;" th:text="${bankCode}">NCB</td>
             </tr>
-            <tr>
+            <tr th:if="${orderType != null}">
+                <td style="padding: 8px 0; color: #777777;">**Loại đơn / giao dịch:**</td>
+                <td style="padding: 8px 0; color: #333333;" th:text="${orderType}"></td>
+            </tr>
+            <tr th:if="${payType != null}">
+                <td style="padding: 8px 0; color: #777777;">**Loại thanh toán:**</td>
+                <td style="padding: 8px 0; color: #333333;" th:text="${payType}"></td>
+            </tr>
+
+            <tr th:if="${orderInfo != null}">
                 <td style="padding: 8px 0; color: #777777;">**Order Info:**</td>
                 <td style="padding: 8px 0; color: #333333;" th:text="${orderInfo}">Thanh toan cong viec</td>
             </tr>

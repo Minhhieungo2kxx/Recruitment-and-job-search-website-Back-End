@@ -1,4 +1,4 @@
-package com.webjob.application.Dto.Request;
+package com.webjob.application.Dto.Request.Payments;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

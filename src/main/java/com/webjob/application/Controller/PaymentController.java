@@ -1,10 +1,11 @@
 package com.webjob.application.Controller;
 
 import com.webjob.application.Annotation.RateLimit;
+import com.webjob.application.Dto.Request.Payments.MomoPaymentCallback;
 import com.webjob.application.Model.Entity.User;
 import com.webjob.application.Model.Enums.PaymentStatus;
-import com.webjob.application.Dto.Request.PaymentCallbackRequest;
-import com.webjob.application.Dto.Request.PaymentCreateRequest;
+import com.webjob.application.Dto.Request.Payments.PaymentCallbackRequest;
+import com.webjob.application.Dto.Request.Payments.PaymentCreateRequest;
 import com.webjob.application.Dto.Response.ApiResponse;
 import com.webjob.application.Dto.Response.PaymentResponse;
 import com.webjob.application.Service.PaymentService;
@@ -39,51 +40,39 @@ public class PaymentController {
             @Valid @RequestBody PaymentCreateRequest request,
             HttpServletRequest httpRequest) {
 
-        try {
-            // Lấy thông tin người dùng hiện tại từ context
-            String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-            User currentUser = userService.getbyEmail(userEmail);
+        String userEmail = SecurityContextHolder.getContext()
+                .getAuthentication().getName();
 
-            // Gọi service để tạo payment
-            PaymentResponse paymentResponse = paymentService.createPaymentForJobView(
-                    currentUser.getId(), request, httpRequest
-            );
+        User currentUser = userService.getbyEmail(userEmail);
 
-            // Tạo phản hồi thành công
-            ApiResponse<PaymentResponse> apiResponse = new ApiResponse<>(
-                    HttpStatus.OK.value(),
-                    null,
-                    "Tạo payment thành công",
-                    paymentResponse
-            );
+        PaymentResponse paymentResponse;
 
-            return ResponseEntity.ok(apiResponse);
-
-        } catch (Exception ex) {
-            log.error("Error creating payment: {}", ex.getMessage(), ex);
-
-            // Tạo phản hồi lỗi
-            ApiResponse<PaymentResponse> errorResponse = new ApiResponse<>(
-                    HttpStatus.BAD_REQUEST.value(),
-                    ex.getMessage(),
-                    "Lỗi tạo payment",
-                    null
-            );
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        if ("VNPAY".equals(request.getGateway())) {
+            paymentResponse = paymentService.createPaymentForJobView(
+                    currentUser.getId(), request, httpRequest);
+        } else {
+            paymentResponse = paymentService.createPaymentMomo(
+                    currentUser.getId(), request, httpRequest);
         }
+
+        ApiResponse<PaymentResponse> apiResponse = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                null,
+                "Tạo payment thành công",
+                paymentResponse
+        );
+
+        return ResponseEntity.ok(apiResponse);
     }
 
-    @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "IP")
+
+
     @GetMapping("/vnpay-return")
     public ResponseEntity<ApiResponse<PaymentResponse>> handleVNPayReturn(HttpServletRequest request) {
-        try {
             // Parse VNPay callback parameters
             PaymentCallbackRequest callbackRequest = paymentService.extractVNPayCallbackParams(request);
-
             // Xử lý callback
             PaymentResponse response = paymentService.handlePaymentCallback(callbackRequest, request);
-
             // Xác định thông điệp phản hồi
             String message = PaymentStatus.SUCCESS.name().equalsIgnoreCase(response.getStatus())
                     ? "Thanh toán thành công"
@@ -95,29 +84,33 @@ public class PaymentController {
                     message,
                     response
             );
+            return ResponseEntity.ok(apiResponse);
+    }
 
+
+    @GetMapping("/momo-return")
+    public ResponseEntity<?> handleMomoReturn(HttpServletRequest request) {
+            MomoPaymentCallback callbackRequest = paymentService.extractMomoCallbackParams(request);
+            PaymentResponse response = paymentService.handlePayment(callbackRequest,request);
+            // Xác định thông điệp phản hồi
+            String message = PaymentStatus.SUCCESS.name().equalsIgnoreCase(response.getStatus())
+                    ? "Thanh toán thành công"
+                    : "Thanh toán thất bại";
+
+            ApiResponse<PaymentResponse> apiResponse = new ApiResponse<>(
+                    HttpStatus.OK.value(),
+                    null,
+                    message,
+                    response
+            );
             return ResponseEntity.ok(apiResponse);
 
-        } catch (Exception ex) {
-            log.error("Lỗi xử lý VNPay callback: {}", ex.getMessage(), ex);
-
-            ApiResponse<PaymentResponse> errorResponse = new ApiResponse<>(
-                    HttpStatus.BAD_REQUEST.value(),
-                    ex.getMessage(),
-                    "Lỗi xử lý callback",
-                    null
-            );
-
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
     }
 
 
     @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/history")
     public ResponseEntity<?> getPaymentHistory() {
-
-        try {
             // Lấy user ID từ authentication (giả sử có getUserId method)
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String email = authentication.getName();
@@ -131,17 +124,6 @@ public class PaymentController {
             );
 
             return ResponseEntity.ok(apiResponse);
-
-        } catch (Exception e) {
-            log.error("Error getting payment history: {}", e.getMessage());
-            ApiResponse<?> apiResponse = new ApiResponse<>(
-                    HttpStatus.BAD_REQUEST.value(),
-                    e.getMessage(),
-                    "Lỗi lấy lịch sử thanh toán: ",
-                    null
-            );
-            return ResponseEntity.badRequest().body(apiResponse);
-        }
     }
 
 }

@@ -1,5 +1,9 @@
 package com.webjob.application.Exception;
 
+import com.webjob.application.Dto.Response.ApiResponse;
+import com.webjob.application.Exception.Customs.BusinessException;
+import com.webjob.application.Exception.Customs.PaymentExpiredException;
+import com.webjob.application.Exception.Customs.TooManyRequestsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -52,7 +56,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(ResponseEntity.badRequest(), HttpStatus.BAD_REQUEST);
     }
 
-    // ✅ 3. Xử lý HttpMessageNotReadableException (khi JSON bị sai format hoặc thiếu)
+    //  3. Xử lý HttpMessageNotReadableException (khi JSON bị sai format hoặc thiếu)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
         ErrorResponException<?> errorResponException=new ErrorResponException<>(
@@ -173,6 +177,31 @@ public class GlobalExceptionHandler {
                 null
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.TOO_MANY_REQUESTS);
+    }
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<?> handleBusinessException(BusinessException ex) {
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.BAD_REQUEST.value(),
+                "Exception Error",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    // 409 - Payment expired
+    @ExceptionHandler(PaymentExpiredException.class)
+    public ResponseEntity<?> handlePaymentExpiredException(PaymentExpiredException ex) {
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.CONFLICT.value(),
+                "Payment expired",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
 

@@ -1,4 +1,4 @@
-package com.webjob.application.Service.VnPay;
+package com.webjob.application.Service.PaymentGateway;
 
 import com.webjob.application.Config.VnPay.VNPayConfig;
 import jakarta.servlet.http.HttpServletRequest;

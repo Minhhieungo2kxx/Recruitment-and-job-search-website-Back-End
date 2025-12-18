@@ -1,6 +1,7 @@
 package com.webjob.application.Dto.Response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -42,4 +43,8 @@ public class PaymentResponse {
             locale = "en_US"
     )
     private Instant createdAt;
+    @Column(length = 255)
+    private String payType;
+    @Column(length = 255)
+    private String orderType;
 }

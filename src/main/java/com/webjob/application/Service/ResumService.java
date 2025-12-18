@@ -220,7 +220,7 @@ public class ResumService {
 //
 //v.v...
 //
-//✅ Nhưng điều này chỉ xảy ra nếu method được gọi qua proxy, tức từ một class khác (hoặc một bean khác).
+// Nhưng điều này chỉ xảy ra nếu method được gọi qua proxy, tức từ một class khác (hoặc một bean khác).
 
 
 }

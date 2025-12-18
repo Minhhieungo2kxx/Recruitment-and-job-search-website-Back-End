@@ -114,7 +114,6 @@ public class PasswordResetService {
         for (int i = 0; i < 8; i++) {
             sb.append(chars.charAt(random.nextInt(chars.length())));
         }
-
         return sb.toString();
     }
 

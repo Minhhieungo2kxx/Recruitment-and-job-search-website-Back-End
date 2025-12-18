@@ -176,6 +176,9 @@ public class ApplicationEmailService {
         vars.put("bankCode", payment.getBankCode());
         vars.put("responseCode",payment.getResponseCode());
         vars.put("orderInfo",payment.getOrderInfo());
+        vars.put("payType",payment.getPayType());
+        vars.put("orderType",payment.getOrderType());
+
         emailService.sendPaymentNotification(
                 "Xác Nhận Thanh Toán WebJob",
                 "emails/payment-notification",
