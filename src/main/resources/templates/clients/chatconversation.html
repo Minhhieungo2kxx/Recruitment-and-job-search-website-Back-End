@@ -11,14 +11,36 @@
 
 </head>
 <body>
+<div id="realtimeToastContainer"></div>
+
+<nav class="top-navbar d-flex align-items-center px-3 bg-primary text-white">
+    <div style="flex: 1;"></div>
+
+    <div class="navbar-brand-custom d-flex align-items-center justify-content-center" style="flex: 2;">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWQQTiGKwCmq8Bw0xn1iHJxhkxTpNz9ZZoXA&s" alt="Logo" class="me-2" style="height: 35px; width: auto; border-radius: 4px;">
+        <h5 class="mb-0 fw-bold text-nowrap">HỆ THỐNG CHAT ITVIECLAM.VN</h5>
+    </div>
+
+    <div class="navbar-actions d-flex justify-content-end" style="flex: 1;">
+        <a href="/" class="btn btn-light btn-sm rounded-pill shadow-sm">
+            <i class="fas fa-home me-1"></i> Trang chủ
+        </a>
+    </div>
+</nav>
 <div class="chat-container">
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="sidebar-header">
-            <div>
-                <h5 class="mb-0">Tin nhắn</h5>
-                <small id="userFullName"></small>
+        <div class="sidebar-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <!-- Avatar -->
+                <div id="sidebarUserAvatar" class="sidebar-user-avatar"></div>
+
+                <div>
+                    <h5 class="mb-0">Tin nhắn </h5>
+                    <small id="userFullName"></small>
+                </div>
             </div>
+
             <div>
                 <button class="btn btn-link text-white p-0" onclick="logout()">
                     <i class="fas fa-sign-out-alt"></i>
@@ -26,10 +48,11 @@
             </div>
         </div>
 
+
         <div class="search-container">
             <div class="position-relative">
                 <input type="text" class="form-control search-input" id="userSearch"
-                       placeholder="Tìm kiếm người dùng...">
+                       placeholder="Tìm kiếm Tên Công ty/ Nhà tuyển dụng...">
                 <div class="user-search-results" id="userSearchResults"></div>
             </div>
         </div>
@@ -62,11 +85,7 @@
                     <i class="fas fa-video"></i>
                 </button>
             </div>
-            <!-- Hiển thị khi đang trong cuộc gọi -->
-            <button id="endCallBtn" class="btn btn-danger" style="display:none">
-                <i class="fas fa-phone-slash"></i> Kết thúc cuộc gọi
-            </button>
-            <audio id="remoteAudio" autoplay></audio>
+
         </div>
 
         <div class="chat-messages" id="chatMessages">
@@ -82,14 +101,107 @@
         </div>
 
         <div class="message-input-container" id="messageInputContainer" style="display: none;">
+
+            <div class="file-preview-container" id="filePreviewContainer" style="display: none;">
+                <div class="file-preview" id="filePreview">
+                    <!-- File preview will be shown here -->
+                </div>
+                <div class="file-actions">
+                    <button type="button" class="btn btn-primary btn-sm" id="sendFileBtn">
+                        <i class="fas fa-paper-plane"></i> Gửi
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="cancelFileBtn">
+                        <i class="fas fa-times"></i> Hủy
+                    </button>
+                </div>
+            </div>
             <form id="messageForm">
-                <div class="message-input-group">
+                <div class="message-input-group position-relative">
+                    <!-- Attach file button (THÊM MỚI) -->
+                    <button type="button" class="attach-btn" id="attachBtn">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <!-- Hidden file input -->
+                    <input type="file" id="fileInput" accept="image/*,.pdf" style="display: none;">
+
+                    <!-- Emoji button -->
+                    <button type="button" class="emoji-btn" id="emojiBtn">😀</button>
+
                     <input type="text" class="message-input" id="messageInput"
                            placeholder="Nhập tin nhắn..." required>
+
+                    <!-- Send -->
                     <button type="submit" class="send-btn">
                         <i class="fas fa-paper-plane"></i>
                     </button>
+
+                    <!-- Emoji picker -->
+                    <div class="emoji-picker" id="emojiPicker">
+
+                        <!-- Tabs -->
+                        <div class="emoji-tabs">
+                            <button type="button" class="emoji-tab active" data-tab="smileys">😄</button>
+                            <button type="button" class="emoji-tab" data-tab="hearts">❤️</button>
+                            <button type="button" class="emoji-tab" data-tab="symbols">🔥</button>
+                        </div>
+
+                        <!-- Contents -->
+                        <div class="emoji-content active" id="smileys">
+                            <span class="emoji">😀</span>
+                            <span class="emoji">😁</span>
+                            <span class="emoji">😂</span>
+                            <span class="emoji">🤣</span>
+                            <span class="emoji">😊</span>
+                            <span class="emoji">😭</span>
+                            <!-- Thêm emoji mới giống Messenger/Zalo -->
+                            <span class="emoji">😍</span>
+                            <span class="emoji">😘</span>
+                            <span class="emoji">😜</span>
+                            <span class="emoji">😎</span>
+                            <span class="emoji">😏</span>
+                            <span class="emoji">🤔</span>
+                            <span class="emoji">🥰</span>
+                            <span class="emoji">🥲</span>
+                        </div>
+
+                        <div class="emoji-content" id="hearts">
+                            <span class="emoji">❤️</span>
+                            <span class="emoji">💙</span>
+                            <span class="emoji">💚</span>
+                            <span class="emoji">💛</span>
+                            <span class="emoji">💜</span>
+                            <!-- Thêm emoji mới -->
+                            <span class="emoji">🖤</span>
+                            <span class="emoji">🤍</span>
+                            <span class="emoji">🤎</span>
+                            <span class="emoji">💔</span>
+                            <span class="emoji">💖</span>
+                            <span class="emoji">💗</span>
+                            <span class="emoji">💓</span>
+                            <span class="emoji">💕</span>
+                        </div>
+
+                        <div class="emoji-content" id="symbols">
+                            <span class="emoji">🔥</span>
+                            <span class="emoji">🎉</span>
+                            <span class="emoji">👍</span>
+                            <span class="emoji">👎</span>
+                            <span class="emoji">🙏</span>
+                            <!-- Thêm emoji mới -->
+                            <span class="emoji">✌️</span>
+                            <span class="emoji">💪</span>
+                            <span class="emoji">🤝</span>
+                            <span class="emoji">✨</span>
+                            <span class="emoji">🌟</span>
+                            <span class="emoji">🎶</span>
+                            <span class="emoji">🎁</span>
+                            <span class="emoji">💥</span>
+                        </div>
+
+                    </div>
+
                 </div>
+
             </form>
         </div>
     </div>
@@ -113,22 +225,10 @@
         </div>
     </div>
 </div>
-<!-- UI hiển thị khi có cuộc gọi đến -->
-<div id="incomingCallModal" class="incoming-call-modal">
-    <div class="incoming-call-box">
-        <div class="caller-info">
-            <div id="callerName" class="caller-name">Người gọi</div>
-            <div class="calling-text">đang gọi cho bạn...</div>
-        </div>
-        <div class="call-buttons">
-            <button id="acceptCallBtn" class="btn btn-success">
-                <i class="fas fa-phone"></i> Chấp nhận
-            </button>
-            <button id="rejectCallBtn" class="btn btn-danger">
-                <i class="fas fa-phone-slash"></i> Từ chối
-            </button>
-        </div>
-    </div>
+<!-- Modal xem ảnh fullscreen (thêm vào cuối body, trước các script) -->
+<div id="imageViewModal" class="image-view-modal">
+    <span class="image-view-close" onclick="chatApp.closeImageView()">&times;</span>
+    <img class="image-view-content" id="imageViewContent">
 </div>
 
 
@@ -136,7 +236,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <script src="/js/chat.js"></script>
-
 
 </body>
 </html>

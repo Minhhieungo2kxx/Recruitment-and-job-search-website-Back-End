@@ -19,6 +19,9 @@ public class WebConfiguration implements WebMvcConfigurer {
                 .addResourceLocations("file:" + basePath + "/user/");
         registry.addResourceHandler("/storage/company/**")
                 .addResourceLocations("file:" + basePath + "/company/");
+
+        registry.addResourceHandler("/storage/chat-files/**")
+                .addResourceLocations("file:" + basePath + "/chat-files/");
     }
 
 //    @Bean

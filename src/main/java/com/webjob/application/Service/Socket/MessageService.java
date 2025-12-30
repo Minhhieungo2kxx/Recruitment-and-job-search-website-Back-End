@@ -14,6 +14,8 @@ import com.webjob.application.Repository.ConversationRepository;
 import com.webjob.application.Repository.MessageRepository;
 import com.webjob.application.Repository.UserRepository;
 import com.webjob.application.Service.UserService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,20 +24,26 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class MessageService {
     private final MessageRepository messageRepository;
     private final ConversationRepository conversationRepository;
     private final UserRepository userRepository;
-
     private final UserService userService;
     private final MessageMapper messageMapper;
-
     private final SimpMessagingTemplate messagingTemplate;
+    @Value("${upload.base-dir}")
+    private String uploadBaseDir;
+
 
     public MessageService(MessageRepository messageRepository,
                           ConversationRepository conversationRepository,
@@ -61,7 +69,15 @@ public class MessageService {
         message.setReceiver(receiver);
         message.setType(requestDTO.getType());
         message.setStatus(Message.MessageStatus.SENT);
-
+        // XỬ LÝ FILE NẾU CÓ
+        if (requestDTO.getContentType() != null) {
+            message.setContentType(requestDTO.getContentType());
+        }
+        if (requestDTO.getFileUrl() != null && !requestDTO.getFileUrl().isEmpty()) {
+            message.setFileUrl(requestDTO.getFileUrl());
+            message.setFileName(requestDTO.getFileName());
+            message.setFileSize(requestDTO.getFileSize());
+        }
         Message savedMessage = messageRepository.save(message);
 
         // Cập nhật hoặc tạo conversation
@@ -77,11 +93,20 @@ public class MessageService {
         if (message.getSender().getId() != user.getId()) {
             throw new RuntimeException("Bạn chỉ có thể sửa tin nhắn của mình");
         }
+        // KHÔNG CHO SỬA MESSAGE CÓ FILE
+        if (message.getContentType() != Message.MessageContentType.TEXT) {
+            throw new RuntimeException("Không thể sửa tin nhắn có file đính kèm");
+        }
         message.setContent(updateDTO.getContent());
         message.setIsEdited(true);
         Message updatedMessage = messageRepository.save(message);
 
         return messageMapper.toResponseDTO(updatedMessage);
+    }
+    public MessageResponseDTO getMessageById(Long messageId) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Tin nhắn không tồn tại"));
+        return messageMapper.toResponseDTO(message);
     }
 
     public void deleteMessage(String userEmail, Long messageId) {
@@ -94,11 +119,25 @@ public class MessageService {
             throw new RuntimeException("Bạn chỉ có thể sửa tin nhắn của mình");
         }
 
+
+        // XÓA FILE NẾU CÓ
+        if (message.getFileUrl() != null && !message.getFileUrl().isEmpty() &&
+                (message.getContentType() == Message.MessageContentType.IMAGE
+                        || message.getContentType() == Message.MessageContentType.FILE)) {
+            deleteFileFromStorage(message.getFileUrl());
+            log.info("User {} xóa message {} kèm file {}", user.getEmail(), messageId, message.getFileUrl());
+
+        }
         message.setIsDeleted(true);
+        message.setContent("Tin nhắn đã bị xóa");
+        message.setFileUrl(null);
+        message.setFileName(null);
+        message.setFileSize(null);
         messageRepository.save(message);
 
         // Gửi thông báo xóa tin nhắn cho cả sender và receiver
-        MessageDeleteDTO deleteDTO = new MessageDeleteDTO(message.getId(), "Tin nhắn đã bị xóa");
+        MessageDeleteDTO deleteDTO = new MessageDeleteDTO(message.getId(), "Tin nhắn đã bị xóa",
+                user.getId());
 
         messagingTemplate.convertAndSendToUser(
                 message.getSender().getEmail(),
@@ -233,6 +272,31 @@ public class MessageService {
             return true;
         }).orElse(false);
     }
+    @Transactional
+    public void markMessageAsRead(Long receiverId, Long senderId) {
+        messageRepository.markMessagesAsRead(receiverId, senderId);
+    }
+    // PHƯƠNG THỨC XÓA FILE
+    private void deleteFileFromStorage(String fileName) {
+        try {
+            Path filePath = Paths.get(uploadBaseDir, "chat-files", fileName);
+
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+                log.info("Đã xóa file: {}", filePath);
+            } else {
+                log.warn("File không tồn tại: {}", filePath);
+            }
+
+        } catch (IOException e) {
+            log.error("Lỗi khi xóa file: {}", fileName, e);
+        }
+    }
+
+
+
+
+
 
 
 

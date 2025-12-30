@@ -130,16 +130,33 @@ public class ApplicationEmailService {
         return response;
     }
     public String getLocationByIp(String ip) {
+
+        // IP local / private → không gọi API
+        if (ip == null ||
+                ip.equals("127.0.0.1") ||
+                ip.equals("0:0:0:0:0:0:0:1") ||
+                ip.startsWith("192.168.") ||
+                ip.startsWith("10.")) {
+
+            return "Localhost";
+        }
+
         try {
             String url = "http://ip-api.com/json/" + ip;
             RestTemplate rest = new RestTemplate();
             Map<String, Object> response = rest.getForObject(url, Map.class);
 
+            if (response == null || !"success".equals(response.get("status"))) {
+                return "Unknown";
+            }
+
             return response.get("city") + ", " + response.get("country");
+
         } catch (Exception e) {
             return "Unknown";
         }
     }
+
     public String getDeviceBasic(String userAgentString) {
         if (userAgentString == null || userAgentString.isEmpty()) {
             return "Không xác định";
@@ -192,5 +209,7 @@ public class ApplicationEmailService {
         NumberFormat vndFormat = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
         return vndFormat.format(amount);
     }
+
+
 
 }

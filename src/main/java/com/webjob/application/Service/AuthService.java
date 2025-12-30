@@ -9,6 +9,7 @@ import com.webjob.application.Dto.Response.UserDTO;
 import com.webjob.application.Service.Redis.TokenBlacklistService;
 import com.webjob.application.Service.SendEmail.ApplicationEmailService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final SecurityUtil securityUtil;
@@ -205,11 +207,19 @@ public class AuthService {
 
     private HttpHeaders clearRefreshCookie() {
         ResponseCookie deleteCookie = ResponseCookie.from("refresh", "")
-                .httpOnly(true).secure(true).path("/").maxAge(0).build();
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .domain("localhost") // PHẢI GIỐNG LOGIN
+                .maxAge(0)
+                .build();
+
         HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.SET_COOKIE, deleteCookie.toString());
+        headers.add(HttpHeaders.SET_COOKIE, deleteCookie.toString());
         return headers;
     }
+
+
 
 
     private Authentication authenticateUser(LoginDTO loginDTO) {
@@ -229,7 +239,7 @@ public class AuthService {
     private LoginResponse buildLoginResponse(User user) {
         LoginResponse.User userDTO = modelMapper.map(user, LoginResponse.User.class);
         String accessToken = securityUtil.createacessToken(user.getEmail(), userDTO);
-        String refreshToken = securityUtil.createrefreshToken(user.getEmail(), userDTO);
+
         return new LoginResponse(accessToken, userDTO);
     }
 
@@ -241,14 +251,15 @@ public class AuthService {
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
+                .domain("localhost") //  BẮT BUỘC
                 .maxAge(jwtRefreshExpiration)
                 .build();
     }
 
+
     public void handleLoginNotification(HttpServletRequest request, String email) {
         // Trong Controller hoặc nơi gọi async
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null) ip = request.getRemoteAddr();
+        String ip = getClientIp(request);
         String userAgent = request.getHeader("User-Agent");
         Map<String, Object> emailVars = new HashMap<>();
         emailVars.put("email", email);
@@ -256,6 +267,27 @@ public class AuthService {
         emailVars.put("ip", ip);
         emailVars.put("userAgent", userAgent);
         applicationEmailService.LoginNotification(emailVars);
+    }
+    public String getClientIp(HttpServletRequest request) {
+        String[] headers = {
+                "X-Forwarded-For",
+                "Proxy-Client-IP",
+                "WL-Proxy-Client-IP",
+                "HTTP_X_FORWARDED_FOR",
+                "HTTP_X_FORWARDED",
+                "HTTP_X_CLUSTER_CLIENT_IP",
+                "HTTP_CLIENT_IP",
+                "HTTP_FORWARDED_FOR",
+                "HTTP_FORWARDED"
+        };
+
+        for (String header : headers) {
+            String ip = request.getHeader(header);
+            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+                return ip.split(",")[0].trim();
+            }
+        }
+        return request.getRemoteAddr();
     }
 
 

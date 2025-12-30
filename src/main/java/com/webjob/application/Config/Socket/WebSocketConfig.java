@@ -1,5 +1,6 @@
 package com.webjob.application.Config.Socket;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 
 @Configuration
 @EnableWebSocketMessageBroker
+@Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final JwtDecoder jwtDecoder;
     private final PresenceChannelInterceptor presenceChannelInterceptor;
@@ -38,6 +40,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         config.setApplicationDestinationPrefixes("/app");
         config.setUserDestinationPrefix("/user");
     }
+
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
@@ -64,6 +67,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                             UsernamePasswordAuthenticationToken auth =
                                     new UsernamePasswordAuthenticationToken(username, null, new ArrayList<>());
                             accessor.setUser(auth);
+                            log.info("User {}  connected successful",username);
                         } catch (Exception e) {
                             System.out.println("JWT verification failed: " + e.getMessage());
                             return null;

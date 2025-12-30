@@ -20,12 +20,16 @@ public class MessageMapper {
         dto.setContent(message.getContent());
         dto.setStatus(message.getStatus());
         dto.setType(message.getType());
+        dto.setContentType(message.getContentType());
+        dto.setFileUrl(message.getFileUrl());
+        dto.setFileName(message.getFileName());
+        dto.setFileSize(message.getFileSize());
         dto.setSender(toUserInfoDTO(message.getSender()));
         dto.setReceiver(toUserInfoDTO(message.getReceiver()));
         dto.setCreatedAt(message.getCreatedAt());
         dto.setUpdatedAt(message.getUpdatedAt());
         dto.setIsEdited(message.getIsEdited());
-
+        dto.setIsDeleted(message.getIsDeleted());
         return dto;
     }
 

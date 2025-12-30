@@ -9,6 +9,7 @@ import com.webjob.application.Service.Redis.TokenBlacklistService;
 import com.webjob.application.Service.SecurityUtil;
 import com.webjob.application.Service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -59,7 +60,7 @@ public class AuthController {
     }
 
     @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "IP")
-    @GetMapping("/refresh")
+    @PostMapping("/refresh")
     public ResponseEntity<?> getRefreshToken(@CookieValue(name = "refresh", defaultValue = "default") String refreshToken) {
         return authService.refreshToken(refreshToken);
 

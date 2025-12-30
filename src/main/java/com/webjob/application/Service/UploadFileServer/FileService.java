@@ -23,6 +23,8 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,38 +43,46 @@ public class FileService {
         this.cloudinary = cloudinary;
         this.uploadFile = uploadFile;
     }
-    public ResponseEntity<?> handledownloadFile(String folder, String filename) {
-        try {
-            Path baseDir = Paths.get(uploadProperties.getBaseDir()).toAbsolutePath().normalize();
-            Path filePath = baseDir.resolve(folder).resolve(filename).normalize();
+public ResponseEntity<?> handledownloadFile(String folder, String filename) {
+    try {
+        Path baseDir = Paths.get(uploadProperties.getBaseDir())
+                .toAbsolutePath()
+                .normalize();
 
-            if (!filePath.startsWith(baseDir) || !Files.exists(filePath)) {
-                return ResponseEntity.notFound().build();
-            }
+        Path filePath = baseDir.resolve(folder)
+                .resolve(filename)
+                .normalize();
 
-            Resource resource = new UrlResource(filePath.toUri());
-            String contentType = Files.probeContentType(filePath);
-            if (contentType == null) {
-                if (filename.endsWith(".pdf")) contentType = "application/pdf";
-                else if (filename.matches(".*\\.(png|jpg|jpeg|gif)$")) contentType = "image/*";
-                else contentType = "application/octet-stream";
-            }
-
-            String disposition = (contentType.startsWith("image/") || contentType.equals("application/pdf"))
-                    ? "inline"
-                    : "attachment";
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"" + resource.getFilename() + "\"")
-                    .body(resource);
-
-        } catch (MalformedURLException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(null);
+        // Chống path traversal
+        if (!filePath.startsWith(baseDir) || !Files.exists(filePath)) {
+            return ResponseEntity.notFound().build();
         }
+
+        Resource resource = new UrlResource(filePath.toUri());
+
+        String contentType = Files.probeContentType(filePath);
+        if (contentType == null) {
+            contentType = "application/octet-stream";
+        }
+
+        String encodedFilename = URLEncoder.encode(
+                resource.getFilename(),
+                StandardCharsets.UTF_8
+        ).replace("+", "%20");
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename*=UTF-8''" + encodedFilename
+                )
+                .body(resource);
+
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
+}
+
     public ResponseEntity<?> proxyDownloadCloudinary(String encodedUrl) {
         try {
             String decodedUrl = Base64Util.decode(encodedUrl);

@@ -16,9 +16,16 @@ public class MessageResponseDTO {
     private String content;
     private Message.MessageStatus status;
     private Message.MessageType type;
+    // THÊM CÁC FIELD MỚI
+    private Message.MessageContentType contentType;
+    private String fileUrl;
+    private String fileName;
+    private Long fileSize;
+
     private UserInfoDTO sender;
     private UserInfoDTO receiver;
     private Instant createdAt;
     private Instant updatedAt;
     private Boolean isEdited;
+    private Boolean isDeleted;
 }

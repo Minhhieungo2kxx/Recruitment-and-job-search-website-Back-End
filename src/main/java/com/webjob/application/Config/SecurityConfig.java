@@ -5,6 +5,7 @@ import com.webjob.application.Config.CustomOAuth2.OAuth2LoginSuccessHandler;
 import com.webjob.application.Config.Redis.JwtBlacklistFilter;
 import com.webjob.application.Service.OAuth2.CustomOAuth2UserService;
 import com.webjob.application.Util.CustomAuthenticationEntryPoint;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +17,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity

@@ -18,4 +18,14 @@ public class MessageRequestDTO {
     private String content;
 
     private Message.MessageType type = Message.MessageType.CHAT;
+    // THÊM CÁC FIELD MỚI
+    private Message.MessageContentType contentType = Message.MessageContentType.TEXT;
+
+    private String fileUrl;
+
+    private String fileName;
+
+    private Long fileSize;
+
+
 }

@@ -44,10 +44,24 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     Optional<Message> findLastMessageBetweenUsers(@Param("userId1") Long userId1,
                                                   @Param("userId2") Long userId2);
 
+//    @Modifying
+//    @Query("UPDATE Message m SET m.status = 'READ' WHERE " +
+//            "m.receiver.id = :userId AND m.sender.id = :senderId AND m.status != 'read'")
+//    void markMessagesAsRead(@Param("userId") Long userId, @Param("senderId") Long senderId);
+
     @Modifying
-    @Query("UPDATE Message m SET m.status = 'READ' WHERE " +
-            "m.receiver.id = :userId AND m.sender.id = :senderId AND m.status != 'read'")
-    void markMessagesAsRead(@Param("userId") Long userId, @Param("senderId") Long senderId);
+    @Query("""
+            UPDATE Message m 
+            SET m.status = 'READ' 
+            WHERE m.receiver.id = :receiverId 
+            AND m.sender.id = :senderId 
+            AND m.status <> 'READ'
+            """)
+    void markMessagesAsRead(
+            @Param("receiverId") Long receiverId,
+            @Param("senderId") Long senderId
+    );
+
 
     List<Message> findAllBySenderOrReceiver(User sender, User receiver);
 

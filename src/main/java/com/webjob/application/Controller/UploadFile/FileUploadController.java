@@ -5,6 +5,7 @@ import com.webjob.application.Config.UploadfileServer.UploadFile;
 import com.webjob.application.Dto.Response.ApiResponse;
 import com.webjob.application.Dto.Response.UploadFileResponse;
 import com.webjob.application.Service.UploadFileServer.FileService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +19,7 @@ import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/v1/file")
+@Slf4j
 public class FileUploadController {
     private final UploadFile uploadFile;
 
@@ -38,15 +40,16 @@ public class FileUploadController {
 
         try {
             String uploadedFileName = uploadFile.getnameFile(file, folder);
-            UploadFileResponse uploadFileResponse = new UploadFileResponse(uploadedFileName, Instant.now(), folder);
+            UploadFileResponse uploadFileResponse =UploadFileResponse.builder()
+                    .fileName(uploadedFileName).uploadedAt(Instant.now())
+                    .fileSize(file.getSize()).contentType(file.getContentType())
+                    .folder(folder).build();
             ApiResponse<?> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), null,
                     "Tải file thành công!",
                     uploadFileResponse
             );
             return ResponseEntity.ok(apiResponse);
-
         } catch (IllegalStateException | IOException e) {
-
             ApiResponse<?> apiResponsebad = new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage(),
                     "Tải file Lỗi",
                     null
@@ -66,7 +69,10 @@ public class FileUploadController {
 
         try {
             String uploadedFileName = fileService.uploadFile(file, folder);
-            UploadFileResponse uploadFileResponse = new UploadFileResponse(uploadedFileName, Instant.now(), folder);
+            UploadFileResponse uploadFileResponse =UploadFileResponse.builder()
+                    .fileName(uploadedFileName).uploadedAt(Instant.now())
+                    .fileSize(file.getSize()).contentType(file.getContentType())
+                    .folder(folder).build();
             ApiResponse<?> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), null,
                     "Tải file thành công lên Cloudinary",
                     uploadFileResponse

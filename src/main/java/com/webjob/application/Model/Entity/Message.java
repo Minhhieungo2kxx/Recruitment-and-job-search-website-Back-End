@@ -26,7 +26,7 @@ public class Message {
     private Long id;
 
     @NotBlank(message = "Nội dung tin nhắn không được để trống")
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String content;
 
     @Enumerated(EnumType.STRING)
@@ -34,6 +34,19 @@ public class Message {
 
     @Enumerated(EnumType.STRING)
     private MessageType type = MessageType.CHAT;
+
+    @Enumerated(EnumType.STRING)
+    private MessageContentType contentType=MessageContentType.TEXT;
+
+    // THÊM CÁC FIELD MỚI CHO FILE
+    @Column(name = "file_url")
+    private String fileUrl;
+
+    @Column(name = "file_name")
+    private String fileName;
+
+    @Column(name = "file_size")
+    private Long fileSize;
 
     @ManyToOne
     @JoinColumn(name = "sender_id")
@@ -69,6 +82,8 @@ public class Message {
     @Column(name = "is_edited")
     private Boolean isEdited = false;
 
+
+
     public enum MessageStatus {
         SENT, DELIVERED, READ
     }
@@ -76,4 +91,8 @@ public class Message {
     public enum MessageType {
         CHAT, JOIN, LEAVE
     }
+    public enum MessageContentType {
+        TEXT, IMAGE, FILE
+    }
+
 }

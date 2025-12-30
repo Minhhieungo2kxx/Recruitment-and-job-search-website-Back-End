@@ -12,6 +12,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ErrorResponseVadidate<T> {
     private int statusCode;
     private String message;

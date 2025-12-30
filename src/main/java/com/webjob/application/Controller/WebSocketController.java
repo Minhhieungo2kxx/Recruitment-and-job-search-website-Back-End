@@ -1,6 +1,7 @@
 package com.webjob.application.Controller;
 
 import com.webjob.application.Annotation.RateLimit;
+import com.webjob.application.Dto.Request.Websockets.SeenRequest;
 import com.webjob.application.Model.Entity.Message;
 import com.webjob.application.Model.Entity.User;
 import com.webjob.application.Dto.Request.Websockets.MessageRequestDTO;
@@ -41,14 +42,7 @@ public class WebSocketController {
                                           Principal principal) {
         return messageService.sendMessage(principal.getName(), messageRequest);
     }
-    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "IP")
-    @MessageMapping("/chat.addUser")
-    @SendTo("/topic/public")
-    public MessageResponseDTO addUser(@Payload MessageRequestDTO messageRequest,
-                                      Principal principal) {
-        messageRequest.setType(Message.MessageType.JOIN);
-        return messageService.sendMessage(principal.getName(), messageRequest);
-    }
+
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectedEvent event) {
@@ -70,32 +64,25 @@ public class WebSocketController {
             messagingTemplate.convertAndSend("/topic/public", leaveMessage);
         }
     }
-    @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
-    @MessageMapping("/call.signal")
-    public void handleCallSignal(@Payload Map<String, Object> signal, Principal principal) {
-        String receiverId = (String) signal.get("receiverId");
-        User user=userService.getbyID(Long.parseLong(receiverId))
-                .orElseThrow(()->new UsernameNotFoundException("Not found with "+receiverId));
-        if (user!=null){
-            messagingTemplate.convertAndSendToUser(user.getEmail(), "/queue/call", signal);
-        }
-        else {
-            System.out.println("Không tìm thấy user với ID: " + receiverId);
-        }
+    @MessageMapping("/chat.seen")
+    public void seenMessage(SeenRequest seenRequest, Principal principal) {
+        Long messageId = seenRequest.getMessageId();   //  ĐÚNG
+        Long senderId  = seenRequest.getSenderId();    // người gửi
+        Long receiverId = seenRequest.getReceiverId(); // người xem
+        messageService.markMessageAsRead(receiverId, senderId);
 
-        System.out.println("Sending call signal to user: " + receiverId);
+        MessageResponseDTO updatedMessage =
+                messageService.getMessageById(messageId);
 
+        messagingTemplate.convertAndSendToUser(
+                updatedMessage.getSender().getEmail(),
+                "/queue/message-status",
+                updatedMessage
+        );
     }
-    @RateLimit(maxRequests = 30, timeWindowSeconds = 60, keyType = "TOKEN")
-    @MessageMapping("/call.candidate")
-    public void handleCallCandidate(@Payload Map<String, Object> candidate, Principal principal) {
-        String receiverId = (String) candidate.get("receiverId");
-        User user=userService.getbyID(Long.parseLong(receiverId))
-                .orElseThrow(()->new UsernameNotFoundException("Not found with "+receiverId));
-        messagingTemplate.convertAndSendToUser(user.getEmail(), "/queue/call", candidate);
-        System.out.println("Sending call signal to user: " + receiverId);
 
-    }
+
+
 
 
 }

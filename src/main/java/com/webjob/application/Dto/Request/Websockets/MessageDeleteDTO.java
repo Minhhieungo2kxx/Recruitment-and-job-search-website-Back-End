@@ -12,4 +12,5 @@ import lombok.Setter;
 public class MessageDeleteDTO {
     private Long messageId;
     private String status;
+    private Long deletedByUserId;
 }

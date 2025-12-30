@@ -45,7 +45,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<?> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        ErrorResponException<?> errorResponException=new ErrorResponException<>(
+        ErrorResponException<?> errorResponException = new ErrorResponException<>(
                 HttpStatus.BAD_REQUEST.value(),
                 "Exception Error",
                 LocalDateTime.now(),
@@ -59,7 +59,7 @@ public class GlobalExceptionHandler {
     //  3. Xử lý HttpMessageNotReadableException (khi JSON bị sai format hoặc thiếu)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        ErrorResponException<?> errorResponException=new ErrorResponException<>(
+        ErrorResponException<?> errorResponException = new ErrorResponException<>(
                 HttpStatus.BAD_REQUEST.value(),
                 "Exception Error",
                 LocalDateTime.now(),
@@ -69,10 +69,10 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponException, HttpStatus.BAD_REQUEST);
     }
 
-  //   ✅ 4. Xử lý NullPointerException (lỗi lập trình)
+    //   ✅ 4. Xử lý NullPointerException (lỗi lập trình)
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<?> handleNullPointerException(NullPointerException ex) {
-        ErrorResponException<?> errorResponException=new ErrorResponException<>(
+        ErrorResponException<?> errorResponException = new ErrorResponException<>(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Exception Error",
                 LocalDateTime.now(),
@@ -85,7 +85,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGenericException(Exception ex) {
-        ErrorResponException<?> errorResponException=new ErrorResponException<>(
+        ErrorResponException<?> errorResponException = new ErrorResponException<>(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Có lỗi xảy ra, vui lòng thử lại sau",
                 LocalDateTime.now(),
@@ -98,7 +98,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<?> handleUsernameNotFoundException(UsernameNotFoundException ex) {
-        ErrorResponException<?> errorResponException=new ErrorResponException<>(
+        ErrorResponException<?> errorResponException = new ErrorResponException<>(
                 HttpStatus.NOT_FOUND.value(),
                 "Exception Error",
                 LocalDateTime.now(),
@@ -110,7 +110,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException ex) {
-        ErrorResponException<?> errorResponException=new ErrorResponException<>(
+        ErrorResponException<?> errorResponException = new ErrorResponException<>(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Authentication Error",
                 LocalDateTime.now(),
@@ -119,9 +119,10 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(errorResponException, HttpStatus.CONFLICT);
     }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleExitsEmail(IllegalArgumentException ex) {
-        ErrorResponException<?> errorResponException=new ErrorResponException<>(
+        ErrorResponException<?> errorResponException = new ErrorResponException<>(
                 HttpStatus.BAD_REQUEST.value(),
                 "Exception Error",
                 LocalDateTime.now(),
@@ -131,9 +132,10 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponException, HttpStatus.BAD_REQUEST);
 
     }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<?> handleRuntime(RuntimeException ex) {
-        ErrorResponException<?> errorResponException=new ErrorResponException<>(
+        ErrorResponException<?> errorResponException = new ErrorResponException<>(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Exception Error",
                 LocalDateTime.now(),
@@ -143,9 +145,10 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponException, HttpStatus.INTERNAL_SERVER_ERROR);
 
     }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<?> handleAccessDeniedException(AccessDeniedException ex) {
-        ErrorResponException<?> errorResponException=new ErrorResponException<>(
+        ErrorResponException<?> errorResponException = new ErrorResponException<>(
                 HttpStatus.FORBIDDEN.value(),
                 "Bạn không có quyền thực hiện thao tác này",
                 LocalDateTime.now(),
@@ -157,7 +160,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<?> handleAuthenticationException(AuthenticationException ex) {
-        ErrorResponException<?> errorResponException=new ErrorResponException<>(
+        ErrorResponException<?> errorResponException = new ErrorResponException<>(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Xác thực thất bại",
                 LocalDateTime.now(),
@@ -167,6 +170,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(errorResponException);
     }
+
     @ExceptionHandler(TooManyRequestsException.class)
     public ResponseEntity<?> handleTooManyRequests(TooManyRequestsException ex) {
         ErrorResponException<?> errorResponse = new ErrorResponException<>(
@@ -178,6 +182,7 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.TOO_MANY_REQUESTS);
     }
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<?> handleBusinessException(BusinessException ex) {
         ErrorResponException<?> errorResponse = new ErrorResponException<>(
@@ -204,12 +209,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
-
-
-
-
-
-
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<?> handleIllegalStateException(IllegalStateException ex) {
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.BAD_REQUEST.value(),
+                "Exception File",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
 
 
 }

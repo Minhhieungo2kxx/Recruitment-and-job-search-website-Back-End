@@ -26,12 +26,5 @@ public class PresenceNotifier {
         messagingTemplate.convertAndSend("/topic/presence", presence);
     }
 
-    // Gửi trạng thái cho user cụ thể
-    public void sendPresenceToUser(Long targetUserId, UserPresenceDTO presence) {
-        messagingTemplate.convertAndSendToUser(
-                targetUserId.toString(),
-                "/queue/presence",
-                presence
-        );
-    }
+
 }
