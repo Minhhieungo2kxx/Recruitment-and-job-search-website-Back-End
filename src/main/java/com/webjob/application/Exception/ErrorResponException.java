@@ -21,6 +21,7 @@ public class ErrorResponException<T> {
     )
     private LocalDateTime timestamp;
     private String error;
+
     T data;
 
 }

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TopCV Clone - Kết nối cơ hội việc làm</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/chatboxai.css}">
+    <link rel="stylesheet" href="/css/index.css">
+</head>
+<body>
+
+<header class="navbar">
+    <div class="container flex-header">
+        <div class="logo">
+            <a th:href="@{/}">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Logo_TopCV_no_slogan.png" alt="TopCV Logo">
+            </a>
+        </div>
+        <nav class="main-menu">
+            <ul>
+                <li><a href="#">Việc làm</a></li>
+                <li><a href="#">Hồ sơ & CV</a></li>
+                <li><a href="#">Công ty</a></li>
+                <li><a href="#">Công cụ</a></li>
+            </ul>
+        </nav>
+        <div class="auth-buttons">
+            <a href="/login-chat" class="btn-login">Đăng nhập</a>
+            <a href="#" class="btn-register">Đăng ký</a>
+            <a href="#" class="btn-recruiter">Nhà tuyển dụng</a>
+        </div>
+    </div>
+</header>
+
+<main>
+    <section class="hero-search">
+        <div class="container">
+            <h1>Tìm việc làm mơ ước của bạn</h1>
+            <div class="search-box">
+                <div class="search-input">
+                    <i class="fa fa-search"></i>
+                    <input type="text" placeholder="Tên công việc, vị trí bạn muốn ứng tuyển...">
+                </div>
+                <select class="location-select">
+                    <option value="all">Tất cả địa điểm</option>
+                    <option value="hn">Hà Nội</option>
+                    <option value="hcm">TP. Hồ Chí Minh</option>
+                </select>
+                <button class="btn-search">Tìm kiếm</button>
+            </div>
+            <div class="quick-tags">
+                <span>Gợi ý: </span>
+                <a href="#">Java</a>, <a href="#">Spring Boot</a>, <a href="#">Frontend</a>, <a href="#">Marketing</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section container">
+        <h2 class="section-title">Việc làm hấp dẫn</h2>
+        <div class="job-grid">
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://media.licdn.com/dms/image/v2/D4E0BAQEO0dbBzELItw/company-logo_200_200/company-logo_200_200/0/1694500701793/techsolutions_logo?e=2147483647&v=beta&t=ZngMB0v1CpsL3tNlGZ5VUKEDxxIjvawVSKi5RtmJzhc" alt="Tech Solutions">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="Java Backend Developer (Spring)">Java Backend Developer (Spring)</h3>
+                    <p class="company-name">Tech Solutions Corp</p>
+                    <p class="salary">15 - 30 triệu</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> Hà Nội</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 3 năm</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjNrth9D12U-w1YDVelzT5eSzetDjf_zGJ4Q&s" alt="FPT Software">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="Senior Frontend Developer (ReactJS)">Senior Frontend Developer (ReactJS)</h3>
+                    <p class="company-name">FPT Software</p>
+                    <p class="salary">20 - 45 triệu</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> Đà Nẵng</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 5 năm</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMOfEGbR6U-dPgsKO0Ng01-T_jw94r8wwuTw&s" alt="VNG">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="Mobile App Developer (Flutter/Dart)">Mobile App Developer (Flutter)</h3>
+                    <p class="company-name">VNG Corporation</p>
+                    <p class="salary">18 - 35 triệu</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> TP. HCM</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 2 năm</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://cdn-new.topcv.vn/unsafe/https://static.topcv.vn/company_logos/WZedclI8ZfWN03oLCkYv9DQ8TYxD5T0i_1694575361____9af0c441a9a8411a4d49f4906653ced7.png" alt="Viettel">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="Data Analyst (SQL, Python)">Data Analyst</h3>
+                    <p class="company-name">Viettel Group</p>
+                    <p class="salary">Thỏa thuận</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> Hà Nội</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 1 năm</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://deo.shopeemobile.com/shopee/shopee-pcmall-live-sg/assets/ca5d12864c12916c05640b36e47ac5c9.png" alt="Shopee">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="DevOps Engineer (AWS/Docker)">DevOps Engineer</h3>
+                    <p class="company-name">Shopee Vietnam</p>
+                    <p class="salary">30 - 60 triệu</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> TP. HCM</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 4 năm</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://media-vnpt.vnptvas.vn/Media/Images/28082023/logo%20VNPT.png" alt="Creative Agency">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="UI/UX Designer (Figma)">UI/UX Designer</h3>
+                    <p class="company-name">Creative Design Agency</p>
+                    <p class="salary">12 - 25 triệu</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> Từ xa (Remote)</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 2 năm</span>
+                    </div>
+                </div>
+            </div>
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://photo2.tinhte.vn/data/attachment-files/2025/12/8914358_22.jpg" alt="VNG Corporation">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="Backend Engineer (NodeJS/Microservices)">Backend Engineer (NodeJS/Microservices)</h3>
+                    <p class="company-name">VNG Corporation</p>
+                    <p class="salary">25 - 50 triệu</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> TP. Hồ Chí Minh</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 3 năm</span>
+                    </div>
+                </div>
+            </div>
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://solutions.viettel.vn/storage/recruitment/tuyendung-noilamviectimkiem-slide16.png" alt="Viettel Solutions">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="Mobile App Developer (Flutter/Dart)">Mobile App Developer (Flutter/Dart)</h3>
+                    <p class="company-name">Viettel Solutions</p>
+                    <p class="salary">18 - 40 triệu</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> Hà Nội</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 2 năm</span>
+                    </div>
+                </div>
+            </div>
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZcQPC-zWVyFOu9J2OGl0j2D220D49D0Z7BQ&s" alt="MoMo">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="Senior UI/UX Product Designer">Senior UI/UX Product Designer</h3>
+                    <p class="company-name">MoMo (M-Service)</p>
+                    <p class="salary">30 - 55 triệu</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> TP. Hồ Chí Minh</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 4 năm</span>
+                    </div>
+                </div>
+            </div>
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMHqfzKjnBKuh_y76LaHQgzi1kKAxFPQ_igA&s" alt="VNG">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="Senior Backend Engineer (Java/Go)">Senior Backend Engineer (Java/Go)</h3>
+                    <p class="company-name">VNG Corporation</p>
+                    <p class="salary">40 - 70 triệu</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> TP. Hồ Chí Minh</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 5 năm</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://cdnphoto.dantri.com.vn/GjiUhERntfWNWTD_keifahSqtCA=/zoom/1200_630/2025/03/19/techcombank-crop-1742353082593.jpeg" alt="Techcombank">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="Data Analyst">Data Analyst (Kinh Doanh)</h3>
+                    <p class="company-name">Techcombank</p>
+                    <p class="salary">25 - 45 triệu</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> Hà Nội</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 2 năm</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://strapi-efex.ichiba.net/uploads/shopee_viet_nam_247771b151.jpg" alt="Shopee">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="Business Development Manager">Business Development Manager</h3>
+                    <p class="company-name">Shopee Vietnam</p>
+                    <p class="salary">Thỏa thuận</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> TP. Hồ Chí Minh</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 3 năm</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnZFY7VARQFUrQGiwzOYaG_ZnnFWO32LmFTw&s" alt="FPT Software">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="Frontend Developer (ReactJS)">Frontend Developer (ReactJS)</h3>
+                    <p class="company-name">FPT Software</p>
+                    <p class="salary">20 - 40 triệu</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> Đà Nẵng</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 2 năm</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://ircdn.vingroup.net/storage/uploads/0_Tintuchoatdong/2019/April/Logo%20VinAI.jpg" alt="VinFast">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="AI Engineer">AI Engineer (Computer Vision)</h3>
+                    <p class="company-name">VinAI (VinGroup)</p>
+                    <p class="salary">50 - 90 triệu</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> Hà Nội</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 3 năm</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="job-card">
+                <div class="job-logo">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSo7bzUuPdIKkPXUiU3yiUI1GKsqdhuPQaQBg&s" alt="Grab">
+                </div>
+                <div class="job-info">
+                    <h3 class="job-title" title="Product Manager">Product Manager</h3>
+                    <p class="company-name">Grab Vietnam</p>
+                    <p class="salary">45 - 80 triệu</p>
+                    <div class="tags">
+                        <span><i class="fa-solid fa-location-dot"></i> TP. Hồ Chí Minh</span>
+                        <span><i class="fa-solid fa-briefcase"></i> 5 năm</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+
+
+<footer class="footer">
+    <div class="container footer-grid">
+        <div class="footer-col">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Logo_TopCV_no_slogan.png" alt="Logo" width="140" style="filter: brightness(0) invert(1); margin-bottom: 20px;">
+            <p style="color: #a7afb7; font-size: 14px;">Nền tảng công nghệ tuyển dụng hàng đầu Việt Nam. Giúp ứng viên tìm việc và nhà tuyển dụng kết nối nhanh chóng.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Về TopCV</h4>
+            <ul>
+                <li><a href="#">Giới thiệu</a></li>
+                <li><a href="#">Tuyển dụng</a></li>
+                <li><a href="#">Liên hệ</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Ứng viên</h4>
+            <ul>
+                <li><a href="#">Tìm việc làm</a></li>
+                <li><a href="#">Tạo CV</a></li>
+                <li><a href="#">Cẩm nang nghề nghiệp</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Hỗ trợ</h4>
+            <ul>
+                <li><a href="#">Điều khoản</a></li>
+                <li><a href="#">Bảo mật</a></li>
+                <li><a href="#">Câu hỏi thường gặp</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2026 TopCV Clone Project. All rights reserved. Designed with Team Lead FPT </p>
+    </div>
+</footer>
+<!-- Include chatbox -->
+<div th:replace="chat/chatbox :: chatbox"></div>
+<script src="/js/chatbox.js"></script>
+</body>
+</html>

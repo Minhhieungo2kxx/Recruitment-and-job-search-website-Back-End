@@ -24,8 +24,8 @@ public class AsyncConfig {
 
 //|         Gọi `@Async` từ đâu?                | Có hiệu lực không? |
 //        | ----------------------------------- | ------------------ |
-//        | Gọi từ controller/service khác bean | ✅ Có hiệu lực      |
-//        | Gọi từ chính bên trong cùng class   | ❌ Không hiệu lực   |
+//        | Gọi từ controller/service khác bean |  Có hiệu lực      |
+//        | Gọi từ chính bên trong cùng class   |  Không hiệu lực   |
 
 //CorePoolSize = 5 → luôn giữ 5 thread sẵn sàng xử lý task.
 //

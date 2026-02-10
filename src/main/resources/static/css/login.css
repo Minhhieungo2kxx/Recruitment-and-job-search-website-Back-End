@@ -1,0 +1,304 @@
+
+:root {
+    --primary-color: #5d5dff; /* Màu chính mới */
+    --secondary-color: #6a5dff; /* Màu phụ mới */
+    --light-bg: #f0f2f5; /* Nền sáng hơn */
+    --text-dark: #333;
+    --text-light: #666;
+    --box-shadow-light: 0 5px 15px rgba(0, 0, 0, 0.08); /* Đổ bóng nhẹ nhàng */
+    --box-shadow-strong: 0 20px 40px rgba(0, 0, 0, 0.15); /* Đổ bóng mạnh hơn */
+    --border-radius: 20px; /* Bo tròn hơn */
+}
+
+body {
+    background: var(--light-bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Poppins', sans-serif; /* Phông chữ hiện đại hơn */
+    color: var(--text-dark);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Thêm hiệu ứng hình học ở nền */
+body::before, body::after {
+    content: '';
+    position: absolute;
+    background: var(--primary-color);
+    border-radius: 50%;
+    opacity: 0.1;
+    filter: blur(50px);
+    z-index: -1;
+    animation: pulse 10s ease-in-out infinite;
+}
+
+body::before {
+    width: 300px;
+    height: 300px;
+    top: -100px;
+    left: -100px;
+}
+
+body::after {
+    width: 400px;
+    height: 400px;
+    bottom: -150px;
+    right: -150px;
+    background: var(--secondary-color);
+    animation-delay: 5s;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.login-container {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-strong);
+    overflow: hidden;
+    width: 100%;
+    max-width: 450px; /* Tăng chiều rộng một chút */
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Tạo hiệu ứng kính mờ */
+    backdrop-filter: blur(10px);
+    animation: slideIn 0.8s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.login-header {
+    text-align: center;
+    padding: 30px 20px 20px;
+    border-bottom: 2px solid var(--light-bg);
+}
+
+.login-header h2 {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 2rem;
+    margin-bottom: 5px;
+}
+
+.login-header p {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-top: 5px;
+}
+
+/* Hiệu ứng logo */
+.logo-icon {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+    animation: bounceIn 1s ease-out;
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.login-body {
+    padding: 30px;
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+}
+
+.form-control {
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    padding: 15px 18px;
+    transition: all 0.3s ease;
+    background-color: #f9f9f9;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(93, 93, 255, 0.15);
+    background-color: white;
+}
+
+.input-group {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #aaa;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: var(--primary-color);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    border: none;
+    border-radius: 15px; /* Bo tròn vừa phải */
+    padding: 15px 30px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 8px 20px rgba(106, 93, 255, 0.4);
+}
+
+.btn-primary:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(106, 93, 255, 0.6);
+}
+
+.alert-danger {
+    border-radius: 10px;
+    font-weight: 500;
+    padding: 12px;
+    animation: shake 0.5s;
+}
+
+/* Hiệu ứng rung khi có lỗi */
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    20%, 60% {
+        transform: translateX(-5px);
+    }
+    40%, 80% {
+        transform: translateX(5px);
+    }
+}
+
+.text-muted a {
+    color: var(--primary-color) !important;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.text-muted a:hover {
+    color: var(--secondary-color) !important;
+}
+
+.google-btn {
+    background-color: #db4437;
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.google-btn:hover {
+    background-color: #c33d2e;
+    color: white;
+}
+/* --- PHẦN RESPONSIVE BỔ SUNG --- */
+
+@media (max-width: 576px) {
+    body {
+        /* Cho phép cuộn trên màn hình rất nhỏ nếu nội dung dài */
+        align-items: flex-start;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        overflow-y: auto;
+    }
+
+    .login-container {
+        width: 90%; /* Để lại khoảng trống 2 bên lề */
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 10px; /* Giảm padding container */
+        border-radius: 15px; /* Giảm bo góc một chút cho cân đối */
+    }
+
+    .login-header {
+        padding: 20px 10px 15px;
+    }
+
+    .login-header h2 {
+        font-size: 1.6rem; /* Giảm cỡ chữ tiêu đề */
+    }
+
+    .login-body {
+        padding: 20px; /* Giảm padding bên trong form */
+    }
+
+    .btn-primary {
+        padding: 12px 20px;
+        font-size: 1rem;
+    }
+
+    /* Thu nhỏ các vòng tròn trang trí ở nền để không lấn át nội dung */
+    body::before {
+        width: 150px;
+        height: 150px;
+        top: -50px;
+        left: -50px;
+    }
+
+    body::after {
+        width: 200px;
+        height: 200px;
+        bottom: -70px;
+        right: -70px;
+    }
+}
+
+/* Hỗ trợ các màn hình siêu nhỏ hoặc điện thoại xoay ngang */
+@media (max-height: 600px) {
+    body {
+        align-items: flex-start;
+        padding: 20px 0;
+    }
+
+    .login-container {
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+}
+
+/* Tối ưu hóa việc hiển thị icon Google nếu text quá dài */
+.google-btn {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

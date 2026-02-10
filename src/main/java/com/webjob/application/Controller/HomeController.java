@@ -16,9 +16,8 @@ public class HomeController {
 
     @RateLimit(maxRequests = 20, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping("/")
-    @ResponseBody
     public String getHome() {
-        return "Welcome SpringBoot RestFul API Beginner";
+        return "home/index";
     }
 
     @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "IP")

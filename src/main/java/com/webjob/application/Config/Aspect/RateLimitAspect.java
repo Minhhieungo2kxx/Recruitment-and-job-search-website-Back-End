@@ -18,6 +18,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 @Aspect
 @Component
@@ -47,12 +48,15 @@ public class RateLimitAspect {
             key = "RATE_LIMIT:IP:" + ip + ":" + method + ":" + endpoint;
             blacklistKey = "BLACKLIST:IP:" + ip + ":" + method + ":" + endpoint;
         }
-
-
         // Kiểm tra xem IP có đang bị block không
         if (Boolean.TRUE.equals(redisTemplate.hasKey(blacklistKey))) {
             logger.warn("Blocked IP {} tried to access while still blocked", blacklistKey);
-            throw new TooManyRequestsException("IP temporarily blocked due to abuse");
+            Long ttl = redisTemplate.getExpire(blacklistKey, TimeUnit.SECONDS);
+            long retryAfter = ttl > 0 ? ttl : 300;
+            throw new TooManyRequestsException(
+                    "IP temporarily blocked due to abuse",
+                    retryAfter
+            );
         }
 
         ValueOperations<String, Object> ops = redisTemplate.opsForValue();
@@ -65,9 +69,13 @@ public class RateLimitAspect {
             ops.increment(key);
         } else {
             // Nếu quá giới hạn, block IP tạm thời 5 phút
-            redisTemplate.opsForValue().set(blacklistKey, "BLOCKED", Duration.ofMinutes(5));
+            long blockSeconds = 300; // 5 phút
+            redisTemplate.opsForValue().set(blacklistKey, "BLOCKED", Duration.ofSeconds(blockSeconds));
             logger.warn("IP {} has been blocked due to too many requests", blacklistKey);
-            throw new TooManyRequestsException("Too many requests. IP temporarily blocked.");
+            throw new TooManyRequestsException(
+                    "Too many requests. IP temporarily blocked.",
+                    blockSeconds
+            );
         }
 
         return joinPoint.proceed();

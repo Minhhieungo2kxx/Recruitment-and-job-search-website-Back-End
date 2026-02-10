@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="chatbox">
+    <div id="chat-icon" onclick="toggleChatBox()">
+        <span style="font-size: 24px;">💬</span>
+    </div>
+
+    <div id="chat-box" style="display: none; opacity: 0; transform: translateY(20px); transition: all 0.3s ease;">
+        <div id="chat-box-header">
+            <div class="header-info">
+                <span class="status-dot"></span>
+                <span>AI Career Advisor</span>
+            </div>
+            <div class="header-actions">
+                <button id="clear-history-btn" onclick="clearChatHistory()" title="Xóa lịch sử">🗑️</button>
+
+            </div>
+        </div>
+
+        <div id="chat-box-body">
+            <div class="system-time">Hôm nay</div>
+
+            <div class="ai-message message">
+                👋 <strong>Xin chào!</strong><br/>
+                Tôi là <strong>AI Career Advisor</strong> – trợ lý tư vấn nghề nghiệp của bạn.
+                <br/><br/>
+                Tôi có thể hỗ trợ bạn:
+                <ul>
+                    <li>🔍 Gợi ý công việc phù hợp với năng lực</li>
+                    <li>📊 Phân tích xu hướng ngành & thị trường</li>
+                    <li>🧭 Định hướng lộ trình phát triển sự nghiệp</li>
+                </ul>
+                💡 <em>Bạn có thể bắt đầu bằng cách hỏi:</em><br/>
+                <strong>“Tôi phù hợp với ngành nghề nào?”</strong>
+            </div>
+        </div>
+
+
+        <div id="chat-box-footer">
+            <div class="input-wrapper">
+                <input type="text"
+                       id="chat-input"
+                       placeholder="Hỏi tôi về sự nghiệp..."
+                       onkeydown="handleKey(event)" />
+                <button id="chat-send" onclick="sendMessage()">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

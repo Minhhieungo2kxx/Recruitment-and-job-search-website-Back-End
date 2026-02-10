@@ -145,7 +145,7 @@ class ChatApp {
 
 
     }
-    }
+
 
     increaseUnread(userId) {
         const convItem = document.querySelector(
@@ -1568,7 +1568,7 @@ async function logout() {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('userInfo');
 
-        window.location.href = '/login-chat';
+        window.location.href = '/';
     }
 }
 

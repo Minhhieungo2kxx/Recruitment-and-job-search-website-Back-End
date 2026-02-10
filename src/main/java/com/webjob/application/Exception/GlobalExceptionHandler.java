@@ -69,7 +69,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponException, HttpStatus.BAD_REQUEST);
     }
 
-    //   ✅ 4. Xử lý NullPointerException (lỗi lập trình)
+    //    4. Xử lý NullPointerException (lỗi lập trình)
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<?> handleNullPointerException(NullPointerException ex) {
         ErrorResponException<?> errorResponException = new ErrorResponException<>(
@@ -180,7 +180,18 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 null
         );
-        return new ResponseEntity<>(errorResponse, HttpStatus.TOO_MANY_REQUESTS);
+        Map<String, Object> body = new HashMap<>();
+        body.put("statusCode", errorResponse.getStatusCode());
+        body.put("message", errorResponse.getMessage());
+        body.put("timestamp", errorResponse.getTimestamp());
+        body.put("error", errorResponse.getError());
+        body.put("data", null);
+        body.put("retryAfter", ex.getRetryAfter());
+
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfter())) // chuẩn HTTP
+                .body(body);
     }
 
     @ExceptionHandler(BusinessException.class)

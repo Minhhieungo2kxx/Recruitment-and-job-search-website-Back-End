@@ -962,6 +962,114 @@ body {
     height: 100%;
     object-fit: cover;
 }
+/* ==========================================================================
+   RESPONSIVE DESIGN BỔ SUNG
+   ========================================================================== */
+
+/* 1. Cho máy tính bảng và màn hình nhỏ (Dưới 992px) */
+@media (max-width: 991px) {
+    .sidebar {
+        width: 300px; /* Thu nhỏ sidebar một chút */
+    }
+
+    .message {
+        max-width: 90%; /* Tăng chiều ngang tin nhắn */
+    }
+}
+
+/* 2. Cho điện thoại di động (Dưới 768px) */
+@media (max-width: 767px) {
+    body {
+        padding-top: 55px; /* Giảm padding cho mobile */
+    }
+
+    .top-navbar {
+        height: 55px;
+    }
+
+    .chat-container {
+        height: calc(100vh - 55px) !important;
+        position: relative;
+    }
+
+    /* Logic Mobile: Ẩn sidebar hoặc chat area */
+    /* Mặc định trên mobile, nếu đang xem danh sách thì ẩn chat, nếu đang chat thì ẩn danh sách */
+    .sidebar {
+        width: 100%;
+        position: absolute;
+        z-index: 10;
+        height: 100%;
+        transition: transform 0.3s ease;
+    }
+
+    /* Khi lớp .show-chat được thêm vào .chat-container bằng JS */
+    .chat-container.show-chat .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .chat-area {
+        width: 100%;
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        z-index: 5;
+    }
+
+    /* Header của chat cần nút "Quay lại" trên mobile */
+    .chat-header {
+        padding: 10px 15px;
+        min-height: 65px;
+    }
+
+    .back-to-list {
+        display: block !important; /* Hiện nút quay lại (cần thêm vào HTML) */
+        margin-right: 10px;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+    /* Tối ưu hóa tin nhắn trên mobile */
+    .message-bubble {
+        padding: 10px 14px;
+        font-size: 0.95rem;
+    }
+
+    .message-image {
+        max-width: 100%; /* Hình ảnh chiếm hết chiều ngang cho phép */
+    }
+
+    /* Input area gọn gàng hơn */
+    .message-input-container {
+        padding: 10px;
+    }
+
+    .message-input {
+        font-size: 14px; /* Tránh tình trạng auto-zoom trên iOS */
+    }
+
+    /* Ẩn các thông tin meta không quan trọng để tiết kiệm không gian */
+    .timestamp {
+        font-size: 0.7em;
+    }
+}
+
+/* 3. Cho điện thoại rất nhỏ (Dưới 400px) */
+@media (max-width: 400px) {
+    .chat-user-info .avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    .conversation-name {
+        max-width: 120px;
+    }
+}
+
+/* 4. Trạng thái hỗ trợ (Helper Classes) */
+.back-to-list {
+    display: none; /* Mặc định ẩn trên Desktop */
+}
 
 
 

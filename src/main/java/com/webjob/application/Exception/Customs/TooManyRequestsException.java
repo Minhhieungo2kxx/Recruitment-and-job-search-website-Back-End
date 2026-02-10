@@ -1,9 +1,15 @@
 package com.webjob.application.Exception.Customs;
 
 public class TooManyRequestsException extends RuntimeException{
-    public TooManyRequestsException(String message) {
+    private final long retryAfter;
+    public TooManyRequestsException(String message, long retryAfter) {
         super(message);
+        this.retryAfter = retryAfter;
     }
+    public long getRetryAfter() {
+        return retryAfter;
+    }
+
 
 }
 
