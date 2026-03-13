@@ -8,6 +8,7 @@ import com.webjob.application.Service.UploadFileServer.FileService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/file")
@@ -36,27 +38,18 @@ public class FileUploadController {
     @PostMapping("/server")
     public ResponseEntity<?> uploadFile(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "folder", defaultValue = "default") String folder) {
-
-        try {
+            @RequestParam(value = "folder", defaultValue = "default") String folder) throws IOException {
             String uploadedFileName = uploadFile.getnameFile(file, folder);
             UploadFileResponse uploadFileResponse =UploadFileResponse.builder()
                     .fileName(uploadedFileName).uploadedAt(Instant.now())
-                    .fileSize(file.getSize()).contentType(file.getContentType())
+                    .fileSize(file.getSize())
+                    .contentType(file.getContentType())
                     .folder(folder).build();
             ApiResponse<?> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), null,
                     "Tải file thành công!",
                     uploadFileResponse
             );
             return ResponseEntity.ok(apiResponse);
-        } catch (IllegalStateException | IOException e) {
-            ApiResponse<?> apiResponsebad = new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage(),
-                    "Tải file Lỗi",
-                    null
-            );
-            return ResponseEntity.badRequest().body(apiResponsebad);
-        }
-
 
     }
 
@@ -65,13 +58,15 @@ public class FileUploadController {
     @PostMapping("/cloudinary")
     public ResponseEntity<?> uploadFileCloudinary(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "folder", defaultValue = "default") String folder) {
-
-        try {
-            String uploadedFileName = fileService.uploadFile(file, folder);
+            @RequestParam(value = "folder", defaultValue = "default") String folder, Authentication authentication) throws IOException {
+            Map<String,String> uploadedFileName = fileService.uploadFile(file, folder,authentication);
             UploadFileResponse uploadFileResponse =UploadFileResponse.builder()
-                    .fileName(uploadedFileName).uploadedAt(Instant.now())
-                    .fileSize(file.getSize()).contentType(file.getContentType())
+                    .fileName(uploadedFileName.get("url"))
+                    .public_id(uploadedFileName.get("publicId"))
+                    .resourceType(uploadedFileName.get("resourceType"))
+                    .uploadedAt(Instant.now())
+                    .fileSize(file.getSize())
+                    .contentType(file.getContentType())
                     .folder(folder).build();
             ApiResponse<?> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), null,
                     "Tải file thành công lên Cloudinary",
@@ -79,15 +74,7 @@ public class FileUploadController {
             );
             return ResponseEntity.ok(apiResponse);
 
-        } catch (IllegalStateException | IOException e) {
-
-            ApiResponse<?> apiResponse = new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage(),
-                    "Tải file Lỗi",
-                    null
-            );
-            return ResponseEntity.badRequest().body(apiResponse);
         }
 
-
     }
-}
+

@@ -14,6 +14,8 @@ import java.time.Instant;
 @Builder
 public class UploadFileResponse {
     private String fileName;
+    private String public_id;
+    private String resourceType;
     @JsonFormat(
             shape = JsonFormat.Shape.STRING,
             pattern = "yyyy-MM-dd HH:mm:ss a z",

@@ -8,6 +8,7 @@ import com.webjob.application.Dto.Response.ApiResponse;
 import com.webjob.application.Service.PasswordResetService;
 import com.webjob.application.Service.UserService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,16 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/password")
-
+@RequiredArgsConstructor
 public class PasswordResetController {
     private final PasswordResetService passwordResetService;
 
     private final UserService userService;
 
-    public PasswordResetController(PasswordResetService passwordResetService, UserService userService) {
-        this.passwordResetService = passwordResetService;
-        this.userService = userService;
-    }
 
     @RateLimit(maxRequests = 3, timeWindowSeconds = 300, keyType = "IP")
     @PostMapping("/forgot")

@@ -22,17 +22,16 @@ public class UserDetailCustom implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         com.webjob.application.Model.Entity.User user=userService.getbyEmail(username);
 
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found "+username);
-        }
-
-        return new User(
+        return new CustomUserDetails(
+                user.getId(),                 // userId
                 user.getEmail(),
                 user.getPassword(),
                 Collections.singletonList(
-                        new SimpleGrantedAuthority("ROLE_"+user.getRole().getName().trim()))); // Chuyển đổi role
-        // thành
-        // authority
+                        new SimpleGrantedAuthority(
+                                "ROLE_" + user.getRole().getName().trim()
+                        )
+                )
+        );
 
 
     }

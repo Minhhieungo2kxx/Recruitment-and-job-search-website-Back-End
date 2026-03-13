@@ -11,13 +11,14 @@ import com.webjob.application.Service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.web.bind.annotation.*;
-
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/auth") // base path cho Auth
 public class AuthController {
@@ -26,26 +27,11 @@ public class AuthController {
     private Long jwtrefreshExpiration;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final SecurityUtil securityUtil;
-
     private final UserService userService;
-
     private final JwtDecoder jwtDecoder;
     private final TokenBlacklistService tokenBlacklistService;
-
     private final AuthService authService;
-
-
     private final ModelMapper modelMapper;
-
-    public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil, UserService userService, JwtDecoder jwtDecoder, TokenBlacklistService tokenBlacklistService, AuthService authService, ModelMapper modelMapper) {
-        this.authenticationManagerBuilder = authenticationManagerBuilder;
-        this.securityUtil = securityUtil;
-        this.userService = userService;
-        this.jwtDecoder = jwtDecoder;
-        this.tokenBlacklistService = tokenBlacklistService;
-        this.authService = authService;
-        this.modelMapper = modelMapper;
-    }
 
     @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "IP")
     @PostMapping("/login")

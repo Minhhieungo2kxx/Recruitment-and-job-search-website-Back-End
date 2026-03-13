@@ -4,6 +4,7 @@ import com.webjob.application.Annotation.RateLimit;
 
 import com.webjob.application.Exception.Customs.TooManyRequestsException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -20,16 +21,12 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
+@RequiredArgsConstructor
 @Aspect
 @Component
 public class RateLimitAspect {
     private final RedisTemplate<String, Object> redisTemplate;
     private static final Logger logger = LoggerFactory.getLogger(RateLimitAspect.class);
-
-    public RateLimitAspect(RedisTemplate<String, Object> redisTemplate) {
-        this.redisTemplate = redisTemplate;
-    }
-
     @Around("@annotation(rateLimit)")
     public Object rateLimit(ProceedingJoinPoint joinPoint, RateLimit rateLimit) throws Throwable {
         ServletRequestAttributes sra = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();

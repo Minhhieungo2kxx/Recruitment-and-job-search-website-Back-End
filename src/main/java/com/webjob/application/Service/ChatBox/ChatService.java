@@ -7,6 +7,7 @@ import com.webjob.application.Model.Entity.ChatMessage;
 import com.webjob.application.Model.Entity.User;
 import com.webjob.application.Repository.ChatMessageRepository;
 import com.webjob.application.Service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ChatService {
     private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
     @Value("${gemini.api.key}")
@@ -68,15 +70,12 @@ public class ChatService {
             Luôn trả lời bằng tiếng Việt, ngắn gọn, chuyên nghiệp.
             """;
 
-    public ChatService(UserService userService, ChatMessageRepository chatMessageRepository) {
-        this.userService = userService;
-        this.chatMessageRepository = chatMessageRepository;
-    }
+
 
     public ChatMessageDto processMessage(ChatMessageDto messageDto, Authentication authentication) {
         try {
             logger.info("Processing message for session: {}", authentication.getName());
-            User user = userService.getbyEmail(authentication.getName());
+            User user = userService.getById(Long.valueOf(authentication.getName()));
             List<ChatMessageDto> history=getChatHistory(authentication);
             String aiResponse = callGeminiWithFallback(
                     messageDto.getMessage(),
@@ -188,7 +187,7 @@ private String callGeminiApiWithModel(
 
     // Lấy lịch sử chat, ưu tiên theo user nếu có
     public List<ChatMessageDto> getChatHistory(Authentication authentication) {
-        User user = userService.getbyEmail(authentication.getName());
+        User user = userService.getById(Long.valueOf(authentication.getName()));
         List<ChatMessage> messages = chatMessageRepository.findByUserOrderByCreatedAtAsc(user);
 
         return messages.stream()
@@ -198,7 +197,7 @@ private String callGeminiApiWithModel(
 
     @Transactional
     public void clearChatHistory(Authentication authentication) {
-        User user = userService.getbyEmail(authentication.getName());
+        User user = userService.getById(Long.valueOf(authentication.getName()));
         // Xóa trong DB theo user
         chatMessageRepository.deleteByUser(user);
         logger.info("Cleared chat history for user: {}", user.getEmail());

@@ -7,6 +7,7 @@ import com.webjob.application.Dto.Response.ConversationDTO;
 import com.webjob.application.Dto.Response.MetaDTO;
 import com.webjob.application.Dto.Response.ResponseDTO;
 import com.webjob.application.Repository.ConversationRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,14 +18,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ConversationService {
     private final ConversationRepository conversationRepository;
     private final MessageMapper messageMapper;
 
-    public ConversationService(ConversationRepository conversationRepository, MessageMapper messageMapper) {
-        this.conversationRepository = conversationRepository;
-        this.messageMapper = messageMapper;
-    }
+
     public ResponseDTO<?> getPaginated(ConversationFilter filter) {
         int page = 0;
         int size = 8;

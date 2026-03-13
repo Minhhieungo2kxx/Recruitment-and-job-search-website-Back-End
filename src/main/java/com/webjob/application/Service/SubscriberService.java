@@ -14,6 +14,7 @@ import com.webjob.application.Repository.SubscriberRepository;
 
 import com.webjob.application.Service.SendEmail.ApplicationEmailService;
 import com.webjob.application.Service.SendEmail.EmailService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -41,6 +42,7 @@ import org.slf4j.LoggerFactory;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class SubscriberService {
 
     private final SubscriberRepository subscriberRepository;
@@ -55,14 +57,7 @@ public class SubscriberService {
 
     private final ApplicationEmailService applicationEmailService;
 
-    public SubscriberService(SubscriberRepository subscriberRepository, SkillRepository skillRepository, EmailService emailService, JobRepository jobRepository, UserService userService, ApplicationEmailService applicationEmailService) {
-        this.subscriberRepository = subscriberRepository;
-        this.skillRepository = skillRepository;
-        this.emailService = emailService;
-        this.jobRepository = jobRepository;
-        this.userService = userService;
-        this.applicationEmailService = applicationEmailService;
-    }
+
 
     @Transactional
     public Subscriber createSubciber(Subscriber subscriber) {
@@ -108,7 +103,6 @@ public class SubscriberService {
     }
 
     @Scheduled(cron = "0 0 8 1 * *") // 8h sáng ngày 1 mỗi tháng
-//    @Scheduled(cron = "0 * * * * *") // chạy mỗi phút
     public void sendSubscribersEmailJobs() {
         log.info("Start sending job emails to subscribers...");
 
@@ -162,10 +156,8 @@ public class SubscriberService {
         return vndFormat.format(amount); // Output: 15.000.000 ₫
     }
 
-    public Subscriber getbySkillSub() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        User user = userService.getbyEmail(email);
+    public Subscriber getbySkillSub(Authentication authentication) {
+        User user = userService.getById(Long.valueOf(authentication.getName()));
         return subscriberRepository.findByEmail(user.getEmail().trim());
 
     }

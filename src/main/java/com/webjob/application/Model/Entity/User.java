@@ -27,7 +27,7 @@ import java.util.List;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không đúng định dạng")
@@ -58,9 +58,8 @@ public class User {
     @Size(max = 500, message = "Địa chỉ không được vượt quá 500 ký tự")
     private String address;
 
-    @Column(length = 512)
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String refreshToken;
-
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

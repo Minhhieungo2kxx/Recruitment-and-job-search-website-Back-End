@@ -8,6 +8,7 @@ import com.webjob.application.Service.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,26 +22,19 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-
+@RequiredArgsConstructor
 @Component
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final SecurityUtil securityUtil;
 
     private final UserService userService;
-    @Autowired
-    private ModelMapper modelMapper;
+
+    private final ModelMapper modelMapper;
     @Value("${security.jwt.refresh-token-validity-in-seconds}")
     private Long jwtrefreshExpiration;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    public OAuth2LoginSuccessHandler(SecurityUtil securityUtil, UserService userService) {
-        this.securityUtil = securityUtil;
-        this.userService = userService;
-    }
-
+    private final ObjectMapper objectMapper;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -49,13 +43,12 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         try {
             // Lấy thông tin user từ Google OAuth2
             String email = ((DefaultOAuth2User) authentication.getPrincipal()).getAttribute("email");
-            User userEntity = userService.getEmailbyGoogle(email);
+            User userEntity = userService.getbyEmail(email);
 
             // Tạo JWT tokens
             LoginResponse.User userDto = modelMapper.map(userEntity, LoginResponse.User.class);
-            String accessToken = securityUtil.createacessToken(userEntity.getEmail(), userDto);
-            String refreshToken = securityUtil.createrefreshToken(userEntity.getEmail(), userDto);
-
+            String accessToken = securityUtil.createacessToken(userEntity);
+            String refreshToken = securityUtil.createrefreshToken(userEntity);
             // Cập nhật refresh token vào database
             userService.updateRefreshtoken(userEntity.getId(), refreshToken);
 

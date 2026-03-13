@@ -1,6 +1,7 @@
 package com.webjob.application.Service.Redis;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -12,15 +13,11 @@ import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 @Service
+@RequiredArgsConstructor
 public class TokenBlacklistService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final JwtDecoder jwtDecoder;
 
-    @Autowired
-    public TokenBlacklistService(RedisTemplate<String, Object> redisTemplate, JwtDecoder jwtDecoder) {
-        this.redisTemplate = redisTemplate;
-        this.jwtDecoder = jwtDecoder;
-    }
 
     private static final String BLACKLIST_PREFIX = "blacklist:";
 

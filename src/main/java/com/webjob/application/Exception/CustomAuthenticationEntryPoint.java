@@ -1,4 +1,4 @@
-package com.webjob.application.Util;
+package com.webjob.application.Exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webjob.application.Dto.Response.ApiResponse;

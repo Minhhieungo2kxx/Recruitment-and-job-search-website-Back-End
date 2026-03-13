@@ -5,6 +5,9 @@ import com.webjob.application.Dto.Response.LoginResponse;
 
 import java.time.Duration;
 import java.util.List;
+
+import com.webjob.application.Model.Entity.User;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
@@ -16,6 +19,7 @@ import java.time.temporal.ChronoUnit;
 
 
 @Service
+@RequiredArgsConstructor
 public class SecurityUtil {
 
     @Value("${security.jwt.base64-secret}")
@@ -31,46 +35,34 @@ public class SecurityUtil {
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
 
-    public SecurityUtil(JwtEncoder jwtEncoder, JwtDecoder jwtDecoder) {
-        this.jwtEncoder = jwtEncoder;
-        this.jwtDecoder = jwtDecoder;
-    }
 
 
-    public String createacessToken(String email,LoginResponse.User user) {
+    public String createacessToken(User user) {
         Instant now = Instant.now();
         Instant validity = now.plus(jwtaccessExpiration, ChronoUnit.SECONDS);
-        LoginResponse.UserinsideToken userinsideToken=new LoginResponse.UserinsideToken();
-        userinsideToken.setId(user.getId());
-        userinsideToken.setEmail(user.getEmail());
-        userinsideToken.setUsername(user.getFullName());
-
-// @formatter:off
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)
                 .expiresAt(validity)
-                .subject(email)
-                .claim("user",userinsideToken)
-                .claim("roles", List.of("ROLE_" + user.getRole().getName().trim().toUpperCase()))
+                .subject(user.getId().toString())
+                .claim("email",user.getEmail().trim())
+                .claim("username",user.getFullName().trim())
+                .claim("roles", List.of(user.getRole().getName().trim().toUpperCase()))
                 .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader,
                 claims)).getTokenValue();
     }
-    public String createrefreshToken(String email,LoginResponse.User user) {
+    public String createrefreshToken(User user) {
         Instant now = Instant.now();
         Instant validity = now.plus(jwtrefreshExpiration, ChronoUnit.SECONDS);
-        LoginResponse.UserinsideToken userinsideToken=new LoginResponse.UserinsideToken();
-        userinsideToken.setId(user.getId());
-        userinsideToken.setEmail(user.getEmail());
-        userinsideToken.setUsername(user.getFullName());
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)
                 .expiresAt(validity)
-                .subject(email)
-                .claim("user",userinsideToken)
-                .claim("roles",List.of("ROLE_"+user.getRole().getName().trim().toUpperCase()))
+                .subject(user.getId().toString())
+                .claim("email",user.getEmail().trim())
+                .claim("username",user.getFullName().trim())
+                .claim("roles", List.of(user.getRole().getName().trim().toUpperCase()))
                 .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader,

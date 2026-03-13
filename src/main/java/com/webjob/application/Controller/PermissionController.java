@@ -7,19 +7,17 @@ import com.webjob.application.Dto.Response.ApiResponse;
 import com.webjob.application.Dto.Response.ResponseDTO;
 import com.webjob.application.Service.PermissionService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/permissions") // base path chuẩn
+@RequiredArgsConstructor
 public class PermissionController {
 
     private final PermissionService permissionService;
-
-    public PermissionController(PermissionService permissionService) {
-        this.permissionService = permissionService;
-    }
 
     @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping

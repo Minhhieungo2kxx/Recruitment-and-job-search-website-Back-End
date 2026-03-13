@@ -38,6 +38,13 @@ public class Resume {
     @NotBlank(message = "URL không được để trống")
     private String url;
 
+    @NotBlank
+    @Column(name = "public_id")
+    private String publicId;
+
+    @Column(name = "resource_type")
+    private String resourceType;
+
     @NotNull(message = "Trạng thái không được để trống")
     @Enumerated(EnumType.STRING) // Store enum as String in DB
     private ResumeStatus status = ResumeStatus.PENDING; // Default status

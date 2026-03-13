@@ -6,6 +6,7 @@ import com.webjob.application.Dto.Response.ResponseDTO;
 import com.webjob.application.Model.Entity.Skill;
 import com.webjob.application.Repository.SkillRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,12 +16,11 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class SkillService {
     private final SkillRepository skillRepository;
 
-    public SkillService(SkillRepository skillRepository) {
-        this.skillRepository = skillRepository;
-    }
+
     public boolean checkNameskill(String name){
         boolean exist=skillRepository.existsByName(name);
         if (exist){

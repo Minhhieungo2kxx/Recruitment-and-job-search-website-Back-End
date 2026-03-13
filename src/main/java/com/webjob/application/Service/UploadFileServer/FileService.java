@@ -4,7 +4,10 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.webjob.application.Config.UploadfileServer.UploadFile;
 import com.webjob.application.Config.UploadfileServer.UploadProperties;
+import com.webjob.application.Model.Entity.TemporaryUpload;
+import com.webjob.application.Repository.TemporaryUploadRepository;
 import com.webjob.application.Util.Base64Util;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -13,6 +16,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +36,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class FileService {
     private final UploadProperties uploadProperties;
 
@@ -38,50 +44,48 @@ public class FileService {
 
     private final UploadFile uploadFile;
 
-    public FileService(UploadProperties uploadProperties, Cloudinary cloudinary, UploadFile uploadFile) {
-        this.uploadProperties = uploadProperties;
-        this.cloudinary = cloudinary;
-        this.uploadFile = uploadFile;
-    }
-public ResponseEntity<?> handledownloadFile(String folder, String filename) {
-    try {
-        Path baseDir = Paths.get(uploadProperties.getBaseDir())
-                .toAbsolutePath()
-                .normalize();
+    private final TemporaryUploadRepository temporaryUploadRepository;
 
-        Path filePath = baseDir.resolve(folder)
-                .resolve(filename)
-                .normalize();
 
-        // Chống path traversal
-        if (!filePath.startsWith(baseDir) || !Files.exists(filePath)) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<?> handledownloadFile(String folder, String filename) {
+        try {
+            Path baseDir = Paths.get(uploadProperties.getBaseDir())
+                    .toAbsolutePath()
+                    .normalize();
+
+            Path filePath = baseDir.resolve(folder)
+                    .resolve(filename)
+                    .normalize();
+
+            // Chống path traversal
+            if (!filePath.startsWith(baseDir) || !Files.exists(filePath)) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Resource resource = new UrlResource(filePath.toUri());
+
+            String contentType = Files.probeContentType(filePath);
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
+            String encodedFilename = URLEncoder.encode(
+                    resource.getFilename(),
+                    StandardCharsets.UTF_8
+            ).replace("+", "%20");
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(
+                            HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename*=UTF-8''" + encodedFilename
+                    )
+                    .body(resource);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
-        Resource resource = new UrlResource(filePath.toUri());
-
-        String contentType = Files.probeContentType(filePath);
-        if (contentType == null) {
-            contentType = "application/octet-stream";
-        }
-
-        String encodedFilename = URLEncoder.encode(
-                resource.getFilename(),
-                StandardCharsets.UTF_8
-        ).replace("+", "%20");
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename*=UTF-8''" + encodedFilename
-                )
-                .body(resource);
-
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
-}
 
     public ResponseEntity<?> proxyDownloadCloudinary(String encodedUrl) {
         try {
@@ -123,18 +127,59 @@ public ResponseEntity<?> handledownloadFile(String folder, String filename) {
         }
     }
 
-    public String uploadFile(MultipartFile file, String folderName) throws IOException {
+    public Map<String, String> uploadFile(MultipartFile file, String folderName,Authentication authentication) throws IOException {
         uploadFile.vadidateUploadFile(file, folderName);
         String originalName = file.getOriginalFilename();
         String baseName = originalName.substring(0, originalName.lastIndexOf("."));
         String uniqueName = System.currentTimeMillis() + "-" + baseName;
-        Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
-                "folder", folderName,
-                "public_id", uniqueName,
-                "access_mode", "public" // Chỉ định quyền truy cập công khai
-        ));
 
-        return result.get("secure_url").toString(); // Trả về link trực tiếp tới file trên Cloudinary
+        Map<?, ?> result = cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap(
+                        "folder", folderName,
+                        "public_id", uniqueName,
+                        "resource_type", "auto",
+                        "access_mode", "public"
+
+                )
+        );
+
+        String secureUrl = result.get("secure_url").toString();
+        String publicId = result.get("public_id").toString();
+        String resourceType = result.get("resource_type").toString();
+        handleTemporaryUpload(publicId, secureUrl, resourceType,authentication);
+
+        return Map.of(
+                "url", secureUrl,
+                "publicId", publicId,
+                "resourceType", resourceType //  TRẢ VỀ
+        );
     }
 
+    public void handleTemporaryUpload(String publicId, String secureUrl, String resourceType,Authentication authentication) {
+        TemporaryUpload temporaryUpload=TemporaryUpload.builder()
+                .publicId(publicId)
+                .url(secureUrl)
+                .resourceType(resourceType)
+                .used(false)
+                .userId(Long.valueOf(authentication.getName()))
+                .build();
+        temporaryUploadRepository.save(temporaryUpload);
+
+    }
+
+
+    public void deleteFile(String publicId, String resourceType) throws IOException {
+
+        Map<?, ?> result = cloudinary.uploader().destroy(
+                publicId,
+                ObjectUtils.asMap("resource_type", resourceType)
+        );
+
+        String resultStatus = result.get("result").toString();
+
+        if (!"ok".equals(resultStatus)) {
+            throw new IllegalStateException("Không thể xóa file trên Cloudinary: " + resultStatus);
+        }
+    }
 }

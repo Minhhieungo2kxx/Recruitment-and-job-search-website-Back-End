@@ -1,6 +1,7 @@
 package com.webjob.application.Config.UploadfileServer;
 
 import com.webjob.application.Dto.Response.UploadFileResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,16 +12,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
 
+@RequiredArgsConstructor
 @Component
 public class UploadFile {
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "jpg", "jpeg", "png", "doc", "docx");
 
 
     private final UploadProperties uploadProperties;
-
-    public UploadFile(UploadProperties uploadProperties) {
-        this.uploadProperties = uploadProperties;
-    }
 
 
     public String getnameFile(MultipartFile file, String nameFolder) throws IOException {

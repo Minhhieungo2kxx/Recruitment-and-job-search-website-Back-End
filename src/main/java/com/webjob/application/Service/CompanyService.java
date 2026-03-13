@@ -10,6 +10,7 @@ import com.webjob.application.Repository.CompanyRepository;
 import com.webjob.application.Repository.UserRepository;
 import com.webjob.application.Service.Specification.CompanySpecification;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class CompanyService {
     private final CompanyRepository companyRepository;
     private final ModelMapper modelMapper;
@@ -29,12 +31,7 @@ public class CompanyService {
     private final UserRepository userRepository;
 
 
-    public CompanyService(CompanyRepository companyRepository, ModelMapper modelMapper, UserRepository userRepository) {
-        this.companyRepository = companyRepository;
-        this.modelMapper = modelMapper;
 
-        this.userRepository = userRepository;
-    }
     @Transactional
     public Company handle(Company company){
         return companyRepository.save(company);

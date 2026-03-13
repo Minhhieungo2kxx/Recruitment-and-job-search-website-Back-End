@@ -8,6 +8,7 @@ import com.webjob.application.Dto.Request.Websockets.MessageRequestDTO;
 import com.webjob.application.Dto.Response.Messensage.MessageResponseDTO;
 import com.webjob.application.Service.Socket.MessageService;
 import com.webjob.application.Service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -23,18 +24,13 @@ import java.security.Principal;
 import java.util.Map;
 
 @Controller
+@RequiredArgsConstructor
 public class WebSocketController {
     private final MessageService messageService;
     private final SimpMessagingTemplate messagingTemplate;
 
     private final UserService userService;
 
-    public WebSocketController(MessageService messageService,
-                               SimpMessagingTemplate messagingTemplate, UserService userService) {
-        this.messageService = messageService;
-        this.messagingTemplate = messagingTemplate;
-        this.userService = userService;
-    }
     @RateLimit(maxRequests = 20, timeWindowSeconds = 60, keyType = "TOKEN")
     @MessageMapping("/chat.sendMessage")
     @SendTo("/topic/public")

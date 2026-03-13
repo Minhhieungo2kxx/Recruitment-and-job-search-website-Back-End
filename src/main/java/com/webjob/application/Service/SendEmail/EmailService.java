@@ -2,6 +2,7 @@ package com.webjob.application.Service.SendEmail;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -14,11 +15,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class EmailService {
-    @Autowired
-    private JavaMailSender mailSender;
-    @Autowired
-    private SpringTemplateEngine templateEngine;
+
+    private final JavaMailSender mailSender;
+
+    private final SpringTemplateEngine templateEngine;
 
     public void sendEmail(String to, String subject, String content, boolean isMultipart, boolean isHtml) {
         MimeMessage mimeMessage = mailSender.createMimeMessage();

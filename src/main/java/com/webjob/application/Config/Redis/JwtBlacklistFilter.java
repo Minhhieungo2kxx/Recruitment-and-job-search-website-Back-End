@@ -7,6 +7,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -14,17 +15,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-
+@RequiredArgsConstructor
 @Component
 public class JwtBlacklistFilter extends OncePerRequestFilter {
     private final TokenBlacklistService tokenBlacklistService;
-    @Autowired
-    private ObjectMapper objectMapper;
 
-    @Autowired
-    public JwtBlacklistFilter(TokenBlacklistService tokenBlacklistService) {
-        this.tokenBlacklistService = tokenBlacklistService;
-    }
+    private final ObjectMapper objectMapper;
+
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {

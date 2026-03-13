@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.*;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.authentication.TestingAuthenticationToken;
@@ -116,8 +117,9 @@ public class UserServiceTest {
 
         HttpServletRequest httpRequest = mock(HttpServletRequest.class);
 
+        Authentication authentication=SecurityContextHolder.getContext().getAuthentication();
         // when
-        userService.changePassword(request,httpRequest);
+        userService.changePassword(request,httpRequest,authentication);
 
         // then
         assertThat(user.getPassword()).isEqualTo("encodedNewPass");

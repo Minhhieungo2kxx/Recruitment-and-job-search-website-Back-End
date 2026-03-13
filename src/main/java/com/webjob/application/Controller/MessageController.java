@@ -9,6 +9,7 @@ import com.webjob.application.Dto.Response.Messensage.ApiResponseSocket;
 import com.webjob.application.Dto.Response.Messensage.MessageResponseDTO;
 import com.webjob.application.Service.Socket.MessageService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/messages")
 @Validated
@@ -24,11 +26,6 @@ public class MessageController {
     private final MessageService messageService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    public MessageController(MessageService messageService,
-                             SimpMessagingTemplate messagingTemplate) {
-        this.messageService = messageService;
-        this.messagingTemplate = messagingTemplate;
-    }
 
     @RateLimit(maxRequests = 30, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping("/send")
@@ -40,13 +37,13 @@ public class MessageController {
 
         // Gửi tin nhắn qua WebSocket đến người nhận
         messagingTemplate.convertAndSendToUser(
-                message.getReceiver().getEmail(),
+                message.getReceiver().getId().toString(),
                 "/queue/messages",
                 message
         );
         // Gửi lại tin nhắn cho chính người gửi
         messagingTemplate.convertAndSendToUser(
-                message.getSender().getEmail(),  // <-- dòng này là bổ sung
+                message.getSender().getId().toString(),  // <-- dòng này là bổ sung
                 "/queue/messages",
                 message
         );
@@ -64,12 +61,12 @@ public class MessageController {
 
         // Thông báo cập nhật qua WebSocket
         messagingTemplate.convertAndSendToUser(
-                updatedMessage.getReceiver().getEmail(),
+                updatedMessage.getReceiver().getId().toString(),
                 "/queue/message-updates",
                 updatedMessage
         );
         messagingTemplate.convertAndSendToUser(
-                updatedMessage.getSender().getEmail(),
+                updatedMessage.getSender().getId().toString(),
                 "/queue/message-updates",
                 updatedMessage
         );

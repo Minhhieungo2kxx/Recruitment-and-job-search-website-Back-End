@@ -7,6 +7,7 @@ import com.webjob.application.Model.Entity.Role;
 import com.webjob.application.Repository.PermissionRepository;
 import com.webjob.application.Repository.RoleRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,12 +18,13 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class PermissionService {
 
-    @Autowired
-    private PermissionRepository permissionRepository;
-    @Autowired
-    private RoleRepository roleRepository;
+
+    private final PermissionRepository permissionRepository;
+
+    private final RoleRepository roleRepository;
 
 
 

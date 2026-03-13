@@ -6,6 +6,7 @@ import com.webjob.application.Dto.Request.ResetPasswordRequest;
 import com.webjob.application.Repository.PasswordResetTokenRepository;
 import com.webjob.application.Repository.UserRepository;
 import com.webjob.application.Service.SendEmail.EmailService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,17 +24,18 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class PasswordResetService {
-    @Autowired
-    private  UserService userService;
-    @Autowired
-    private  PasswordResetTokenRepository tokenRepository;
-    @Autowired
-    private  PasswordEncoder passwordEncoder;
-    @Autowired
-    private EmailService emailService;
-    @Autowired
-    private  UserRepository userRepository;
+
+    private final   UserService userService;
+
+    private final   PasswordResetTokenRepository tokenRepository;
+
+    private final   PasswordEncoder passwordEncoder;
+
+    private final EmailService emailService;
+
+    private final   UserRepository userRepository;
 
 
     @Async

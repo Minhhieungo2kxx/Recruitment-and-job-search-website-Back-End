@@ -21,6 +21,7 @@ import com.webjob.application.Service.SendEmail.ApplicationEmailService;
 import com.webjob.application.Service.PaymentGateway.VNPayService;
 import com.webjob.application.Util.UtilFormat;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -35,8 +36,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 @Slf4j
+@RequiredArgsConstructor
 public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final JobRepository jobRepository;
@@ -52,19 +53,6 @@ public class PaymentService {
     // Giá cố định để xem thông tin ứng viên
     private static final Long COMPETITION_VIEW_PRICE =50000L;
 
-    public PaymentService(PaymentRepository paymentRepository,
-                          JobRepository jobRepository,
-                          UserRepository userRepository,
-                          VNPayService vnPayService, UserService userService, ApplicationEmailService applicationEmailService, RedisLockService redisLockService, MomoService momoService) {
-        this.paymentRepository = paymentRepository;
-        this.jobRepository = jobRepository;
-        this.userRepository = userRepository;
-        this.vnPayService = vnPayService;
-        this.userService = userService;
-        this.applicationEmailService = applicationEmailService;
-        this.redisLockService = redisLockService;
-        this.momoService = momoService;
-    }
 
     @Transactional
     public PaymentResponse createPaymentForJobView(Long userId, PaymentCreateRequest request, HttpServletRequest httpRequest) {

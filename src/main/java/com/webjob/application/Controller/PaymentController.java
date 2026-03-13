@@ -12,6 +12,7 @@ import com.webjob.application.Service.PaymentService;
 import com.webjob.application.Service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,28 +24,20 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/payments")
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 @Slf4j
+@RequiredArgsConstructor
 public class PaymentController {
     private final PaymentService paymentService;
     private final UserService userService;
 
-    public PaymentController(PaymentService paymentService, UserService userService) {
-        this.paymentService = paymentService;
-        this.userService = userService;
-    }
 
     @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(
             @Valid @RequestBody PaymentCreateRequest request,
-            HttpServletRequest httpRequest) {
-
-        String userEmail = SecurityContextHolder.getContext()
-                .getAuthentication().getName();
-
-        User currentUser = userService.getbyEmail(userEmail);
-
+            HttpServletRequest httpRequest,Authentication authentication) {
+        User currentUser = userService.getById(Long.valueOf(authentication.getName()));
         PaymentResponse paymentResponse;
 
         if ("VNPAY".equals(request.getGateway())) {
@@ -110,11 +103,9 @@ public class PaymentController {
 
     @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/history")
-    public ResponseEntity<?> getPaymentHistory() {
+    public ResponseEntity<?> getPaymentHistory(Authentication authentication) {
             // Lấy user ID từ authentication (giả sử có getUserId method)
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String email = authentication.getName();
-            User user = userService.getbyEmail(email);
+            User user = userService.getById(Long.valueOf(authentication.getName()));
             List<PaymentResponse> history = paymentService.getUserPaymentHistory(user.getId());
             ApiResponse<?> apiResponse = new ApiResponse<>(
                     HttpStatus.OK.value(),

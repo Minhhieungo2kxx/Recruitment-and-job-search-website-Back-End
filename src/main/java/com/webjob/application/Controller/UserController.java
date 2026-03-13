@@ -14,9 +14,12 @@ import com.webjob.application.Service.Socket.PresenceService;
 import com.webjob.application.Service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +29,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/users")
+@RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
@@ -34,14 +38,6 @@ public class UserController {
     private final CompanyService companyService;
 
     private final PresenceService presenceService;
-
-    public UserController(UserService userService, ModelMapper modelMapper, CompanyService companyService, RoleService roleService, PresenceService presenceService) {
-        this.userService = userService;
-        this.modelMapper = modelMapper;
-        this.companyService = companyService;
-
-        this.presenceService = presenceService;
-    }
 
     @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "IP")
     @PostMapping
@@ -66,7 +62,7 @@ public class UserController {
     @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @PutMapping("/{id}")
     public ResponseEntity<?> editUserById(@PathVariable Long id,@Valid @RequestBody Userrequest userrequest) {
-            User user=userService.getbyID(id).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " +id));
+            User user=userService.getById(id);
             Instant instant=user.getCreatedAt();
             modelMapper.map(userrequest,user);
             user.setCreatedAt(instant);
@@ -86,11 +82,7 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUserbyId(@PathVariable Long id) {
             userService.checkById(id);
-            Optional<User> canfind = userService.getbyID(id);
-            if (canfind.isEmpty()) {
-                throw new UsernameNotFoundException("User not found with id: " + id);
-            }
-            User edit = canfind.get();
+            User edit=userService.getById(id);
             userService.deleteUser(edit);
             ApiResponse<Object> response = new ApiResponse<>(
                     HttpStatus.NO_CONTENT.value(),
@@ -105,11 +97,12 @@ public class UserController {
 
 
     @RateLimit(maxRequests = 30, timeWindowSeconds = 60, keyType = "IP")
+//    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserbyID(@PathVariable Long id) {
-        try {
+
             userService.checkById(id);
-            User user=userService.getbyID(id).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " +id));
+            User user=userService.getById(id);
             UserDTO userDTO=modelMapper.map(user,UserDTO.class);
             ApiResponse<?> response = new ApiResponse<>(
                     HttpStatus.OK.value(),
@@ -120,13 +113,9 @@ public class UserController {
             );
             return ResponseEntity.ok(response);
 
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-
         }
 
 
-    }
 
     @RateLimit(maxRequests = 20, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping
@@ -144,10 +133,9 @@ public class UserController {
 
     @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @PutMapping("/setting")
-    public ResponseEntity<?> SettingUser(@Valid @RequestBody UserSetting userSetting) {
+    public ResponseEntity<?> SettingUser(@Valid @RequestBody UserSetting userSetting, Authentication authentication) {
         // Lấy thông tin người dùng hiện tại từ context
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userService.getbyEmail(userEmail);
+        User user = userService.getById(Long.valueOf(authentication.getName()));
         Instant instant=user.getCreatedAt();
         modelMapper.map(userSetting,user);
         user.setCreatedAt(instant);
@@ -162,8 +150,9 @@ public class UserController {
 
     @RateLimit(maxRequests = 3, timeWindowSeconds = 300, keyType = "TOKEN")
     @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest request,HttpServletRequest httprequest) {
-        userService.changePassword(request,httprequest);
+    public ResponseEntity<?> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,HttpServletRequest httprequest,Authentication authentication) {
+        userService.changePassword(request,httprequest,authentication);
         ApiResponse<UserSetting> response = new ApiResponse<>(HttpStatus.OK.value(),
                 null,
                 "Thay doi mat khau successful,Vui long dang nhap lai",

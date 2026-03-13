@@ -6,6 +6,7 @@ import com.webjob.application.Dto.Response.ApiResponse;
 import com.webjob.application.Model.Entity.ChatMessage;
 import com.webjob.application.Service.ChatBox.ChatService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/chat")
 @Validated
@@ -23,9 +25,7 @@ public class ChatController {
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
     private final ChatService chatService;
 
-    public ChatController(ChatService chatService) {
-        this.chatService = chatService;
-    }
+
 
     @RateLimit(maxRequests = 20, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping("/send")

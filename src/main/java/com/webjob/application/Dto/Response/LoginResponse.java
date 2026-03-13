@@ -31,15 +31,15 @@ public class LoginResponse {
 
 
     }
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class UserinsideToken {
-        private Long id;
-        private String email;
-        private String username;
-        
-
-    }
+//    @Getter
+//    @Setter
+//    @NoArgsConstructor
+//    @AllArgsConstructor
+//    public static class UserinsideToken {
+//        private Long id;
+//        private String email;
+//        private String username;
+//
+//
+//    }
 }

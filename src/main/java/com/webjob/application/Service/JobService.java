@@ -13,6 +13,7 @@ import com.webjob.application.Repository.JobRepository;
 import com.webjob.application.Repository.SkillRepository;
 import com.webjob.application.Service.Specification.JobSpecification;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class JobService {
 
     private final SkillRepository skillRepository;
@@ -36,12 +38,7 @@ public class JobService {
     private final ModelMapper modelMapper;
     private final CompanyRepository companyRepository;
 
-    public JobService(SkillRepository skillRepository, JobRepository jobRepository, ModelMapper modelMapper, CompanyRepository companyRepository) {
-        this.skillRepository = skillRepository;
-        this.jobRepository = jobRepository;
-        this.modelMapper = modelMapper;
-        this.companyRepository = companyRepository;
-    }
+
 
 
     @Transactional
@@ -139,7 +136,7 @@ public class JobService {
         Pageable pageable = PageRequest.of(page, jobFilter.getSize(), sort);
 
         Page<Job> result = jobRepository.findAll(spec, pageable);
-        System.out.println("✅ Saved to Redis cache for key: page_" + page + "_size_" + jobFilter.getSize());
+        System.out.println(" Saved to Redis cache for key: page_" + page + "_size_" + jobFilter.getSize());
         return result;
 
 

@@ -7,6 +7,7 @@ import com.webjob.application.Model.Entity.Role;
 
 import com.webjob.application.Service.RoleService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +15,10 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/roles")
+@RequiredArgsConstructor
 public class RoleController {
-    @Autowired
-    private RoleService roleService;
+
+    private final RoleService roleService;
 
 
     @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")

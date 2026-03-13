@@ -5,13 +5,17 @@ import com.webjob.application.Model.Entity.Permission;
 import com.webjob.application.Model.Entity.Role;
 import com.webjob.application.Dto.Response.MetaDTO;
 import com.webjob.application.Dto.Response.ResponseDTO;
+import com.webjob.application.Model.Entity.User;
 import com.webjob.application.Repository.PermissionRepository;
 import com.webjob.application.Repository.RoleRepository;
+import com.webjob.application.Service.Redis.PermissionCacheService;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,22 +24,23 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class RoleService {
-    @Autowired
-    private RoleRepository roleRepository;
-    @Autowired
-    private PermissionRepository permissionRepository;
 
+    private final RoleRepository roleRepository;
+
+    private final PermissionRepository permissionRepository;
+    private final PermissionCacheService permissionCacheService;
 
 
     @Transactional
-    public Role createRole(Role role){
+    public Role createRole(Role role) {
         boolean exists = roleRepository.existsByName(role.getName());
-        if(exists){
+        if (exists) {
             throw new IllegalArgumentException("Role đã tồn tại với name: " + role.getName());
         }
 
-        List<Permission> validPermissions =getValidPerMissions(role.getPermissions());
+        List<Permission> validPermissions = getValidPerMissions(role.getPermissions());
         // Nếu validPermissions là rỗng thì gán giá trị [] cho role.setPermissions()
         if (validPermissions.isEmpty()) {
             role.setPermissions(new ArrayList<>()); // Đặt một danh sách trống
@@ -45,15 +50,12 @@ public class RoleService {
 
         return roleRepository.save(role);
     }
-    @Transactional
-    public Role EditRole(Long id, Role role){
-        Role update=getByid(id).orElseThrow(()-> new IllegalArgumentException("Role not found with "+id));
-//        boolean exists = roleRepository.existsByName(role.getName());
-//        if(exists){
-//            throw new IllegalArgumentException("Role đã tồn tại với name: " + role.getName());
-//        }
 
-        List<Permission> validPermissions =getValidPerMissions(role.getPermissions());
+    @Transactional
+    public Role EditRole(Long id, Role role) {
+        Role update = getByid(id).orElseThrow(() -> new IllegalArgumentException("Role not found with " + id));
+
+        List<Permission> validPermissions = getValidPerMissions(role.getPermissions());
         update.setName(role.getName());
         update.setDescription(role.getDescription());
         update.setActive(role.isActive());
@@ -64,16 +66,19 @@ public class RoleService {
         } else {
             update.setPermissions(validPermissions); // Nếu có quyền hợp lệ thì sử dụng danh sách đó
         }
+        for (User user : update.getUsers()) {
+            permissionCacheService.evict(user.getId().toString());
+        }
+
         return roleRepository.save(update);
     }
-    public Page<Role> getAllPage(int page, int size){
+
+    public Page<Role> getAllPage(int page, int size) {
 //        Sort.Direction direction=Sort.Direction.ASC;
 //        Sort sort=Sort.by(direction,"name");
-        Pageable pageable= PageRequest.of(page,size);
+        Pageable pageable = PageRequest.of(page, size);
         return roleRepository.findAll(pageable);
     }
-
-
 
 
     private List<Permission> getValidPerMissions(List<Permission> permissionList) {
@@ -82,19 +87,32 @@ public class RoleService {
                 .collect(Collectors.toList());
         return permissionRepository.findByIdIn(ids);
     }
-    public Optional<Role> getByid(Long id){
-       return roleRepository.findById(id);
+
+    public Optional<Role> getByid(Long id) {
+        return roleRepository.findById(id);
     }
+
     @Transactional
-    public void deleteRole(Long id){
-        Role role=getByid(id).orElseThrow(()->new IllegalArgumentException("Role not found with "+id));
+    public void deleteRole(Long id) {
+        Role role = getByid(id).orElseThrow(() -> new IllegalArgumentException("Role not found with " + id));
         role.getPermissions().clear();
+        for (User user : role.getUsers()) {
+            permissionCacheService.evict(user.getId().toString());
+        }
         roleRepository.delete(role);
     }
 
+    public Role getByName(String name) {
+        Role role = roleRepository.findByName(name);
+        if (role == null) {
+            throw new IllegalArgumentException("Role not found with name " + name);
+        }
+        return role;
+    }
+
     public ResponseDTO<?> getPaginated(String pageparam, String type) {
-        int page=0;
-        int size=8;
+        int page = 0;
+        int size = 8;
         try {
             page = Integer.parseInt(pageparam);
             if (page <= 0)
@@ -103,15 +121,15 @@ public class RoleService {
             // Nếu người dùng nhập sai, mặc định về trang đầu
             page = 1;
         }
-        Page<Role> pagelist=getAllPage(page-1,size);
-        int currentpage=pagelist.getNumber()+1;
-        int pagesize=pagelist.getSize();
-        int totalpage=pagelist.getTotalPages();
-        Long totalItem=pagelist.getTotalElements();
+        Page<Role> pagelist = getAllPage(page - 1, size);
+        int currentpage = pagelist.getNumber() + 1;
+        int pagesize = pagelist.getSize();
+        int totalpage = pagelist.getTotalPages();
+        Long totalItem = pagelist.getTotalElements();
 
-        MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
-        List<Role> jobsList=pagelist.getContent();
-        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,jobsList);
+        MetaDTO metaDTO = new MetaDTO(currentpage, pagesize, totalpage, totalItem);
+        List<Role> jobsList = pagelist.getContent();
+        ResponseDTO<?> respond = new ResponseDTO<>(metaDTO, jobsList);
         return respond;
     }
 

@@ -17,6 +17,7 @@ import com.webjob.application.Service.JobService;
 import com.webjob.application.Service.PaymentService;
 import com.webjob.application.Service.UserService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -27,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/jobs") // Base URL chuẩn RESTful
 @CrossOrigin(origins = "*")
@@ -42,13 +43,6 @@ public class JobController {
     private final UserService userService;
     private final PaymentService paymentService;
 
-    public JobController(JobService jobService, ModelMapper modelMapper, CompanyService companyService, UserService userService, PaymentService paymentService) {
-        this.jobService = jobService;
-        this.modelMapper = modelMapper;
-        this.companyService = companyService;
-        this.userService = userService;
-        this.paymentService = paymentService;
-    }
 
     @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping
@@ -144,14 +138,9 @@ public class JobController {
     @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/{jobId}/applicant-info")
     public ResponseEntity<?> getJobApplicantInfo(@PathVariable Long jobId) {
-
-        try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String email = authentication.getName();
-            User userHR = userService.getbyEmail(email);
-            Long userId = userHR.getId();
-            JobApplicantInfoResponse response = paymentService.getJobApplicantInfo(userId, jobId);
-
+            User userHR = userService.getById(Long.valueOf(authentication.getName()));
+            JobApplicantInfoResponse response = paymentService.getJobApplicantInfo(userHR.getId(), jobId);
             ApiResponse<?> apiResponse=new ApiResponse<>(
                     HttpStatus.OK.value(),
                     null,
@@ -160,16 +149,6 @@ public class JobController {
             );
             return ResponseEntity.ok(apiResponse);
 
-        } catch (Exception e) {
-            log.error("Error getting job applicant info: {}", e.getMessage());
-            ApiResponse<?> apiResponse=new ApiResponse<>(
-                    HttpStatus.BAD_REQUEST.value(),
-                    e.getMessage(),
-                    "Lỗi lấy thông tin ứng viên",
-                    null
-            );
-            return ResponseEntity.badRequest().body(apiResponse);
-        }
     }
 
 

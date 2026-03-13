@@ -11,12 +11,14 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateResumeDTO {
-
-    private Long id;
+public class UpdateResumeHR {
 
     @NotNull(message = "Trạng thái không được để trống")
     private ResumeStatus status;
+
+
+
+
 
 
 }

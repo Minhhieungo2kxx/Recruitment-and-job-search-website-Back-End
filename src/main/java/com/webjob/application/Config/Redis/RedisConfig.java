@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.webjob.application.Dto.Request.Redis.PermissionSet;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +15,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -72,6 +74,29 @@ public class RedisConfig {
         return RedisCacheManager.builder(redisConnectionFactory())
                 .cacheDefaults(cacheConfig)
                 .build();
+    }
+
+    @Bean
+    public RedisTemplate<String, PermissionSet> permissionRedisTemplate(
+            RedisConnectionFactory connectionFactory) {
+
+        RedisTemplate<String, PermissionSet> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+
+        Jackson2JsonRedisSerializer<PermissionSet> valueSerializer =
+                new Jackson2JsonRedisSerializer<>(PermissionSet.class);
+
+        StringRedisSerializer keySerializer = new StringRedisSerializer();
+
+        template.setKeySerializer(keySerializer);
+        template.setValueSerializer(valueSerializer);
+
+        template.setHashKeySerializer(keySerializer);
+        template.setHashValueSerializer(valueSerializer);
+
+        template.afterPropertiesSet();
+
+        return template;
     }
 
 }

@@ -8,6 +8,7 @@ import com.webjob.application.Util.UtilFormat;
 import eu.bitwalker.useragentutils.DeviceType;
 import eu.bitwalker.useragentutils.UserAgent;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -23,15 +24,11 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ApplicationEmailService {
 
     private final EmailService emailService;
 
-
-    public ApplicationEmailService(EmailService emailService) {
-        this.emailService = emailService;
-
-    }
 
     @Async("taskExecutor")
     public void sendJobApplicate(User user, Job job,User hr) {

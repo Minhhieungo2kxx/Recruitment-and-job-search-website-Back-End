@@ -14,6 +14,7 @@ import com.webjob.application.Repository.ConversationRepository;
 import com.webjob.application.Repository.MessageRepository;
 import com.webjob.application.Repository.UserRepository;
 import com.webjob.application.Service.UserService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class MessageService {
     private final MessageRepository messageRepository;
     private final ConversationRepository conversationRepository;
@@ -45,20 +47,9 @@ public class MessageService {
     private String uploadBaseDir;
 
 
-    public MessageService(MessageRepository messageRepository,
-                          ConversationRepository conversationRepository,
-                          UserRepository userRepository, UserService userService,
-                          MessageMapper messageMapper, SimpMessagingTemplate messagingTemplate) {
-        this.messageRepository = messageRepository;
-        this.conversationRepository = conversationRepository;
-        this.userRepository = userRepository;
-        this.userService = userService;
-        this.messageMapper = messageMapper;
-        this.messagingTemplate = messagingTemplate;
-    }
 
-    public MessageResponseDTO sendMessage(String senderEmail, MessageRequestDTO requestDTO) {
-        User sender = userService.getbyEmail(senderEmail);
+    public MessageResponseDTO sendMessage(String userID, MessageRequestDTO requestDTO) {
+        User sender = userService.getById(Long.valueOf(userID));
 
         User receiver = userRepository.findById(requestDTO.getReceiverId())
                 .orElseThrow(() -> new RuntimeException("Người nhận không tồn tại"));
@@ -86,10 +77,10 @@ public class MessageService {
         return messageMapper.toResponseDTO(savedMessage);
     }
 
-    public MessageResponseDTO updateMessage(String userEmail, MessageUpdateDTO updateDTO) {
+    public MessageResponseDTO updateMessage(String userID, MessageUpdateDTO updateDTO) {
         Message message = messageRepository.findById(updateDTO.getMessageId())
                 .orElseThrow(() -> new RuntimeException("Tin nhắn không tồn tại"));
-        User user = userService.getbyEmail(userEmail);
+        User user = userService.getById(Long.valueOf(userID));
         if (message.getSender().getId() != user.getId()) {
             throw new RuntimeException("Bạn chỉ có thể sửa tin nhắn của mình");
         }
@@ -109,11 +100,11 @@ public class MessageService {
         return messageMapper.toResponseDTO(message);
     }
 
-    public void deleteMessage(String userEmail, Long messageId) {
+    public void deleteMessage(String userID, Long messageId) {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Tin nhắn không tồn tại"));
 
-        User user = userService.getbyEmail(userEmail);
+        User user = userService.getById(Long.valueOf(userID));
 
         if (message.getSender().getId() != user.getId()) {
             throw new RuntimeException("Bạn chỉ có thể sửa tin nhắn của mình");
@@ -140,21 +131,21 @@ public class MessageService {
                 user.getId());
 
         messagingTemplate.convertAndSendToUser(
-                message.getSender().getEmail(),
+                message.getSender().getId().toString(),
                 "/queue/message-deletes",
                 deleteDTO
         );
 
         messagingTemplate.convertAndSendToUser(
-                message.getReceiver().getEmail(),
+                message.getReceiver().getId().toString(),
                 "/queue/message-deletes",
                 deleteDTO
         );
     }
 
     @Transactional
-    public List<MessageResponseDTO> getMessagesBetweenUsers(String userEmail, Long otherUserId) {
-        User user = userService.getbyEmail(userEmail);
+    public List<MessageResponseDTO> getMessagesBetweenUsers(String userId, Long otherUserId) {
+        User user = userService.getById(Long.valueOf(userId));
         List<Message> messages = messageRepository.findMessagesBetweenUsers(user.getId(), otherUserId);
 
         // Đánh dấu tin nhắn là đã đọc
@@ -166,8 +157,8 @@ public class MessageService {
     }
 
     @Transactional
-    public List<ConversationResponseDTO> getUserConversations(String userEmail) {
-        User user = userService.getbyEmail(userEmail);
+    public List<ConversationResponseDTO> getUserConversations(String userID) {
+        User user = userService.getById(Long.valueOf(userID));
 
         List<Conversation> conversations = conversationRepository.findConversationsByUserId(user.getId());
 
@@ -195,9 +186,9 @@ public class MessageService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserInfoDTO> searchUsers(final String userEmail, final String searchTerm) {
-        final User currentUser = userService.getbyEmail(userEmail);
-        final List<User> users = isHR(currentUser)
+    public List<UserInfoDTO> searchUsers( String userID, String searchTerm) {
+         User currentUser = userService.getById(Long.valueOf(userID));
+         List<User> users = isHR(currentUser)
                 ? userRepository.findCandidatesByName(searchTerm)
                 : userRepository.findHRsByName(searchTerm);
 

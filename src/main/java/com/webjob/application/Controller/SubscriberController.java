@@ -7,18 +7,21 @@ import com.webjob.application.Dto.Response.ApiResponse;
 import com.webjob.application.Service.SubscriberService;
 import com.webjob.application.Service.UserService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/subscribers")
+@RequiredArgsConstructor
 public class SubscriberController {
-    @Autowired
-    private SubscriberService subscriberService;
-    @Autowired
-    private UserService userService;
+
+    private final SubscriberService subscriberService;
+
+    private final UserService userService;
 
 
     @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "IP")
@@ -46,8 +49,8 @@ public class SubscriberController {
 
     @RateLimit(maxRequests = 30, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping("/skills")
-    public ResponseEntity<?> GetSkillSubcriber() {
-        Subscriber subscriber=subscriberService.getbySkillSub();
+    public ResponseEntity<?> GetSkillSubcriber(Authentication authentication) {
+        Subscriber subscriber=subscriberService.getbySkillSub(authentication);
         ApiResponse<?> apiResponse=new ApiResponse<>(HttpStatus.OK.value(), null,
                 "Get All Skill Subscriber thành công",
                 subscriber);

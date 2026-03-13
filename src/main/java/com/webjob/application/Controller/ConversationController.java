@@ -8,20 +8,19 @@ import com.webjob.application.Dto.Response.ApiResponse;
 import com.webjob.application.Dto.Response.ConversationDTO;
 import com.webjob.application.Dto.Response.ResponseDTO;
 import com.webjob.application.Service.ConversationService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/admin/conversations")
 public class ConversationController {
     private final ConversationService conversationService;
     private final MessageMapper messageMapper;
 
-    public ConversationController(ConversationService conversationService, MessageMapper messageMapper) {
-        this.conversationService = conversationService;
-        this.messageMapper = messageMapper;
-    }
+
     @RateLimit(maxRequests = 10, timeWindowSeconds = 60, keyType = "IP")
     @GetMapping
     public ResponseEntity<?> getAllConversations(ConversationFilter filter) {

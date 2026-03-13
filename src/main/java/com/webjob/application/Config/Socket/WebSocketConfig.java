@@ -1,5 +1,6 @@
 package com.webjob.application.Config.Socket;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
@@ -20,17 +21,13 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 import java.util.ArrayList;
 
+@RequiredArgsConstructor
 @Configuration
 @EnableWebSocketMessageBroker
 @Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final JwtDecoder jwtDecoder;
     private final PresenceChannelInterceptor presenceChannelInterceptor;
-
-    public WebSocketConfig(JwtDecoder jwtDecoder, PresenceChannelInterceptor presenceChannelInterceptor) {
-        this.jwtDecoder = jwtDecoder;
-        this.presenceChannelInterceptor = presenceChannelInterceptor;
-    }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -62,12 +59,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         try {
                             String token = authToken.substring(7);
                             Jwt jwt = jwtDecoder.decode(token);
-                            String username = jwt.getSubject();
-
+                            String userID = jwt.getSubject();
                             UsernamePasswordAuthenticationToken auth =
-                                    new UsernamePasswordAuthenticationToken(username, null, new ArrayList<>());
+                                    new UsernamePasswordAuthenticationToken(userID, null, new ArrayList<>());
                             accessor.setUser(auth);
-                            log.info("User {}  connected successful",username);
+                            log.info("User {}  connected successful",userID);
                         } catch (Exception e) {
                             System.out.println("JWT verification failed: " + e.getMessage());
                             return null;

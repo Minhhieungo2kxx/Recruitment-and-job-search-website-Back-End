@@ -8,6 +8,7 @@ import com.webjob.application.Dto.Response.ResponseDTO;
 import com.webjob.application.Model.Entity.Skill;
 import com.webjob.application.Service.SkillService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,17 +16,11 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/skills")
+@RequiredArgsConstructor
 public class SkillController {
     private final SkillService skillService;
     private final ModelMapper modelMapper;
 
-
-
-
-    public SkillController(SkillService skillService, ModelMapper modelMapper) {
-        this.skillService = skillService;
-        this.modelMapper = modelMapper;
-    }
 
     @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping

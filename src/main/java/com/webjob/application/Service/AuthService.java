@@ -9,6 +9,7 @@ import com.webjob.application.Dto.Response.UserDTO;
 import com.webjob.application.Service.Redis.TokenBlacklistService;
 import com.webjob.application.Service.SendEmail.ApplicationEmailService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +36,7 @@ import java.util.Map;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final SecurityUtil securityUtil;
@@ -49,15 +51,7 @@ public class AuthService {
 
     private final ApplicationEmailService applicationEmailService;
 
-    public AuthService(AuthenticationManager authenticationManager, SecurityUtil securityUtil, UserService userService, ModelMapper modelMapper, JwtDecoder jwtDecoder, TokenBlacklistService tokenBlacklistService, ApplicationEmailService applicationEmailService) {
-        this.authenticationManager = authenticationManager;
-        this.securityUtil = securityUtil;
-        this.userService = userService;
-        this.modelMapper = modelMapper;
-        this.jwtDecoder = jwtDecoder;
-        this.tokenBlacklistService = tokenBlacklistService;
-        this.applicationEmailService = applicationEmailService;
-    }
+
 
 
     @Transactional
@@ -121,7 +115,7 @@ public class AuthService {
         }
 
         // 4. Kiểm tra email từ JWT có khớp user DB
-        if (!decodedJwt.getSubject().equals(user.getEmail())) {
+        if (!decodedJwt.getClaim("email").equals(user.getEmail())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiResponse<>(401, "Refresh token does not match user.", null, null));
         }
@@ -231,21 +225,22 @@ public class AuthService {
         return authentication;
     }
 
-    private User getUserFromAuthentication(Authentication authentication) {
-        String email = authentication.getName();
-        return userService.getbyEmail(email);
+    public User getUserFromAuthentication(Authentication authentication) {
+//        String email = authentication.getName();
+        Long userId = Long.parseLong(authentication.getName());
+        return userService.getById(userId);
     }
 
     private LoginResponse buildLoginResponse(User user) {
         LoginResponse.User userDTO = modelMapper.map(user, LoginResponse.User.class);
-        String accessToken = securityUtil.createacessToken(user.getEmail(), userDTO);
+        String accessToken = securityUtil.createacessToken(user);
 
         return new LoginResponse(accessToken, userDTO);
     }
 
     private ResponseCookie createRefreshCookie(User user) {
         LoginResponse.User userDTO = modelMapper.map(user, LoginResponse.User.class);
-        String refreshToken = securityUtil.createrefreshToken(user.getEmail(), userDTO);
+        String refreshToken = securityUtil.createrefreshToken(user);
 
         return ResponseCookie.from("refresh", refreshToken)
                 .httpOnly(true)
