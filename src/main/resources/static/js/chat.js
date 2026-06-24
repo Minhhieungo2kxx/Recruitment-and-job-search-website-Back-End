@@ -31,7 +31,7 @@ class ChatApp {
 
             if (this.currentUser.avatar) {
                 const img = document.createElement('img');
-                img.src = 'http://localhost:8081/storage/user/' + this.currentUser.avatar;
+                img.src =this.currentUser.avatar;
                 img.alt = this.currentUser.fullName;
                 img.className = 'avatar-img';
                 avatarContainer.appendChild(img);
@@ -88,7 +88,7 @@ class ChatApp {
                 async (error) => {
                     console.warn(" WS connect error", error);
 
-                    // ❗ CONNECT FAIL → REFRESH NGAY
+                    //  CONNECT FAIL → REFRESH NGAY
                     const ok = await this.refreshAccessToken();
                     if (ok) {
                         console.log("Retry WS after refresh");
@@ -182,7 +182,7 @@ class ChatApp {
         formData.append('folder', 'chat-files');
 
         try {
-            const response = await fetch('/api/v1/file/server', {
+            const response = await fetch('/api/v1/file/cloudinary', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${this.accessToken}`
@@ -421,7 +421,7 @@ class ChatApp {
             if (user.avatar) {
                 avatarHtml = `
                     <img
-                        src="http://localhost:8081/storage/user/${user.avatar}"
+                        src="${user.avatar}"
                         alt="${user.fullName}"
                         class="avatar-img"
                     />
@@ -497,7 +497,7 @@ class ChatApp {
             chatUserAvatarEl.innerHTML = '';
             if (user.avatar) {
                 const img = document.createElement('img');
-                img.src = 'http://localhost:8081/storage/user/' + user.avatar;
+                img.src = user.avatar;
                 img.alt = user.fullName;
                 img.className = 'avatar-img';
                 chatUserAvatarEl.appendChild(img);
@@ -511,7 +511,7 @@ class ChatApp {
             chatUser.innerHTML = '';
             if (user.avatar) {
                 const img = document.createElement('img');
-                img.src = 'http://localhost:8081/storage/user/' + user.avatar;
+                img.src = user.avatar;
                 img.alt = user.fullName;
                 img.className = 'avatar-img';
                 chatUser.appendChild(img);
@@ -737,7 +737,7 @@ class ChatApp {
         const editedText = message.isEdited ? ' (đã sửa)' : '';
 
         const avatarHtml = message.sender.avatar
-            ? `<img src="http://localhost:8081/storage/user/${message.sender.avatar}" class="message-avatar" />`
+            ? `<img src="${message.sender.avatar}" class="message-avatar" />`
             : `<div class="message-avatar initials">${this.getInitials(message.sender.fullName)}</div>`;
 
         // Xử lý nội dung file
@@ -745,9 +745,9 @@ class ChatApp {
         if (message.contentType === 'IMAGE') {
             fileContentHtml = `
                 <div class="message-file-content">
-                    <img src="http://localhost:8081/storage/chat-files/${message.fileUrl}"
+                    <img src="${message.fileUrl}"
                          class="message-image"
-                         onclick="chatApp.viewImage('http://localhost:8081/storage/chat-files/${message.fileUrl}')" />
+                         onclick="chatApp.viewImage('${message.fileUrl}')" />
                 </div>
             `;
         } else if (message.contentType === 'FILE') {
@@ -780,7 +780,9 @@ class ChatApp {
                 ${fileContentHtml}
 
                 ${message.content && message.content !== 'Đã gửi file'
-                    ? `<div class="message-content">${message.content}</div>`
+                    ? `<div class="message-content">
+                          ${this.formatMessageContent(message.content)}
+                    </div>`
                     : ''}
 
                 <div class="message-time-status">
@@ -810,6 +812,18 @@ class ChatApp {
         `;
 
         return div;
+    }
+    formatMessageContent(content) {
+        const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+
+        return content.replace(
+            codeBlockRegex,
+            (_, lang, code) => `
+            <pre class="code-block">
+                <code>${this.escapeHtml(code)}</code>
+            </pre>
+        `
+        );
     }
     async downloadFile(folder, fileUrl, originalName) {
         try {
@@ -888,7 +902,7 @@ class ChatApp {
 
         if (receiver.avatar) {
             return `
-                <img src="http://localhost:8081/storage/user/${receiver.avatar}"
+                <img src="${receiver.avatar}"
                      class="seen-avatar"
                      title="Đã xem" />
             `;
@@ -1228,6 +1242,7 @@ class ChatApp {
         }
     }
     handleMessageStatusUpdate(message) {
+        console.log("STATUS UPDATE", message);
         const el = document.querySelector(`[data-message-id="${message.id}"]`);
         if (!el) return;
 
@@ -1248,6 +1263,7 @@ class ChatApp {
             }
         }
     }
+
 
 
 
@@ -1283,7 +1299,13 @@ class ChatApp {
         // Message form
         document.getElementById('messageForm').addEventListener('submit', (e) => {
             e.preventDefault();
+
             const input = document.getElementById('messageInput');
+
+            input.addEventListener('input', () => {
+                input.style.height = '40px';
+                input.style.height = input.scrollHeight + 'px';
+            });
             this.sendMessage(input.value);
         });
 
