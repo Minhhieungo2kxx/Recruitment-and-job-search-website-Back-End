@@ -34,3 +34,67 @@ build/
 # Env files - chứa thông tin nhạy cảm
 .env
 .env.*
+
+
+# === Maven ===
+!.mvn/wrapper/maven-wrapper.jar
+/target/
+.mvn/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# === Java ===
+*.class
+*.jar
+*.war
+*.ear
+
+*.tar
+*.tar.gz
+
+# === Spring Boot specific ===
+/bin/
+/logs/
+*.log
+*.tmp
+*.h2.db
+*.mv.db
+*.db
+*.sqlite
+
+## IntelliJ IDEA
+.idea/
+out/
+# ===== Logs =====
+logs/
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Upload runtime data (QUAN TRỌNG) =====
+myapp/uploads/
+## Eclipse
+
+.settings/
+.loadpath
+
+# ===== Env / secret =====
+*.env
+application-local.properties
+application-secret.properties
+
+# ===== DB files =====
+
+
+# === Others ===
+*.swp
+*.bak
+*.old
+
+
+# Ignore all .json files (general, if bạn không dùng .json cho data khác)
+service-account-key.json
+credentials.json
