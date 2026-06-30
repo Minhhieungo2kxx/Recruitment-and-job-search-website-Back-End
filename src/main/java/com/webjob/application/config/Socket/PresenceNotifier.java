@@ -23,7 +23,12 @@ public class PresenceNotifier {
 
     // Broadcast trạng thái cho specific user
     public void notifyUserPresence(UserPresenceDTO presence) {
-        messagingTemplate.convertAndSend("/topic/presence", presence);
+//        messagingTemplate.convertAndSend("/topic/presence", presence);
+        messagingTemplate.convertAndSendToUser(
+                presence.getUserId().toString(),
+                "/queue/presence",
+                presence
+        );
     }
 
 

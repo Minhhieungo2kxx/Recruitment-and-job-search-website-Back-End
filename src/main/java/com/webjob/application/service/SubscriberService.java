@@ -1,6 +1,7 @@
 package com.webjob.application.service;
 
 
+import com.webjob.application.messaging.producer.EmailProducer;
 import com.webjob.application.models.Entity.Job;
 import com.webjob.application.dto.Request.SubscriberRequest;
 import com.webjob.application.models.Entity.Skill;
@@ -46,7 +47,7 @@ public class SubscriberService {
     private final UserService userService;
 
     private final ApplicationEmailService applicationEmailService;
-
+    private final EmailProducer emailProducer;
 
 
     @Transactional
@@ -92,53 +93,33 @@ public class SubscriberService {
         return get;
     }
 
-    @Scheduled(cron = "0 0 8 1 * *") // 8h sáng ngày 1 mỗi tháng
+    @Scheduled(cron = "0 0 8 1 * *")
+//    @Scheduled(cron = "0 */1 * * * *")
     public void sendSubscribersEmailJobs() {
-        log.info("Start sending job emails to subscribers...");
 
-        int pageSize = 500; // xử lý 500 subscriber mỗi batch
-        Pageable pageable = PageRequest.of(0, pageSize);
+        log.info("Start publishing email jobs...");
 
-        Page<Long> idPage;
+        Pageable pageable = PageRequest.of(0, 500);
+
+        Page<Long> page;
 
         do {
-            // Query 1: lấy 1 trang ID subscriber
-            idPage = subscriberRepository.findPageIds(pageable);
 
-            if (idPage.isEmpty()) break;
+            page = subscriberRepository.findPageIds(pageable);
 
-            log.info("Processing subscriber ID page {} with {} ids",
-                    pageable.getPageNumber(), idPage.getContent().size());
-
-            // Query 2: fetch đầy đủ subscriber + skills cho IDs
-            List<Subscriber> subscribers =
-                    subscriberRepository.findAllWithSkillsByIds(idPage.getContent());
-
-            log.info("Fetched {} subscribers with skills", subscribers.size());
-
-            for (Subscriber subscriber : subscribers) {
-
-                List<Skill> skills = Optional.ofNullable(subscriber.getSkills())
-                        .orElse(Collections.emptyList());
-
-                if (skills.isEmpty()) continue;
-
-                // Lấy TOP 10 job mới nhất theo skills
-                List<Job> matchedJobs = jobRepository.findTop10BySkills(skills, PageRequest.of(0, 10));
-
-                if (matchedJobs.isEmpty()) continue;
-
-                applicationEmailService.sendJobEmail(subscriber, matchedJobs);
+            if (page.isEmpty()) {
+                break;
             }
 
-            // chuyển sang trang tiếp theo
-            pageable = idPage.nextPageable();
+            page.getContent().forEach(emailProducer::publish);
 
-        } while (idPage.hasNext());
+            pageable = page.nextPageable();
 
-        log.info("Finish sending job emails.");
+        } while (page.hasNext());
+
+        log.info("Finish publishing.");
+
     }
-
 
 
     public String formatVietnameseCurrency(double amount) {
@@ -151,6 +132,14 @@ public class SubscriberService {
         return subscriberRepository.findByEmail(user.getEmail().trim());
 
     }
+//    feat(email): add RabbitMQ-based asynchronous email processing
+//
+//- configure RabbitMQ exchange, queue and DLQ
+//- add retry and dead-letter handling
+//- schedule monthly email publishing
+//- publish subscriber email jobs to queue
+//- consume email jobs asynchronously
+//- send job recommendation emails using template
 
 
 }

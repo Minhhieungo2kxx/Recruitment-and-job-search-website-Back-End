@@ -1,5 +1,6 @@
 package com.webjob.application.service;
 
+import com.webjob.application.dto.record.LoginSuccessEvent;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.dto.Request.LoginDTO;
 import com.webjob.application.dto.Request.Userrequest;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -50,6 +52,7 @@ public class AuthService {
     private final TokenBlacklistService tokenBlacklistService;
 
     private final ApplicationEmailService applicationEmailService;
+    private final ApplicationEventPublisher eventPublisher;
 
 
 
@@ -70,7 +73,14 @@ public class AuthService {
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.SET_COOKIE, refreshCookie.toString());
         //send Email
-        handleLoginNotification(request, user.getEmail());
+        eventPublisher.publishEvent(
+                new LoginSuccessEvent(
+                        user.getEmail(),
+                        getClientIp(request),
+                        request.getHeader("User-Agent"),
+                        LocalDateTime.now()
+                )
+        );
         return ResponseEntity.ok().headers(headers).body(response);
     }
 
@@ -88,6 +98,7 @@ public class AuthService {
         return ResponseEntity.ok(response);
     }
 
+    @Transactional
     public ResponseEntity<?> refreshToken(String refreshToken) {
 
         // 1. Nếu không có token → reject
@@ -139,6 +150,7 @@ public class AuthService {
     }
 
 
+    @Transactional
     public ResponseEntity<?> logout(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!isAuthenticated(authentication)) {
@@ -160,6 +172,7 @@ public class AuthService {
         return ResponseEntity.ok().headers(headers).body(response);
     }
 
+    @Transactional
     public ResponseEntity<?> register(Userrequest userrequest) {
 
         User user = modelMapper.map(userrequest, User.class);
@@ -252,17 +265,17 @@ public class AuthService {
     }
 
 
-    public void handleLoginNotification(HttpServletRequest request, String email) {
-        // Trong Controller hoặc nơi gọi async
-        String ip = getClientIp(request);
-        String userAgent = request.getHeader("User-Agent");
-        Map<String, Object> emailVars = new HashMap<>();
-        emailVars.put("email", email);
-        emailVars.put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
-        emailVars.put("ip", ip);
-        emailVars.put("userAgent", userAgent);
-        applicationEmailService.LoginNotification(emailVars);
-    }
+//    public void handleLoginNotification(HttpServletRequest request, String email) {
+//        // Trong Controller hoặc nơi gọi async
+//        String ip = getClientIp(request);
+//        String userAgent = request.getHeader("User-Agent");
+//        Map<String, Object> emailVars = new HashMap<>();
+//        emailVars.put("email", email);
+//        emailVars.put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
+//        emailVars.put("ip", ip);
+//        emailVars.put("userAgent", userAgent);
+//        applicationEmailService.LoginNotification(emailVars);
+//    }
     public String getClientIp(HttpServletRequest request) {
         String[] headers = {
                 "X-Forwarded-For",

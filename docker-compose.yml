@@ -1,0 +1,61 @@
+version: '3.9'
+
+services:
+  rabbitmq:
+
+    image: rabbitmq:3.13-management
+
+    container_name: rabbitmq
+
+    restart: unless-stopped
+
+    hostname: rabbitmq
+
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis-server
+
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    environment:
+      REDIS_PASSWORD: ${SPRING_REDIS_PASSWORD}
+
+    command: >
+      sh -c "
+      redis-server
+      --requirepass $$REDIS_PASSWORD
+      --appendonly yes
+      --save 60 1000
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      "
+
+    volumes:
+      - redis_data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+
+volumes:
+  redis_data:
+  rabbitmq-data:

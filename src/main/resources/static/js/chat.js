@@ -135,13 +135,19 @@ class ChatApp {
             }
         });
 
+
         this.stompClient.subscribe('/user/queue/message-deletes', msg => {
             this.handleMessageDelete(JSON.parse(msg.body));
+        });
+       this.stompClient.subscribe('/user/queue/presence', msg => {
+           this.handlePresenceUpdate(JSON.parse(msg.body));
         });
 
         this.stompClient.subscribe('/topic/presence', msg => {
             this.handlePresenceUpdate(JSON.parse(msg.body));
         });
+
+
 
 
     }

@@ -1,14 +1,11 @@
-package com.webjob.application.config;
+package com.webjob.application.config.App;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
 
-import com.webjob.application.dto.Request.Redis.PermissionSet;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,7 +26,6 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -119,13 +115,7 @@ public class AppConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
-    @Bean
-    public Cache<String, PermissionSet> permissionLocalCache() {
-        return Caffeine.newBuilder()
-                .maximumSize(10_000)
-                .expireAfterWrite(Duration.ofMinutes(10))
-                .build();
-    }
+
 
 
 

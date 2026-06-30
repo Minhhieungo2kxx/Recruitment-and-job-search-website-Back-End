@@ -1,4 +1,4 @@
-package com.webjob.application.config;
+package com.webjob.application.config.App;
 
 import com.webjob.application.service.UserService;
 import org.springframework.security.core.userdetails.UserDetails;

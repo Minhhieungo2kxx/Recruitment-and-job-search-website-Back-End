@@ -20,7 +20,14 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.Instant;
 
 @Entity
-@Table(name = "resumes")
+@Table(
+        name = "resumes",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {
+                        "user_id",
+                        "job_id"
+                })}
+)
 @Getter
 @Setter
 @NoArgsConstructor

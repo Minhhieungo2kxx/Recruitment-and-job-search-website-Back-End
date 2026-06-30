@@ -3,6 +3,7 @@ package com.webjob.application.service.SendEmail;
 
 import com.webjob.application.dto.Request.PaymentSuccessDto;
 import com.webjob.application.dto.Response.RespondEmailJob;
+import com.webjob.application.messaging.dto.JobAppliedEvent;
 import com.webjob.application.models.Entity.*;
 import com.webjob.application.utils.UtilFormat;
 import eu.bitwalker.useragentutils.DeviceType;
@@ -14,7 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.text.NumberFormat;
+import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,25 +30,24 @@ public class ApplicationEmailService {
     private final EmailService emailService;
 
 
-    @Async("taskExecutor")
-    public void sendJobApplicate(User user, Job job,User hr) {
-        Company company = job.getCompany();
+//    @Async("taskExecutor")
+    public void sendJobApplicate(JobAppliedEvent event) {
 
         Map<String, Object> emailVars = new HashMap<>();
-        emailVars.put("email", user.getEmail());
-        emailVars.put("username", user.getFullName());
-        emailVars.put("usernameHR",hr.getFullName());
-        emailVars.put("namecompany",company.getName());
-        emailVars.put("nameJob", job.getName());
-        emailVars.put("logo",company.getLogo());
+        emailVars.put("email", event.getEmail());
+        emailVars.put("username",event.getUsername());
+        emailVars.put("usernameHR",event.getUsernameHR());
+        emailVars.put("namecompany",event.getCompanyName());
+        emailVars.put("nameJob", event.getJobName());
+        emailVars.put("logo",event.getCompanyLogo());
         http://localhost:8081/storage/company/
-        emailVars.put("salary", formatVietnameseCurrency(job.getSalary()));
-        emailVars.put("location", job.getLocation());
+        emailVars.put("salary", formatVietnameseCurrency(event.getSalary().doubleValue()));
+        emailVars.put("location",event.getLocation());
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
                 .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
-        String startDateFormatted = formatter.format(job.getStartDate());
-        String endDateFormatted = formatter.format(job.getEndDate());
+        String startDateFormatted = formatter.format(event.getStartDate());
+        String endDateFormatted = formatter.format(event.getEndDate());
         emailVars.put("starttime", startDateFormatted);
         emailVars.put("endtime", endDateFormatted);
 
@@ -54,6 +56,7 @@ public class ApplicationEmailService {
                 "emails/emailjob-apply",
                 emailVars
         );
+        log.info("Sent job email to {}", event.getEmail());
     }
 
 
@@ -78,7 +81,7 @@ public class ApplicationEmailService {
         );
     }
 
-    @Async("taskExecutor")
+
     public void sendJobEmail(Subscriber subscriber, List<Job> jobs) {
         List<RespondEmailJob> jobSummaries = Optional.ofNullable(jobs)
                 .orElseGet(Collections::emptyList)  // nếu jobs null → dùng list rỗng
@@ -86,7 +89,7 @@ public class ApplicationEmailService {
                 .map(this::convertJobToSendEmail)
                 .filter(Objects::nonNull)          // loại bỏ các kết quả null
                 .collect(Collectors.toList());      // Java 8
-        try {
+
             emailService.sendTemplateEmail(
                     subscriber.getEmail(),
                     "Cơ hội việc làm hot đang chờ bạn!",
@@ -95,9 +98,37 @@ public class ApplicationEmailService {
                     jobSummaries
             );
             log.info("Sent job email to {}", subscriber.getEmail());
-        } catch (Exception e) {
-            log.error("Failed to send email to {}", subscriber.getEmail(), e);
-        }
+
+    }
+    public void sendResetPasswordEmail(String email, String fullName, String token, Instant expiresAt) {
+        // Tạo link reset
+        String resetLink = "https://webjob-client.com/reset-password?token=" + token;
+
+        // Chuẩn bị biến truyền vào email template
+        Map<String, Object> emailVars = new HashMap<>();
+        emailVars.put("name",fullName);
+        emailVars.put("username",email);
+        emailVars.put("resetLink", resetLink);
+        emailVars.put("token", token);
+
+        // Format thời gian theo giờ Việt Nam
+        ZoneId userZone = ZoneId.of("Asia/Ho_Chi_Minh");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(
+                "HH:mm 'ngày' dd 'tháng' MM, yyyy (z)",
+                new Locale("vi", "VN")
+        ).withZone(userZone);
+
+        // Chuyển expiry sang timezone VN
+        ZonedDateTime expiryInUserZone = expiresAt.atZone(userZone);
+        emailVars.put("expiryTime", formatter.format(expiryInUserZone));
+
+        // Gửi email
+        emailService.sendTemplateResetPassword(
+                "Password Reset Request",
+                "emails/password-reset",
+                emailVars
+        );
+        log.info("Sent job email to {}", email);
     }
 
     public RespondEmailJob convertJobToSendEmail(Job job) {
