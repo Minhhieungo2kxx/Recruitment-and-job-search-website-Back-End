@@ -21,20 +21,31 @@ public class PresenceScheduler {
     private final PresenceNotifier notifier;
     private final UserRepository userRepository;
 
-//     Chạy mỗi phút để cập nhật trạng thái "x phút trước"
+    //     Chạy mỗi phút để cập nhật trạng thái "x phút trước"
     @Scheduled(fixedDelay = 120000) // 2 phút
     public void updatePresenceStatus() {
         log.info(" Bắt đầu task updatePresenceStatus()...");
         List<User> recentlyOfflineUsers = userRepository.findRecentlyOfflineUsers(
                 Instant.now().minus(Duration.ofMinutes(30))
         );
-
         for (User user : recentlyOfflineUsers) {
-            if (!user.isOnline()) {
-                UserPresenceDTO presence = presenceService.getUserPresence(user.getId());
-                notifier.notifyUserPresence(presence);
+            try {
+
+                if (!user.isOnline()) {
+                    UserPresenceDTO presence = presenceService.get_UserPresence(user);
+                    notifier.notifyUserPresence(presence);
+                }
+
+            } catch (Exception e) {
+                log.error(
+                        "Presence update failed for user {}",
+                        user.getId(),
+                        e
+                );
             }
         }
+
+
         log.info(" Kết thúc task updatePresenceStatus()");
     }
 

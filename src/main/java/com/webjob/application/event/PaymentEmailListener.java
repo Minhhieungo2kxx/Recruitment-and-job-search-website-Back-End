@@ -1,4 +1,4 @@
-package com.webjob.application.service.Events;
+package com.webjob.application.event;
 
 import com.webjob.application.dto.Request.PaymentSuccessDto;
 import com.webjob.application.dto.record.PaymentSuccessEvent;

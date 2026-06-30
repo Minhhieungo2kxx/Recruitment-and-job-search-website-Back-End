@@ -1,4 +1,4 @@
-package com.webjob.application.config;
+package com.webjob.application.config.App;
 
 
 import org.springframework.context.annotation.Configuration;

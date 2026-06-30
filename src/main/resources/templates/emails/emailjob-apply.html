@@ -1,158 +1,399 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
+
     <meta charset="UTF-8">
-    <title>Xác nhận ứng tuyển thành công</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Thông tin ứng tuyển</title>
+
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f2f5;
-            -webkit-text-size-adjust: 100%;
-            -ms-text-size-adjust: 100%;
+
+        body{
+            margin:0;
+            padding:0;
+            background:#f4f6f9;
+            font-family:Segoe UI,Arial,sans-serif;
+            color:#333;
         }
-        .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #ffffff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+
+        .wrapper{
+            width:100%;
+            padding:40px 0;
         }
-        .header {
-            background-color: #007bff;
-            color: #ffffff;
-            padding: 40px 30px;
-            text-align: center;
-            position: relative;
+
+        .container{
+
+            max-width:650px;
+            margin:auto;
+            background:#fff;
+            border-radius:14px;
+            overflow:hidden;
+            box-shadow:0 5px 20px rgba(0,0,0,.08);
+
         }
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 600;
+
+        .header{
+
+            background:linear-gradient(135deg,#0d6efd,#0056b3);
+            color:#fff;
+            text-align:center;
+            padding:35px;
+
         }
-        .header p {
-            margin-top: 10px;
-            font-size: 16px;
-            opacity: 0.9;
+
+        .header h1{
+
+            margin:0;
+            font-size:28px;
+
         }
-        .content {
-            padding: 30px;
-            color: #333;
+
+        .header p{
+
+            margin-top:10px;
+            opacity:.9;
+
         }
-        .content h2 {
-            font-size: 22px;
-            color: #2c3e50;
-            margin-top: 0;
-            margin-bottom: 10px;
+
+        .content{
+
+            padding:30px;
+
         }
-        .content p {
-            font-size: 16px;
-            line-height: 1.6;
+
+        .job-card{
+
+            margin-top:25px;
+            background:#fafafa;
+            border:1px solid #ececec;
+            border-radius:10px;
+            padding:20px;
+
         }
-        .job-card {
-            background-color: #f9f9f9;
-            border: 1px solid #e0e0e0;
-            border-left: 5px solid #007bff;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 25px;
+
+        .company-logo{
+
+            width:75px;
+            height:75px;
+            border-radius:10px;
+            object-fit:cover;
+            border:1px solid #ddd;
+
         }
-        .job-card h3 {
-            color: #007bff;
-            font-size: 20px;
-            margin-top: 0;
+
+        .job-title{
+
+            font-size:22px;
+            font-weight:bold;
+            color:#0d6efd;
+
         }
-        .job-info {
-            margin-top: 15px;
+
+        .company-name{
+
+            color:#666;
+            margin-top:6px;
+
         }
-        .job-info p {
-            margin: 8px 0;
-            display: flex;
-            align-items: center;
+
+        .badge{
+
+            display:inline-block;
+            margin-top:10px;
+            background:#e9f8ef;
+            color:#198754;
+            padding:7px 14px;
+            border-radius:20px;
+            font-size:13px;
+            font-weight:bold;
+
         }
-        .job-info strong {
-            color: #555;
-            width: 140px;
-            display: inline-block;
+
+        .info-table{
+
+            width:100%;
+            margin-top:20px;
+            border-collapse:collapse;
+
         }
-        .logo-section {
-            text-align: center;
-            padding: 20px;
-            border-top: 1px solid #f0f0f0;
+
+        .info-table td{
+
+            padding:12px 0;
+            border-bottom:1px solid #eee;
+
         }
-        .logo-section img {
-            max-width: 120px;
-            height: auto;
-            border-radius: 8px;
+
+        .label{
+
+            width:180px;
+            font-weight:600;
+            color:#666;
+
         }
-        .footer {
-            text-align: center;
-            padding: 20px 30px;
-            background-color: #f0f2f5;
-            font-size: 14px;
-            color: #777;
-            border-bottom-left-radius: 12px;
-            border-bottom-right-radius: 12px;
+
+        .salary{
+
+            color:#198754;
+            font-weight:bold;
+            font-size:16px;
+
         }
-        .button {
-            display: inline-block;
-            background-color: #007bff;
-            color: #ffffff;
-            text-decoration: none;
-            padding: 12px 25px;
-            border-radius: 5px;
-            margin-top: 20px;
-            font-weight: bold;
+
+        .hr-box{
+
+            margin-top:30px;
+            padding:20px;
+            border-left:5px solid #0d6efd;
+            background:#f5f9ff;
+            border-radius:8px;
+
         }
-        .button:hover {
-            background-color: #0056b3;
+
+        .footer{
+
+            background:#f8f9fa;
+            text-align:center;
+            padding:25px;
+            font-size:13px;
+            color:#777;
+
         }
+
+        .footer img{
+
+            margin-top:15px;
+
+        }
+
     </style>
+
 </head>
+
 <body>
-<div class="container">
-    <div class="header">
-        <h1>Chúc mừng bạn đã ứng tuyển!</h1>
-        <p>Chúng tôi đã nhận được hồ sơ của bạn cho vị trí dưới đây.</p>
-    </div>
-    <div class="content">
-        <h2 th:text="'Xin chào, ' + ${username} + '!'"></h2>
-        <p>
-            Cảm ơn bạn đã quan tâm đến cơ hội làm việc tại
-            <strong th:text="${namecompany}">Tên công ty</strong>.
-            Chúng tôi sẽ xem xét cẩn thận hồ sơ của bạn.
-        </p>
 
-        <div class="job-card">
-            <h3 th:text="${nameJob}">Tên công việc</h3>
-            <div class="job-info">
-                <p><strong>Công ty:</strong> <span th:text="${namecompany}">Tên công ty</span></p>
-                <p><strong>Địa điểm:</strong> <span th:text="${location}">Địa điểm</span></p>
-                <p><strong>Mức lương:</strong> <span th:text="${salary}">Lương</span></p>
-                <p><strong>Ngày hết hạn:</strong> <span th:text="${endtime}">Thời gian kết thúc</span></p>
+<div class="wrapper">
+
+    <div class="container">
+
+        <div class="header">
+
+            <h1>🎉 Ứng tuyển thành công</h1>
+
+            <p>Hồ sơ của bạn đã được gửi tới nhà tuyển dụng.</p>
+
+        </div>
+
+        <div class="content">
+
+            <h2 th:text="'Xin chào ' + ${username} + ','">
+                Xin chào
+            </h2>
+
+            <p>
+
+                Cảm ơn bạn đã ứng tuyển vào vị trí
+
+                <strong th:text="${nameJob}"></strong>
+
+                tại
+
+                <strong th:text="${namecompany}"></strong>.
+
+            </p>
+
+            <p>
+
+                Chúng tôi đã ghi nhận thành công hồ sơ ứng tuyển của bạn.
+                Dưới đây là toàn bộ thông tin của vị trí đã đăng ký.
+
+            </p>
+
+            <div class="job-card">
+
+                <table width="100%">
+
+                    <tr>
+
+                        <td width="90">
+
+                            <img
+                                    class="company-logo"
+                                    th:if="${logo!=null}"
+                                    th:src="${logo}"
+                                    alt="Logo">
+
+                        </td>
+
+                        <td>
+
+                            <div
+                                    class="job-title"
+                                    th:text="${nameJob}">
+                                Backend Developer
+                            </div>
+
+                            <div
+                                    class="company-name"
+                                    th:text="${namecompany}">
+                                ABC Company
+                            </div>
+
+                            <div class="badge">
+                                ✔ Đã nhận hồ sơ
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                </table>
+
+                <table class="info-table">
+
+                    <tr>
+
+                        <td class="label">👤 Ứng viên</td>
+
+                        <td th:text="${username}"></td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class="label">📧 Email</td>
+
+                        <td th:text="${email}"></td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class="label">🏢 Công ty</td>
+
+                        <td th:text="${namecompany}"></td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class="label">💼 Vị trí</td>
+
+                        <td th:text="${nameJob}"></td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class="label">📍 Địa điểm</td>
+
+                        <td th:text="${location}"></td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class="label">💰 Mức lương</td>
+
+                        <td
+                                class="salary"
+                                th:text="${salary}">
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class="label">📅 Ngày bắt đầu</td>
+
+                        <td th:text="${starttime}"></td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class="label">⏳ Hạn ứng tuyển</td>
+
+                        <td th:text="${endtime}"></td>
+
+                    </tr>
+
+                </table>
+
             </div>
+
+            <div class="hr-box">
+
+                <h3 style="margin-top:0;color:#0d6efd;">
+                    👨‍💼 Thông tin chuyên viên tuyển dụng
+                </h3>
+
+                <p>
+
+                    Hồ sơ của bạn đã được chuyển đến chuyên viên phụ trách tuyển dụng.
+
+                </p>
+
+                <p>
+
+                    <strong th:text="${usernameHR}">
+                        Nguyễn Văn A
+                    </strong>
+
+                </p>
+
+                <p>
+
+                    Bạn có thể trao đổi trực tiếp với HR thông qua chức năng
+                    <strong>Chat Online</strong>
+                    trên hệ thống để được hỗ trợ nhanh nhất.
+
+                </p>
+
+            </div>
+
+            <p style="margin-top:30px;line-height:1.8">
+
+                Trong thời gian tới, nhà tuyển dụng sẽ xem xét hồ sơ của bạn.
+                Nếu hồ sơ phù hợp, chuyên viên tuyển dụng sẽ liên hệ để trao đổi về các vòng tuyển dụng tiếp theo.
+
+            </p>
+
+            <p>
+
+                Chúc bạn sớm tìm được công việc phù hợp và đạt được nhiều thành công trong sự nghiệp!
+
+            </p>
+
         </div>
 
-        <div class="logo-section">
-            <img th:src="${logo}" alt="Logo công ty"/>
+        <div class="footer">
+
+            <p>
+
+                Đây là email được gửi tự động, vui lòng không phản hồi email này.
+
+            </p>
+
+            <p>
+
+                © 2026 TopWork Recruitment Platform. All rights reserved.
+
+            </p>
+
+            <img
+                    src="cid:webjobLogo"
+                    width="120"
+                    alt="TopWork">
+
         </div>
-        <p style="margin-top: 30px;">
-            Bạn cũng có thể trao đổi và nhắn tin trực tiếp qua hệ thống Chat Online với nhân sự phụ trách (HR) của công ty có tên : <strong th:text="${usernameHR}">Tên HR</strong>.
-        </p>
-
-        <p style="margin-top: 30px;">
-            Mọi thông tin liên hệ và phản hồi sẽ được gửi đến email này. Chúc bạn một ngày tốt lành!
-        </p>
-
-
 
     </div>
-    <div class="footer">
-        <p>Đây là email tự động, vui lòng không trả lời.</p>
-        <p>Hệ thống tuyển dụng &copy; 2025</p>
-    </div>
+
 </div>
+
 </body>
+
 </html>

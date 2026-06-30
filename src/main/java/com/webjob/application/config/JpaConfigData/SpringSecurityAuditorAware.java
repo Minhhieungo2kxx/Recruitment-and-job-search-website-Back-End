@@ -1,6 +1,6 @@
 package com.webjob.application.config.JpaConfigData;
 
-import com.webjob.application.config.CustomUserDetails;
+import com.webjob.application.config.App.CustomUserDetails;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

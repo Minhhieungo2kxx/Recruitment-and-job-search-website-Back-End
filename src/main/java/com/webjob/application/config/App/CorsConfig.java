@@ -1,4 +1,4 @@
-package com.webjob.application.config;
+package com.webjob.application.config.App;
 
 
 import org.springframework.beans.factory.annotation.Value;

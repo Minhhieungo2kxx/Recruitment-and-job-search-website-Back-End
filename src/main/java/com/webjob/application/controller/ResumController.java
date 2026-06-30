@@ -1,6 +1,7 @@
 package com.webjob.application.controller;
 
 import com.webjob.application.annotation.RateLimit;
+import com.webjob.application.dto.Request.ResumeRequest;
 import com.webjob.application.dto.Request.UpdateResumeUser;
 import com.webjob.application.dto.Response.ApiResponse;
 import com.webjob.application.dto.Response.ResponseDTO;
@@ -30,7 +31,7 @@ public class ResumController {
 
     @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping
-    public ResponseEntity<?> createResume(@Valid @RequestBody Resume resume, Authentication authentication) {
+    public ResponseEntity<?> createResume(@Valid @RequestBody ResumeRequest resume, Authentication authentication) {
         return resumService.create_Resume(resume, authentication);
 
     }

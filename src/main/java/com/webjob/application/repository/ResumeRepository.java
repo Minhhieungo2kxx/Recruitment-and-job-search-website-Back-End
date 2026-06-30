@@ -1,5 +1,6 @@
 package com.webjob.application.repository;
 
+import com.webjob.application.models.Entity.Job;
 import com.webjob.application.models.Entity.Resume;
 import com.webjob.application.models.Entity.User;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,8 @@ public interface ResumeRepository extends JpaRepository<Resume,Long>, JpaSpecifi
 //    WHERE c.id = :companyId
 //    LIMIT ... OFFSET ...
     Page<Resume> findAllByJob_Company_Id(Long companyId, Pageable pageable);
+
+    boolean existsByUserAndJob(User user, Job job);
 
 
 

@@ -12,4 +12,5 @@ public interface TemporaryUploadRepository extends JpaRepository<TemporaryUpload
     Optional<TemporaryUpload> findByPublicId(String publicId);
     List<TemporaryUpload> findByUsedFalseAndCreatedAtBefore(Instant cutoff);
 
+
 }

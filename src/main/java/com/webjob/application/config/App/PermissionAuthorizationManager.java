@@ -1,4 +1,4 @@
-package com.webjob.application.config;
+package com.webjob.application.config.App;
 
 import com.webjob.application.dto.Request.Redis.PermissionSet;
 import com.webjob.application.service.Redis.PermissionCacheService;

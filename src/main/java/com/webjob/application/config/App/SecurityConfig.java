@@ -1,4 +1,4 @@
-package com.webjob.application.config;
+package com.webjob.application.config.App;
 
 import com.webjob.application.config.CustomOAuth2.OAuth2LoginFailureHandler;
 import com.webjob.application.config.CustomOAuth2.OAuth2LoginSuccessHandler;
@@ -41,7 +41,8 @@ public class SecurityConfig {
 
         String[] publicEndpoints = {"/", "/api/v1/auth/login", "/api/v1/auth/refresh",
                 "/api/v1/auth/register", "/storage/**", "/api/v1/subscribers/send-mails",
-                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api/v1/password/**",
+                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api/v1/password/forgot"
+                ,"/api/v1/password/reset",
                 "/oauth2/**", "/login/oauth2/**" // OAuth2 login Google
                 , "/api/v1/payments/vnpay-return", "/login-chat", "/chat",
                 "/js/**", "/css/**", "/img/**", "/ws/**", "/audio/**", "/login-success"

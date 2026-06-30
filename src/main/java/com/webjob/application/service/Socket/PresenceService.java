@@ -95,6 +95,28 @@ public class PresenceService {
 
         return dto;
     }
+    public UserPresenceDTO get_UserPresence(User user) {
+
+        UserPresenceDTO dto = new UserPresenceDTO();
+        dto.setUserId(user.getId());
+        dto.setOnline(user.isOnline());
+        dto.setLastSeenAt(user.getLastSeenAt());
+
+        if (user.isOnline()) {
+            dto.setStatusText("Đang hoạt động");
+            dto.setStatusType("online");
+        } else if (user.getLastSeenAt() != null) {
+            String statusText = calculateLastSeenText(user.getLastSeenAt());
+            dto.setStatusText(statusText);
+            dto.setStatusType(calculateStatusType(user.getLastSeenAt()));
+        } else {
+            dto.setStatusText("Chưa từng truy cập");
+            dto.setStatusType("offline");
+        }
+
+        return dto;
+    }
+
 
     // Tính toán text hiển thị thời gian
     private String calculateLastSeenText(Instant lastSeen) {

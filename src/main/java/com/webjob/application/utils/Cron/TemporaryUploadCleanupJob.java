@@ -24,8 +24,8 @@ public class TemporaryUploadCleanupJob {
     @Transactional
     public void cleanup() {
 
-//        Instant cutoff = Instant.now().minus(1, ChronoUnit.DAYS);
-        Instant cutoff = Instant.now().minus(1, ChronoUnit.MINUTES);
+        Instant cutoff = Instant.now().minus(1, ChronoUnit.DAYS);
+//        Instant cutoff = Instant.now().minus(1, ChronoUnit.MINUTES);
         List<TemporaryUpload> unused =
                 repository.findByUsedFalseAndCreatedAtBefore(cutoff);
 

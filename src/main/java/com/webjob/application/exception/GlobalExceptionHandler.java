@@ -1,8 +1,6 @@
 package com.webjob.application.exception;
 
-import com.webjob.application.exception.Customs.BusinessException;
-import com.webjob.application.exception.Customs.PaymentExpiredException;
-import com.webjob.application.exception.Customs.TooManyRequestsException;
+import com.webjob.application.exception.Customs.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -229,6 +227,54 @@ public class GlobalExceptionHandler {
                 null
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    @ExceptionHandler(JobExpiredException.class)
+    public ResponseEntity<?> handleJobExpired(JobExpiredException ex) {
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.BAD_REQUEST.value(),
+                "Job has expired",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    @ExceptionHandler(AlreadyAppliedException.class)
+    public ResponseEntity<?> handleAlreadyApplied(AlreadyAppliedException ex) {
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+    @ExceptionHandler(AppException.class)
+    public ResponseEntity<?> handleAppException(AppException ex) {
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    @ExceptionHandler(ResourceLockedException.class)
+    public ResponseEntity<?> handleLock(ResourceLockedException ex) {
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
 
