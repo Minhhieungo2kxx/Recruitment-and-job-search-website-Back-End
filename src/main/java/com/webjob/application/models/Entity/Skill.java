@@ -2,8 +2,10 @@ package com.webjob.application.models.Entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.webjob.application.enums.SkillStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,10 +18,16 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "skills")
+@Table(
+        name = "skills",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = "name")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,28 +38,36 @@ public class Skill {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Tên Skill không được để trống")
-    @Size(max = 255, message = "Tên Skill không được vượt quá 255 ký tự")
+    /**
+     * Java
+     * Spring Boot
+     * Excel
+     * SEO
+     * AutoCAD
+     */
+    @NotBlank(message = "Tên kỹ năng không được để trống")
+    @Size(max = 100)
+    @Column(nullable = false, length = 100)
     private String name;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    /**
+     * ACTIVE / INACTIVE
+     */
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private SkillStatus status = SkillStatus.ACTIVE;
 
     @Column(name = "created_at", updatable = false)
     @CreatedDate
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
+
     private Instant createdAt;
 
     @Column(name = "updated_at")
     @LastModifiedDate
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
     private Instant updatedAt;
 
     @Column(name = "created_by")
@@ -64,14 +80,17 @@ public class Skill {
     @LastModifiedBy
     private String updatedBy;
 
-    @ManyToMany(mappedBy = "skills",fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "skill", fetch = FetchType.LAZY)
     @JsonIgnore
-    private List<Job> jobs;
+    private List<JobSkill> jobSkills = new ArrayList<>();
 
-    @ManyToMany(fetch = FetchType.LAZY,mappedBy = "skills")
+    @OneToMany(mappedBy = "skill", fetch = FetchType.LAZY)
     @JsonIgnore
-    private List<Subscriber> subscribers;
+    private List<SubscriberSkill> subscriberSkills = new ArrayList<>();
 
+    @OneToMany(mappedBy = "skill", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<JobCategorySkill> jobCategorySkills = new ArrayList<>();
 
 
 }

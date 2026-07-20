@@ -5,7 +5,7 @@ import com.webjob.application.dto.record.PaymentSuccessEvent;
 import com.webjob.application.models.Entity.Payment;
 import com.webjob.application.repository.PaymentRepository;
 import com.webjob.application.service.SendEmail.ApplicationEmailService;
-import com.webjob.application.utils.UtilFormat;
+import com.webjob.application.utils.common.UtilFormat;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;

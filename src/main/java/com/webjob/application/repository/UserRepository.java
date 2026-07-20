@@ -1,7 +1,10 @@
 package com.webjob.application.repository;
 
 import com.webjob.application.models.Entity.Company;
+import com.webjob.application.models.Entity.Role;
 import com.webjob.application.models.Entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -14,32 +17,78 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
-    boolean existsByEmail(String email);
+
+
+    boolean existsByEmailAndDeletedFalse(String email);
+
 
     @SuppressWarnings("NullableProblems")
-    boolean existsById(Long id);
+    boolean existsByIdAndDeletedFalse(Long id);
+
+    User findByEmailAndDeletedFalse(String email);
 
     User findByEmail(String email);
 
-//  User findByEmailAndRefreshToken(String email, String refreshtoken);
-    User findByRefreshToken(String refreshToken);
-
-    Optional<User> findByCompany(Company company);
-
-    List<User> findAllByCompany(Company company);
+    User findByRefreshTokenAndDeletedFalse(String refreshToken);
 
 
-    List<User> findByFullNameContainingIgnoreCaseAndIdNot(String fullName, Long excludeId);
+    User findByCompanyAndDeletedFalse(Company company);
 
-    @Query("SELECT u FROM User u WHERE u.role.name = 'HR' AND u.fullName LIKE %:searchTerm%")
+    List<User> findAllByCompanyAndDeletedFalse(Company company);
+
+
+
+    @Query("""
+        SELECT u
+        FROM User u
+        WHERE u.deleted = false
+          AND u.role.code LIKE 'HR_%'
+          AND u.fullName LIKE %:searchTerm%
+        """)
     List<User> findHRsByName(@Param("searchTerm") String searchTerm);
 
-    //    @Query("SELECT u FROM User u WHERE u.role.name != 'HR' AND u.fullName LIKE %:searchTerm%")
-//    List<User> findCandidatesByName(@Param("searchTerm") String searchTerm);
-    @Query("SELECT u FROM User u WHERE u.role.name NOT IN ('HR', 'ADMIN') AND u.fullName LIKE %:searchTerm%")
+    @Query("""
+        SELECT u
+        FROM User u
+        WHERE u.deleted = false
+          AND u.role.code = 'USER'
+          AND u.fullName LIKE %:searchTerm%
+        """)
     List<User> findCandidatesByName(@Param("searchTerm") String searchTerm);
 
-    @Query("SELECT u FROM User u WHERE u.isOnline = false AND u.lastSeenAt > :since")
+
+    @Query("""
+        SELECT u
+        FROM User u
+        WHERE u.deleted = false
+          AND u.isOnline = false
+          AND u.lastSeenAt > :since
+        """)
     List<User> findRecentlyOfflineUsers(@Param("since") Instant since);
+
+
+    boolean existsByRoleAndDeletedFalse(Role role);
+
+    @Query("""
+        SELECT u
+        FROM User u
+        JOIN FETCH u.role r
+        WHERE u.id = :id
+          AND u.deleted = false
+          AND r.active = true
+        """)
+    Optional<User> findActiveRoleUser(@Param("id") Long id);
+
+    Optional<User> findByIdAndDeletedTrue(Long id);
+
+    Optional<User> findByIdAndDeletedFalse(Long id);
+
+    Page<User> findAllByDeletedFalse(Pageable pageable);
+
+
+    Page<User> findAllByDeletedTrue(Pageable pageable);  // User đã xóa
+
+
+
 
 }

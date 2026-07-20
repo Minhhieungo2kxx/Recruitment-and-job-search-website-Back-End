@@ -3,7 +3,10 @@ package com.webjob.application.models.Entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.webjob.application.enums.CompanyStatus;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -23,7 +26,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-
 public class Company {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,22 +49,10 @@ public class Company {
 
     @Column(name = "created_at", updatable = false)
     @CreatedDate
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
     private Instant createdAt;
 
     @Column(name = "updated_at")
     @LastModifiedDate
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
     private Instant updatedAt;
 
     @Column(name = "created_by")
@@ -75,15 +65,51 @@ public class Company {
     @LastModifiedBy
     private String updatedBy;
 
-    @OneToMany(mappedBy ="company",fetch =FetchType.LAZY)
+    private String website;
+
+    private String email;
+
+    private String phone;
+
+    @Min(1)
+    private Integer employeeSize = 1;
+
+
+
+    // Ví dụ sử dụng Validation Annotations trong Spring Boot
+    @Min(value = 1800, message = "Năm thành lập không hợp lệ")
+    private Integer foundedYear;
+
+    @Enumerated(EnumType.STRING)
+    private CompanyStatus status = CompanyStatus.ACTIVE;
+
+    @Column(nullable = false)
+    private Boolean deleted = false;
+
+    private Instant deletedAt;
+
+    private String deletedBy;
+
+    @Column(unique = true, length = 20)
+    private String taxCode;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "industry_id")
+    private Industry industry;
+
+
+    @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<User> users;
 
-    @OneToMany(mappedBy ="company",fetch =FetchType.LAZY)
+    @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Job> jobs;
 
-
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<FollowCompany> followers;
 
 
 }

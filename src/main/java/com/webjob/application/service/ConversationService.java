@@ -29,20 +29,15 @@ public class ConversationService {
     private final MessageMapper messageMapper;
 
 
-    public ResponseDTO<?> getPaginated(ConversationFilter filter) {
-        int page = 0;
-        int size = 8;
-        try {
-            page = Integer.parseInt(filter.getPage());
-            if (page <= 0)
-                page = 1;
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
-            page = 1;
+    public ResponseDTO<List<ConversationDTO>> getPaginated(int page,int size,ConversationFilter filter) {
+        if(filter==null){
+            filter=new ConversationFilter();
         }
+
+        size = Math.min(Math.max(size, 1), 50);
+        page = Math.max(page, 1);
         Pageable pageable = PageRequest.of(page-1, size, Sort.by("updatedAt").descending());
         Page<Conversation> conversations;
-
         if (filter.getUserId() != null) {
             // Lọc theo user tham gia
             conversations = conversationRepository.findAllByUser1_IdOrUser2_Id(filter.getUserId(),filter.getUserId(), pageable);
@@ -61,7 +56,7 @@ public class ConversationService {
         MetaDTO metaDTO = new MetaDTO(currentpage, pagesize, totalpage, totalItem);
         List<Conversation> list =conversations.getContent();
         List<ConversationDTO> listmessage=list.stream().map(messageMapper::toDTO).collect(Collectors.toList());
-        ResponseDTO<?> respond = new ResponseDTO<>(metaDTO,listmessage);
+        ResponseDTO<List<ConversationDTO>> respond = new ResponseDTO<>(metaDTO,listmessage);
         return respond;
 
     }
@@ -76,32 +71,22 @@ public class ConversationService {
         conversationRepository.delete(conversation);
 
     }
-    public ResponseEntity<?> getAllConversations(ConversationFilter filter) {
-        ResponseDTO<?> respond = getPaginated(filter);
-        ApiResponse<?> response = new ApiResponse<>(HttpStatus.OK.value(), null,
-                "Get all Conversations Succesful",
-                respond
-        );
-        return ResponseEntity.ok(response);
+
+    public ResponseDTO<List<ConversationDTO>> getAllConversations(int page, int size,ConversationFilter filter) {
+        ResponseDTO<List<ConversationDTO>> respond = getPaginated(page,size,filter);
+        return respond;
     }
-    public ResponseEntity<?> getConversationById( Long id) {
+
+    public ConversationDTO getConversationById( Long id) {
         Conversation conversation = getbyID(id);
         ConversationDTO conversationDTO = messageMapper.toDTO(conversation);
-        ApiResponse<?> response = new ApiResponse<>(HttpStatus.OK.value(), null,
-                "Detail  Conversations Succesful with " + id,
-                conversationDTO
-        );
-        return ResponseEntity.ok(response);
+        return conversationDTO;
 
     }
     @Transactional
-    public ResponseEntity<?> deleteConversationById( Long id) {
+    public void deleteConversationById( Long id) {
         deleteConversation(id);
-        ApiResponse<?> response = new ApiResponse<>(HttpStatus.OK.value(), null,
-                "Delete  Conversations Succesful with " + id,
-                null
-        );
-        return ResponseEntity.ok(response);
+
 
     }
 

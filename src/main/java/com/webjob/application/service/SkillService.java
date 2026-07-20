@@ -2,24 +2,26 @@ package com.webjob.application.service;
 
 
 import com.webjob.application.dto.Request.SkillRequest;
-import com.webjob.application.dto.Response.ApiResponse;
-import com.webjob.application.dto.Response.MetaDTO;
-import com.webjob.application.dto.Response.ResponseDTO;
+import com.webjob.application.dto.Request.SkillSearchRequest;
+import com.webjob.application.dto.Response.*;
+import com.webjob.application.mapper.SkillMapper;
 import com.webjob.application.models.Entity.Skill;
+import com.webjob.application.repository.JobCategorySkillRepository;
+import com.webjob.application.repository.JobSkillRepository;
 import com.webjob.application.repository.SkillRepository;
+import com.webjob.application.repository.SubscriberSkillRepository;
+import com.webjob.application.service.Specification.SkillSpecification;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -27,16 +29,23 @@ import java.util.Optional;
 public class SkillService {
     private final SkillRepository skillRepository;
 
+    private final ModelMapper modelMapper;
 
-    public boolean checkNameskill(String name){
-        boolean exist=skillRepository.existsByName(name);
-        if (exist){
-            throw new IllegalArgumentException("Skill name "+name+" da ton tai");
+    private final SkillMapper skillMapper;
+    private final JobSkillRepository jobSkillRepository;
+    private final SubscriberSkillRepository subscriberSkillRepository;
+    private final JobCategorySkillRepository jobCategorySkillRepository;
+
+
+    public boolean checkNameskill(String name) {
+        boolean exist = skillRepository.existsByName(name);
+        if (exist) {
+            throw new IllegalArgumentException("Skill name " + name + " da ton tai");
         }
         return false;
     }
 
-    public Skill handle(Skill skill){
+    public Skill handle(Skill skill) {
         return skillRepository.save(skill);
     }
 
@@ -47,88 +56,148 @@ public class SkillService {
         }
         return true;
     }
-    public Optional<Skill> getbyID(Long id){
+
+    public Optional<Skill> getbyID(Long id) {
         return skillRepository.findById(id);
     }
 
-    public Page<Skill> getAllPage(int page, int size){
-        Sort.Direction direction=Sort.Direction.ASC;
-        Sort sort=Sort.by(direction,"name");
-        Pageable pageable= PageRequest.of(page,size,sort);
+
+    public Page<Skill> getAllPage(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
         return skillRepository.findAll(pageable);
     }
-    public ResponseDTO<?> getAllPageList(String pageparam,String type){
-        int page=0;
-        int size=8;
+
+    public ResponseDTO<List<SkillResponse>> getAllPageList(int page,int size) {
+
         try {
-            page = Integer.parseInt(pageparam);
             if (page <= 0)
                 page = 1;
+            if(size<=0){
+                size=8;
+            }
         } catch (NumberFormatException e) {
             // Nếu người dùng nhập sai, mặc định về trang đầu
             page = 1;
+            size=8;
         }
-        Page<Skill> pagelist=getAllPage(page-1,size);
-        int currentpage=pagelist.getNumber()+1;
-        int pagesize=pagelist.getSize();
-        int totalpage=pagelist.getTotalPages();
-        Long totalItem=pagelist.getTotalElements();
+        Page<Skill> pagelist = getAllPage(page - 1, size);
+        List<SkillResponse> responseList = pagelist.getContent().stream()
+                .map(skillMapper::toResponse)
+                .toList();
 
-        MetaDTO metaDTO=new MetaDTO(currentpage,pagesize,totalpage,totalItem);
-        ResponseDTO<?> respond=new ResponseDTO<>(metaDTO,pagelist.getContent());
+        int currentpage = pagelist.getNumber() + 1;
+        int pagesize = pagelist.getSize();
+        int totalpage = pagelist.getTotalPages();
+        Long totalItem = pagelist.getTotalElements();
+
+        MetaDTO metaDTO = new MetaDTO(currentpage, pagesize, totalpage, totalItem);
+        ResponseDTO<List<SkillResponse>> respond = new ResponseDTO<>(metaDTO, responseList);
         return respond;
     }
+
     @Transactional
     public void deleteSkill(Long id) {
-        Skill skill = skillRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Skill không tồn tại với id: " + id));
-
-        // Gỡ bỏ quan hệ với jobs
-        if (skill.getJobs() != null) {
-            skill.getJobs().forEach(job -> job.getSkills().remove(skill));
-            skill.getJobs().clear(); // để tránh cascade lỗi
+        if (!skillRepository.existsById(id)) {
+            throw new IllegalArgumentException("Skill không tồn tại với id: " + id);
         }
 
-        // Gỡ bỏ quan hệ với subscribers
-        if (skill.getSubscribers() != null) {
-            skill.getSubscribers().forEach(subscriber -> subscriber.getSkills().remove(skill));
-            skill.getSubscribers().clear();
-        }
-        skillRepository.delete(skill);
-    }
-    @Transactional
-    public ResponseEntity<?> create_Skill(Skill skill) {
-        checkNameskill(skill.getName());
-        Skill save=handle(skill);
-        ApiResponse<?> response = new ApiResponse<>(
-                HttpStatus.CREATED.value(),
-                null,
-                "Create Skill successful",
-                save
+        jobSkillRepository.deleteBySkillId(id);
 
-        );
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        subscriberSkillRepository.deleteBySkillId(id);
+
+        jobCategorySkillRepository.deleteBySkillId(id);
+        skillRepository.deleteById(id);
+    }
+
+
+    @Transactional
+    public SkillResponse createSkill(SkillRequest skillRequest) {
+        checkNameskill(skillRequest.getName());
+        Skill skill = modelMapper.map(skillRequest, Skill.class);
+        Skill save = handle(skill);
+        return skillMapper.toResponse(save);
 
     }
-    @Transactional
-    public ResponseEntity<?> Edit_Skill(Long id,  SkillRequest skillRequest) {
-        Skill update=getbyID(id).orElseThrow(() -> new IllegalArgumentException("Skill not found with ID: " + id));
 
-        if(skillRequest.getName() !=null & !skillRequest.getName().isEmpty()) {
-            checkNameskill(skillRequest.getName());
+
+    @Transactional
+    public SkillResponse updateSkill(Long id, SkillRequest skillRequest) {
+        Skill update = getbyID(id).orElseThrow(() -> new IllegalArgumentException("Skill not found with ID: " + id));
+
+        if (skillRequest.getName() != null & !skillRequest.getName().isEmpty()) {
+
             update.setName(skillRequest.getName());
         }
-        handle(update);
-        ApiResponse<?> response = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "Edit Skill successful",
-                update
+        if (skillRequest.getDescription() != null && !skillRequest.getDescription().isEmpty()) {
+            update.setDescription(skillRequest.getDescription());
+        }
+        if (skillRequest.getStatus() != null && !skillRequest.getStatus().toString().isEmpty()) {
+            update.setStatus(skillRequest.getStatus());
+        }
 
-        );
-        return new ResponseEntity<>(response, HttpStatus.OK);
+
+        return skillMapper.toResponse(handle(update));
+    }
+
+    public SkillResponse getSkillByID(Long id) {
+        Skill skill = getbyID(id).orElseThrow(() -> new IllegalArgumentException("Skill not found with ID: " + id));
+        return skillMapper.toResponse(skill);
 
     }
+
+
+    public Page<Skill> searchSkills(SkillSearchRequest request, Pageable pageable) {
+        Specification<Skill> spec = Specification.where(SkillSpecification.hasKeyword(request.getKeyword()))
+                .and(SkillSpecification.hasStatus(request.getStatus()))
+                .and(SkillSpecification.createdBy(request.getCreatedBy()))
+                .and(SkillSpecification.createdAfter(request.getFromDate()))
+                .and(SkillSpecification.createdBefore(request.getToDate()));
+
+        return skillRepository.findAll(spec, pageable);
+    }
+    public ResponseDTO<List<SkillResponse>> searchSkill(SkillSearchRequest request, int page, int size) {
+        if(request==null){
+            request = new SkillSearchRequest();
+        }
+        try {
+            if (page <= 0)
+                page = 1;
+            if(size<=0){
+                size=8;
+            }
+        } catch (NumberFormatException e) {
+            // Nếu người dùng nhập sai, mặc định về trang đầu
+            page = 1;
+            size=8;
+        }
+        Pageable pageable = PageRequest.of(page-1, size, Sort.by("id"));
+
+        Page<Skill> pages = searchSkills(request,pageable);
+        List<SkillResponse> responses = pages.getContent()
+                .stream()
+                .map(skillMapper::toResponse)
+                .toList();
+        MetaDTO meta = new MetaDTO(
+                pages.getNumber() + 1,
+                pages.getSize(),
+                pages.getTotalPages(),
+                pages.getTotalElements()
+        );
+
+        return new ResponseDTO<>(meta, responses);
+    }
+    public List<SkillOptionResponse> searchSkillforSubscriber(String keyword){
+
+
+        Specification<Skill> spec =
+                SkillSpecification.hasKeyword(keyword);
+
+        return skillRepository.findAll(spec)
+                .stream()
+                .map(skill -> modelMapper.map(skill,SkillOptionResponse.class))
+                .toList();
+    }
+
 
 
 }

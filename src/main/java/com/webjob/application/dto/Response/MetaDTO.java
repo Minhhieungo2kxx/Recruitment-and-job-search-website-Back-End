@@ -10,6 +10,6 @@ import lombok.*;
 public class MetaDTO {
     private int current;
     private int pageSize;
-    private int pages;
-    private long total;
+    private int totalPages;
+    private long totalItems;
 }

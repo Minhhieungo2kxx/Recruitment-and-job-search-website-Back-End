@@ -1,0 +1,98 @@
+package com.webjob.application.service.Redis;
+
+import com.webjob.application.annotation.RateLimit;
+
+import com.webjob.application.exception.Customs.TooManyRequestsException;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
+@RequiredArgsConstructor
+@Aspect
+@Component
+public class RateLimitAspect {
+    private final RedisTemplate<String, Object> redisTemplate;
+    private static final Logger logger = LoggerFactory.getLogger(RateLimitAspect.class);
+    @Around("@annotation(rateLimit)")
+    public Object rateLimit(ProceedingJoinPoint joinPoint, RateLimit rateLimit) throws Throwable {
+        ServletRequestAttributes sra = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        HttpServletRequest request = sra.getRequest();
+        String endpoint = request.getRequestURI(); // Thêm endpoint để phân biệt
+        String method = request.getMethod();
+
+        String key;
+        String blacklistKey;
+        if ("TOKEN".equalsIgnoreCase(rateLimit.keyType())) {
+            String userId =extractUserIdFromContext();
+            key = "RATE_LIMIT:TOKEN:" + userId + ":" + method + ":" + endpoint;
+            blacklistKey = "BLACKLIST:TOKEN:" + userId + ":" + method + ":" + endpoint;
+        } else {
+            String ip = getClientIP(request);
+            key = "RATE_LIMIT:IP:" + ip + ":" + method + ":" + endpoint;
+            blacklistKey = "BLACKLIST:IP:" + ip + ":" + method + ":" + endpoint;
+        }
+        // Kiểm tra xem IP có đang bị block không
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(blacklistKey))) {
+            logger.warn("Blocked IP {} tried to access while still blocked", blacklistKey);
+            Long ttl = redisTemplate.getExpire(blacklistKey, TimeUnit.SECONDS);
+            long retryAfter = ttl > 0 ? ttl : 300;
+            throw new TooManyRequestsException(
+                    "IP temporarily blocked due to abuse",
+                    retryAfter
+            );
+        }
+
+        ValueOperations<String, Object> ops = redisTemplate.opsForValue();
+        Integer count = (Integer) ops.get(key);
+        int max = rateLimit.maxRequests();
+
+        if (count == null) {
+            ops.set(key, 1, Duration.ofSeconds(rateLimit.timeWindowSeconds()));
+        } else if (count < max) {
+            ops.increment(key);
+        } else {
+            // Nếu quá giới hạn, block IP tạm thời 5 phút
+            long blockSeconds = 240; // 4 phút
+            redisTemplate.opsForValue().set(blacklistKey, "BLOCKED", Duration.ofSeconds(blockSeconds));
+            logger.warn("IP {} has been blocked due to too many requests", blacklistKey);
+            throw new TooManyRequestsException(
+                    "Too many requests. IP temporarily blocked.",
+                    blockSeconds
+            );
+        }
+
+        return joinPoint.proceed();
+    }
+
+private String extractUserIdFromContext() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || !authentication.isAuthenticated()) {
+        return "anonymous";
+    }
+
+    String userId = authentication.getName();
+    return userId != null ? userId : "anonymous";
+
+
+}
+
+
+    private String getClientIP(HttpServletRequest request) {
+        String xfHeader = request.getHeader("X-Forwarded-For");
+        return xfHeader == null ? request.getRemoteAddr() : xfHeader.split(",")[0];
+    }
+}

@@ -1,43 +1,38 @@
 package com.webjob.application.service;
 
-import com.webjob.application.dto.Request.UserSetting;
-import com.webjob.application.dto.Request.Userrequest;
-import com.webjob.application.dto.Response.ApiResponse;
+import com.webjob.application.dto.Request.*;
 import com.webjob.application.dto.Response.MetaDTO;
 import com.webjob.application.dto.Response.ResponseDTO;
 import com.webjob.application.dto.Response.UserDTO;
+import com.webjob.application.enums.UserStatus;
+import com.webjob.application.exception.Customs.BadRequestException;
+import com.webjob.application.exception.Customs.ResourceNotFoundException;
+import com.webjob.application.exception.Customs.UnauthorizedException;
 import com.webjob.application.models.Entity.*;
-import com.webjob.application.dto.Request.ChangePasswordRequest;
 
 import com.webjob.application.repository.ConversationRepository;
 import com.webjob.application.repository.MessageRepository;
-import com.webjob.application.repository.ResumeRepository;
+
 import com.webjob.application.repository.UserRepository;
 import com.webjob.application.service.Redis.TokenBlacklistService;
 import com.webjob.application.service.Socket.PresenceService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -45,7 +40,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RoleService roleService;
-    private final ResumeRepository resumeRepository;
+    //    private final ResumeRepository resumeRepository;
     private final CompanyService companyService;
     private final ModelMapper modelMapper;
     private final MessageRepository messageRepository;
@@ -55,76 +50,114 @@ public class UserService {
     private final PresenceService presenceService;
 
 
+    public User handleUser(Userrequest userrequest) {
 
-    public User handleUser(User user) {
-        // 2. Kiểm tra email đã tồn tại
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw new IllegalArgumentException("Email đã tồn tại trong hệ thống.");
+        if (userRepository.existsByEmailAndDeletedFalse(userrequest.getEmail())) {
+            throw new IllegalArgumentException("Email: " + userrequest.getEmail() + " đã tồn tại trong hệ thống.");
         }
-        Optional<Company> company = companyService.getbyID(user.getCompany().getId());
-        user.setCompany(company.orElse(null));
-        Optional<Role> role = roleService.getByid(user.getRole().getId());
-        user.setRole(role.orElse(null));
-        // Mã hóa mật khẩu trước khi lưu
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            String encodedPassword = passwordEncoder.encode(user.getPassword());
-            user.setPassword(encodedPassword);
+
+        User user = modelMapper.map(userrequest, User.class);
+        Role role = roleService.getByid(userrequest.getRoleId())
+                .orElseThrow(() -> new RuntimeException("Role không tồn tại"));
+        user.setRole(role);
+        String code = role.getCode();
+        // Chỉ HR mới cần Company
+        if (code.startsWith("HR")) {
+            if (userrequest.getCompanyId() == null) {
+                throw new RuntimeException("HR phải thuộc một công ty.");
+            }
+
+            Company company = companyService.getbyID(userrequest.getCompanyId())
+                    .orElseThrow(() -> new RuntimeException("Company không tồn tại"));
+
+            user.setCompany(company);
+        } else {
+            // Admin/User không có company
+            user.setCompany(null);
+        }
+
+        if (user.getPassword() != null && !user.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+
+        return userRepository.save(user);
+    }
+    public User registerClientUser(Userrequest userrequest) {
+
+        if (userRepository.existsByEmailAndDeletedFalse(userrequest.getEmail())) {
+            throw new IllegalArgumentException("Email: " + userrequest.getEmail() + " đã tồn tại trong hệ thống.");
+        }
+
+        User user = modelMapper.map(userrequest, User.class);
+        Role role = roleService.getByid(3L)
+                .orElse(null);
+        user.setRole(role);
+        if (user.getPassword() != null && !user.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+        return userRepository.save(user);
+    }
+
+
+    public User handleUpdate(Long id, UserRequestUpdate userrequest) {
+        User user = getById(id);
+        Instant instant = user.getCreatedAt();
+        modelMapper.map(userrequest, user);
+        user.setCreatedAt(instant);
+        if (userrequest.getRoleId() != null) {
+            Role role = roleService.getByid(userrequest.getRoleId())
+                    .orElseThrow(() -> new RuntimeException("Role không tồn tại "));
+            if (!role.isActive()) {
+                throw new RuntimeException("Role đã bị vô hiệu hóa");
+            }
+            user.setRole(role);
+        }
+        if (user.getRole() == null) {
+            throw new RuntimeException("User chưa có role");
+        }
+        String code = user.getRole().getCode();
+// Chỉ HR mới cần Company
+        if (code.startsWith("HR")) {
+            if (userrequest.getCompanyId() == null) {
+                throw new RuntimeException("HR phải thuộc một công ty.");
+            }
+
+            Company company = companyService.getbyID(userrequest.getCompanyId())
+                    .orElseThrow(() -> new RuntimeException("Company không tồn tại"));
+
+            user.setCompany(company);
+        } else {
+            // Admin/User không có company
+            user.setCompany(null);
         }
 
         return userRepository.save(user);
     }
 
+    public User handleSetting(Long id, UserSetting userSetting) {
 
-    public User handleUpdate(User user) {
-        Optional<Company> company = companyService.getbyID(user.getCompany().getId());
-        user.setCompany(company.orElse(null));
-        Optional<Role> role = roleService.getByid(user.getRole().getId());
-        user.setRole(role.orElse(null));
-        // Mã hóa mật khẩu trước khi lưu
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            String encodedPassword = passwordEncoder.encode(user.getPassword());
-            user.setPassword(encodedPassword);
-        }
+        User user = getById(id);
+        Instant instant = user.getCreatedAt();
+        modelMapper.map(userSetting, user);
+        user.setCreatedAt(instant);
+
         return userRepository.save(user);
     }
 
-    public List<User> getAll() {
-        return userRepository.findAll();
-    }
 
     public boolean checkById(Long id) {
-        boolean exists = userRepository.existsById(id);
+        boolean exists = userRepository.existsByIdAndDeletedFalse(id);
         if (!exists) {
-            throw new IllegalArgumentException("Không tồn tại User với ID: " + id);
+            throw new ResourceNotFoundException("Không tồn tại User với ID: " + id);
         }
         return true;
     }
 
+
+
     public User getById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
-    }
-
-
-    public void deleteUser(User user) {
-        // Xóa message mà user là sender hoặc receiver
-        List<Message> messages = messageRepository.findAllBySenderOrReceiver(user, user);
-        messageRepository.deleteAll(messages);
-
-        // Xóa conversation mà user là user1 hoặc user2
-        List<Conversation> conversations = conversationRepository.findAllByUser1OrUser2(user, user);
-        conversationRepository.deleteAll(conversations);
-
-        // Nếu có Resume liên quan
-        Page<Resume> resumes = resumeRepository.findAllByUser(user, null);
-        List<Resume> resumeList = resumes.getContent();
-        for (Resume resume : resumeList) {
-            resume.setUser(null); // giữ lại Resume nhưng gỡ liên kết
-        }
-        resumeRepository.saveAll(resumeList);
-
-        // Cuối cùng xóa user
-        userRepository.delete(user);
+        return userRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found or no Active  with id: " + id));
     }
 
 
@@ -133,6 +166,8 @@ public class UserService {
         if (user == null) {
             throw new UsernameNotFoundException("User not found with email: " + email);
         }
+
+
         return user;
     }
 
@@ -142,24 +177,42 @@ public class UserService {
     }
 
     public User getbyHR(Company company) {
-        User user = this.userRepository.findByCompany(company)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with company: " + company.getName()));
-        return user;
-    }
-
-
-    public User getUserByRefreshToken(String refreshToken) {
-        User user = userRepository.findByRefreshToken(refreshToken);
+        User user = userRepository.findByCompanyAndDeletedFalse(company);
         if (user == null) {
-            throw new UsernameNotFoundException("Invalid refresh token or not found");
+            throw new UsernameNotFoundException("User not found with company: " + company.getName());
         }
         return user;
     }
 
 
+    public User getUserByRefreshToken(String refreshToken) {
+        User user = userRepository.findByRefreshTokenAndDeletedFalse(refreshToken);
+
+        if (user == null) {
+            throw new UsernameNotFoundException("Invalid refresh token or not found");
+        }
+        switch (user.getStatus()) {
+            case ACTIVE:
+                return user;
+
+            case BLOCKED:
+                throw new UnauthorizedException("Your account has been blocked.");
+
+            case PENDING:
+                throw new UnauthorizedException("Your account is pending verification.");
+
+            case INACTIVE:
+                throw new UnauthorizedException("Your account has been deactivated.");
+
+            default:
+                throw new UnauthorizedException("Invalid account status.");
+        }
+    }
+
+
     public Page<User> getAllPage(int page, int size) {
         Sort.Direction direction = Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, "fullName");
+        Sort sort = Sort.by(direction, "id");
         Pageable pageable = PageRequest.of(page, size, sort);
         return userRepository.findAll(pageable);
 
@@ -168,25 +221,22 @@ public class UserService {
 
     @Transactional
     public void updateRefreshtoken(Long id, String refreshtoken) {
-        User user = userRepository.findById(id)
+        User user = userRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
         user.setRefreshToken(refreshtoken);
         userRepository.save(user);
     }
 
-    public Optional<User> geybyCompany(Company company) {
 
-        return userRepository.findByCompany(company);
-    }
+    public ResponseDTO<List<UserDTO>> getPaginatedResumes(int page, int size) {
 
-    public ResponseDTO<?> getPaginatedResumes(String pageparam, String type) {
-        int page = 1;
-        int size = 8;
         try {
-            page = Integer.parseInt(pageparam);
+
             if (page <= 0) page = 1;
+            if (size <= 0) size = 10;
         } catch (NumberFormatException e) {
             page = 1; // mặc định về trang đầu tiên nếu input không hợp lệ
+            size = 10;
         }
         Page<User> pagelist = getAllPage(page - 1, size);
         int currentpage = pagelist.getNumber() + 1;
@@ -201,14 +251,15 @@ public class UserService {
             UserDTO userDTO = modelMapper.map(user, UserDTO.class);
             userDTOList.add(userDTO);
         }
-        ResponseDTO<?> respond = new ResponseDTO<>(metaDTO, userDTOList);
+        ResponseDTO<List<UserDTO>> respond = new ResponseDTO<>(metaDTO, userDTOList);
         return respond;
     }
 
 
+    @Transactional
     public void changePassword(ChangePasswordRequest request, HttpServletRequest httpRequest, Authentication authentication) {
 
-        User user = getById(Long.valueOf(authentication.getName()));
+        User user = getCurrentUser();
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Mật khẩu cũ không đúng");
         }
@@ -235,107 +286,111 @@ public class UserService {
         }
 
     }
-    @Transactional
-    public ResponseEntity<ApiResponse<UserDTO>> create_User(Userrequest userrequest) {
 
-        // Tạo user và ánh xạ dữ liệu
-        User user = modelMapper.map(userrequest, User.class);
-        // Xử lý và phản hồi
-        User userSaved = handleUser(user);
+    @Transactional
+    public UserDTO createUser(Userrequest userrequest) {
+        User userSaved = handleUser(userrequest);
         UserDTO userDTO = modelMapper.map(userSaved, UserDTO.class);
-        ApiResponse<UserDTO> response = new ApiResponse<>(
-                HttpStatus.CREATED.value(),
-                null,
-                "Create USER successful",
-                userDTO
-        );
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return userDTO;
 
     }
 
+
     @Transactional
-    public ResponseEntity<?> edit_UserById( Long id,  Userrequest userrequest) {
-        User user = getById(id);
-        Instant instant = user.getCreatedAt();
-        modelMapper.map(userrequest, user);
-        user.setCreatedAt(instant);
-        User updatedUser = handleUpdate(user);
+    public UserDTO updateUser(Long id, UserRequestUpdate userrequest) {
+        User updatedUser = handleUpdate(id, userrequest);
         UserDTO userDTO = modelMapper.map(updatedUser, UserDTO.class);
-        ApiResponse<UserDTO> response = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "Edit USER successful",
-                userDTO
-
-        );
-        return ResponseEntity.ok(response);
-    }
-    @Transactional
-    public ResponseEntity<?> delete_UserbyId(@PathVariable Long id) {
-        checkById(id);
-        User edit = getById(id);
-        deleteUser(edit);
-        ApiResponse<Object> response = new ApiResponse<>(
-                HttpStatus.NO_CONTENT.value(),
-                null,
-                "Delete USER successful",
-                null
-
-        );
-        return ResponseEntity.ok(response);
+        return userDTO;
 
     }
-    public ResponseEntity<?> get_UserbyID( Long id) {
 
+
+    public UserDTO getUserByID(Long id) {
         checkById(id);
         User user = getById(id);
         UserDTO userDTO = modelMapper.map(user, UserDTO.class);
-        ApiResponse<?> response = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "Detail USER successful",
-                userDTO
-
-        );
-        return ResponseEntity.ok(response);
+        return userDTO;
 
     }
-    public ResponseEntity<?> Get_allPageList(String pageparam) {
-        ResponseDTO<?> respond = getPaginatedResumes(pageparam, "default");
-        ApiResponse<?> response = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "fetch all user",
-                respond
-        );
-        return ResponseEntity.ok(response);
 
+
+    public ResponseDTO<List<UserDTO>> getAllUser(int page, int size) {
+        return getPaginatedResumes(page, size);
     }
+
     @Transactional
-    public ResponseEntity<?> Setting_User(@Valid @RequestBody UserSetting userSetting, Authentication authentication) {
-
-        User user = getById(Long.valueOf(authentication.getName()));
-        Instant instant = user.getCreatedAt();
-        modelMapper.map(userSetting, user);
-        user.setCreatedAt(instant);
-        User updatedUser = handleUpdate(user);
+    public UserSetting settingUser(Long id, UserSetting userSetting) {
+        User updatedUser = handleSetting(id, userSetting);
         UserSetting setting = modelMapper.map(updatedUser, UserSetting.class);
-        ApiResponse<UserSetting> response = new ApiResponse<>(HttpStatus.OK.value(), null,
-                "Setting USER successful",
-                setting
-        );
-        return ResponseEntity.ok(response);
+        return setting;
     }
-    @Transactional
-    public ResponseEntity<?> change_forPassword(ChangePasswordRequest request, HttpServletRequest httprequest, Authentication authentication) {
-        changePassword(request, httprequest, authentication);
-        ApiResponse<UserSetting> response = new ApiResponse<>(HttpStatus.OK.value(),
-                null,
-                "Thay doi mat khau successful,Vui long dang nhap lai",
-                null
 
-        );
-        return ResponseEntity.ok(response);
+
+    public User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = Long.valueOf(authentication.getName());
+        User user = getById(userId);
+        switch (user.getStatus()) {
+            case ACTIVE:
+                return user;
+
+            case BLOCKED:
+                throw new UnauthorizedException("Your account has been blocked.");
+
+            case PENDING:
+                throw new UnauthorizedException("Your account is pending verification.");
+
+            case INACTIVE:
+                throw new UnauthorizedException("Your account has been deactivated.");
+
+            default:
+                throw new UnauthorizedException("Invalid account status.");
+        }
+
+    }
+
+    public User updatePassword(Long id, PasswordRequest request) {
+
+        User user = getById(id);
+
+        if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu mới phải khác mật khẩu hiện tại.");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public UserDTO restoreUser(Long id) {
+        User user = userRepository.findByIdAndDeletedTrue(id)
+                .orElseThrow(() -> new BadRequestException("User not found or Delete "));
+        boolean existed = userRepository.existsByEmailAndDeletedFalse(user.getEmail());
+        if (existed) {
+            throw new IllegalArgumentException(
+                    "Email đã được sử dụng bởi tài khoản khác.");
+        }
+        user.setDeleted(false);
+        user.setDeletedAt(null);
+        user.setStatus(UserStatus.ACTIVE);
+        user.setRefreshToken(null);
+        UserDTO userDTO = modelMapper.map(userRepository.save(user), UserDTO.class);
+        return userDTO;
+
+    }
+
+    @Transactional
+    public void deleteUserById(Long id) {
+        User user = getById(id);
+        user.setDeleted(true);
+        user.setDeletedAt(Instant.now());
+        user.setOnline(false);
+        user.setRefreshToken(null);
+        user.setStatus(UserStatus.INACTIVE);
+        userRepository.save(user);
+
+
     }
 
 }

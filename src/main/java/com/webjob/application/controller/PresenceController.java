@@ -20,18 +20,14 @@ public class PresenceController {
 
     @RateLimit(maxRequests = 30, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getUserPresence(@PathVariable Long userId) {
+    public ResponseEntity<UserPresenceDTO> getUserPresence(@PathVariable Long userId) {
         UserPresenceDTO presence = presenceService.getUserPresence(userId);
         return ResponseEntity.ok(presence);
     }
 
     @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "TOKEN")
     @GetMapping("/users")
-    public ResponseEntity<?> getMultipleUsersPresence(@RequestParam List<Long> userIds) {
-        List<UserPresenceDTO> presences = userIds.stream()
-                .map(presenceService::getUserPresence)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(presences);
+    public ResponseEntity<List<UserPresenceDTO>> getMultipleUsersPresence(@RequestParam List<Long> userIds) {
+        return ResponseEntity.ok(presenceService.getAllUserPresence(userIds));
     }
 }

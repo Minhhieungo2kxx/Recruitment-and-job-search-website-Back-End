@@ -1,5 +1,11 @@
 package com.webjob.application.dto.Request;
 
+import com.webjob.application.enums.CompanyStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -25,6 +31,26 @@ public class CompanyDTO {
     @Size(max = 500, message = "Đường dẫn logo không được vượt quá 500 ký tự")
     private String logo;
 
+    private String website;
+
+    private String email;
+
+    private String phone;
+
+    private Integer employeeSize;
+
+    private Long industryId;
+
+    // Ví dụ sử dụng Validation Annotations trong Spring Boot
+    @Min(value = 1800, message = "Năm thành lập không hợp lệ")
+    @Max(value = 2027, message = "Năm thành lập không được vượt quá năm hiện tại")
+    private Integer foundedYear;
+
+    @Enumerated(EnumType.STRING)
+    private CompanyStatus status;
+
+    @Column(unique = true, length = 20)
+    private String taxCode;
 
 
 }

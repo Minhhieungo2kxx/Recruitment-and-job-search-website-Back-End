@@ -1,42 +1,58 @@
 package com.webjob.application.dto.Request;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.webjob.application.enums.UserStatus;
+import com.webjob.application.models.Entity.*;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserSetting {
-    private Long id;
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không đúng định dạng")
-    @Size(max = 255, message = "Email không được vượt quá 255 ký tự")
+
+
     private String email;
 
-
-    @NotBlank(message = "Họ tên không được để trống")
-    @Size(max = 100, message = "Họ tên không được vượt quá 100 ký tự")
     private String fullName;
 
-    @Size(max = 500, message = "Đường dẫn avatar không được vượt quá 500 ký tự")
     private String avatar;
 
+    private LocalDate dateOfBirth;
 
-    @NotNull(message = "Tuổi không được để trống")
-    @Min(value = 0, message = "Tuổi không được nhỏ hơn 0")
-    @Max(value = 150, message = "Tuổi không được lớn hơn 150")
-    private Integer age;
+    private String gender;
 
-    @NotBlank(message = "Giới tính không được để trống")
-    @Pattern(regexp = "MALE|FEMALE", message = "Giới tính phải là MALE hoặc FEMALE")
-    private String gender; // MALE/FEMALE
+    private String phone;
 
-    @NotBlank(message = "Địa chỉ không được để trống")
-    @Size(max = 500, message = "Địa chỉ không được vượt quá 500 ký tự")
     private String address;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

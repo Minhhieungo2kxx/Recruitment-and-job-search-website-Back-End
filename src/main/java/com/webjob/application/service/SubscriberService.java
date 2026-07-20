@@ -1,12 +1,16 @@
 package com.webjob.application.service;
 
 
+import com.webjob.application.dto.Request.Search.SubscriberFilterRequest;
+import com.webjob.application.dto.Response.*;
+import com.webjob.application.enums.ResumeStatus;
+import com.webjob.application.exception.Customs.ConflictException;
+import com.webjob.application.exception.Customs.ForbiddenException;
+import com.webjob.application.exception.Customs.ResourceNotFoundException;
+import com.webjob.application.mapper.SubscriberMapper;
 import com.webjob.application.messaging.producer.EmailProducer;
-import com.webjob.application.models.Entity.Job;
+import com.webjob.application.models.Entity.*;
 import com.webjob.application.dto.Request.SubscriberRequest;
-import com.webjob.application.models.Entity.Skill;
-import com.webjob.application.models.Entity.Subscriber;
-import com.webjob.application.models.Entity.User;
 import com.webjob.application.repository.JobRepository;
 import com.webjob.application.repository.SkillRepository;
 import com.webjob.application.repository.SubscriberRepository;
@@ -14,21 +18,25 @@ import com.webjob.application.repository.SubscriberRepository;
 
 import com.webjob.application.service.SendEmail.ApplicationEmailService;
 import com.webjob.application.service.SendEmail.EmailService;
+import com.webjob.application.service.Specification.ApplicationSpecification;
+import com.webjob.application.service.Specification.SubscriberSpecification;
+import com.webjob.application.utils.common.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.NumberFormat;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,106 +48,180 @@ public class SubscriberService {
 
     private final SkillRepository skillRepository;
 
-    private final EmailService emailService;
+    private final ModelMapper modelMapper;
+    private final SubscriberMapper subscriberMapper;
 
-    private final JobRepository jobRepository;
-
-    private final UserService userService;
-
-    private final ApplicationEmailService applicationEmailService;
-    private final EmailProducer emailProducer;
+    private final SecurityUtils securityUtils;
 
 
     @Transactional
-    public Subscriber createSubciber(Subscriber subscriber) {
-        checkEmailSubcriber(subscriber.getEmail());
-        List<Skill> validSkills = getValidSkills(subscriber.getSkills());
-        if (validSkills.isEmpty()) {
-            throw new IllegalArgumentException("Không có kỹ năng nào hợp lệ.");
+    public SubscriberResponse createSubscriber(SubscriberRequest request) {
+
+        Subscriber subscriber = new Subscriber();
+        modelMapper.map(request,subscriber);
+
+        Map<Long, Skill> skillMap = getSkillMap(request.getSkillIds());
+
+        if (skillMap.size() != request.getSkillIds().size()) {
+            throw new ResourceNotFoundException("Một hoặc nhiều Skill không tồn tại.");
         }
-        subscriber.setSkills(validSkills);
-        return subscriberRepository.save(subscriber);
+
+        List<SubscriberSkill> subscriberSkills =
+                request.getSkillIds()
+                        .stream()
+                        .map(id -> {
+                            SubscriberSkill ss = new SubscriberSkill();
+                            ss.setSubscriber(subscriber);
+                            ss.setSkill(skillMap.get(id));
+                            return ss;
+                        })
+                        .toList();
+        subscriber.setSubscriberSkills(subscriberSkills);
+        subscriber.setUser(securityUtils.getCurrentUser());
+        Subscriber saved = subscriberRepository.save(subscriber);
+        return subscriberMapper.mapToResponse(saved);
     }
+
 
     @Transactional
-    public Subscriber updateSubciber(SubscriberRequest request) {
-        Subscriber canfind = getById(request.getId());
-        List<Skill> validSkills = getValidSkills(request.getSkills());
-        if (validSkills.isEmpty()) {
-            throw new IllegalArgumentException("Không có kỹ năng nào hợp lệ.");
+    public SubscriberResponse updateSubscriber(Long id,SubscriberRequest request) {
+
+
+        Subscriber subscriber = getById(id);
+
+        if(!subscriber.getUser().getId().equals(securityUtils.getCurrentUserId())){
+            throw new ForbiddenException("You dont permission !");
         }
-        canfind.setSkills(validSkills);
-        return subscriberRepository.save(canfind);
+
+        modelMapper.map(request,subscriber);
+
+        Map<Long, Skill> skillMap = getSkillMap(request.getSkillIds());
+
+        if (skillMap.size() != request.getSkillIds().size()) {
+            throw new ResourceNotFoundException("Một hoặc nhiều Skill không tồn tại.");
+        }
+
+        subscriber.getSubscriberSkills().clear();
+
+        subscriberRepository.flush();
+        List<SubscriberSkill> subscriberSkills = request.getSkillIds()
+                .stream()
+                .map(skillId -> {
+
+                    SubscriberSkill ss = new SubscriberSkill();
+
+                    ss.setSubscriber(subscriber);
+                    ss.setSkill(skillMap.get(skillId));
+
+                    return ss;
+                })
+                .toList();
+        subscriber.getSubscriberSkills().addAll(subscriberSkills);
+
+        Subscriber saved = subscriberRepository.save(subscriber);
+        return subscriberMapper.mapToResponse(saved);
     }
 
-    public boolean checkEmailSubcriber(String email) {
-        boolean exist = subscriberRepository.existsByEmail(email);
-        if (exist) {
-            throw new IllegalArgumentException("Subcriber email " + email + " da ton tai, vui long tao cai khac");
+
+
+
+    private Map<Long, Skill> getSkillMap(List<Long> skillIds) {
+
+        if (skillIds == null || skillIds.isEmpty()) {
+            return Map.of();
         }
-        return false;
+
+        List<Skill> skills = skillRepository.findAllById(skillIds);
+
+        return skills.stream()
+                .collect(Collectors.toMap(
+                        Skill::getId,
+                        Function.identity()
+                ));
     }
 
-    private List<Skill> getValidSkills(List<Skill> skills) {
-        List<Long> ids = skills.stream()
-                .map(Skill::getId)
-                .collect(Collectors.toList());
-        return skillRepository.findByIdIn(ids);
-    }
 
     public Subscriber getById(Long id) {
-        Subscriber get = subscriberRepository.findById(id).
-                orElseThrow(() -> new IllegalArgumentException("Subcriber not found with ID: " + id));
-        return get;
-    }
-
-    @Scheduled(cron = "0 0 8 1 * *")
-//    @Scheduled(cron = "0 */1 * * * *")
-    public void sendSubscribersEmailJobs() {
-
-        log.info("Start publishing email jobs...");
-
-        Pageable pageable = PageRequest.of(0, 500);
-
-        Page<Long> page;
-
-        do {
-
-            page = subscriberRepository.findPageIds(pageable);
-
-            if (page.isEmpty()) {
-                break;
-            }
-
-            page.getContent().forEach(emailProducer::publish);
-
-            pageable = page.nextPageable();
-
-        } while (page.hasNext());
-
-        log.info("Finish publishing.");
-
+        return subscriberRepository.findById(id).
+                orElseThrow(() -> new ResourceNotFoundException("Subscriber not found with ID: " + id));
     }
 
 
-    public String formatVietnameseCurrency(double amount) {
-        NumberFormat vndFormat = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
-        return vndFormat.format(amount); // Output: 15.000.000 ₫
+    @Transactional
+    public void deleteSubscriber(Long id){
+
+        Subscriber subscriber = getById(id);
+        if(!subscriber.getUser().getId().equals(securityUtils.getCurrentUserId())){
+            throw new ForbiddenException("You dont permission !");
+        }
+
+        subscriber.getSubscriberSkills().clear();
+
+        subscriberRepository.flush();
+
+        subscriberRepository.delete(subscriber);
+    }
+    @Transactional(readOnly = true)
+    public SubscriberResponse getDetail(Long id){
+
+        Subscriber subscriber = getById(id);
+        return subscriberMapper.mapToResponse(subscriber);
     }
 
-    public Subscriber getbySkillSub(Authentication authentication) {
-        User user = userService.getById(Long.valueOf(authentication.getName()));
-        return subscriberRepository.findByEmail(user.getEmail().trim());
+
+
+
+
+
+//cho client
+    @Transactional(readOnly = true)
+    public ResponseDTO<List<SubscriberListResponse>> getAllSubscriber(int page, int size, SubscriberFilterRequest request) {
+        if(request==null){
+            request=new SubscriberFilterRequest();
+        }
+
+
+        size = Math.min(Math.max(size, 1), 50);
+        page = Math.max(page, 1);
+
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+
+        Specification<Subscriber> spec = Specification
+                .where(SubscriberSpecification.hasUserId(securityUtils.getCurrentUserId()))
+                .and(SubscriberSpecification.keyword(request.getKeyword()))
+                .and(SubscriberSpecification.hasStatus(request.getStatus()))
+                .and(SubscriberSpecification.hasSkills(request.getSkillIds()))
+                .and(SubscriberSpecification.createdAfter(request.getFromDate()))
+                .and(SubscriberSpecification.createdBefore(request.getToDate()));
+
+        Page<Subscriber> pagelist = subscriberRepository.findAll(spec, pageable);
+
+        int currentpage = pagelist.getNumber() + 1;
+        int pagesize = pagelist.getSize();
+        int totalpage = pagelist.getTotalPages();
+        Long totalItem = pagelist.getTotalElements();
+
+        MetaDTO metaDTO = new MetaDTO(currentpage, pagesize, totalpage, totalItem);
+        List<SubscriberListResponse> list = pagelist.getContent().stream()
+                .map(subscriberMapper::toResponseSubscriberList)
+                .toList();
+        // 4. Trả về kết quả
+        return new ResponseDTO<>(metaDTO, list);
 
     }
-//    feat(email): add RabbitMQ-based asynchronous email processing
-//
-//- configure RabbitMQ exchange, queue and DLQ
-//- add retry and dead-letter handling
-//- schedule monthly email publishing
-//- publish subscriber email jobs to queue
-//- consume email jobs asynchronously
-//- send job recommendation emails using template
+    @Transactional
+    public void updateSubscription(Long id, boolean subscribed) {
+        Subscriber subscriber = getById(id);
+
+        if (!subscriber.getUser().getId().equals(securityUtils.getCurrentUserId())) {
+            throw new ForbiddenException("You don't have permission!");
+        }
+
+        subscriber.setSubscribed(subscribed);
+    }
+
+
 
 
 }

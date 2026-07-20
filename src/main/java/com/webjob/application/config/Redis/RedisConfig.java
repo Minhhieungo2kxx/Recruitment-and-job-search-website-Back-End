@@ -55,7 +55,7 @@ public class RedisConfig {
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory
             , ObjectMapper redisObjectMapper) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(redisConnectionFactory());
+        template.setConnectionFactory(connectionFactory);
 
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(redisObjectMapper);
         template.setKeySerializer(new StringRedisSerializer());
@@ -79,7 +79,7 @@ public class RedisConfig {
                 .serializeValuesWith(pair)
                 .entryTtl(Duration.ofMinutes(5));
 
-        return RedisCacheManager.builder(redisConnectionFactory())
+        return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(cacheConfig)
                 .build();
     }

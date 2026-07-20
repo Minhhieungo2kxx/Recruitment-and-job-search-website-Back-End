@@ -18,6 +18,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -32,8 +33,14 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
     @NotBlank(message = "Tên vai trò không được để trống")
-    private String name;
+    @Column(unique = true, nullable = false)
+    private String code; // HR_MANAGER
+
+    @NotBlank(message = "Tên không được để trống")
+    @Column(nullable = false)
+    private String displayName; // HR
 
     @NotBlank(message = "Mô tả vai trò không được để trống")
     private String description;
@@ -72,16 +79,15 @@ public class Role {
     @LastModifiedBy
     private String updatedBy;
 
-    @ManyToMany
-    @JoinTable(
-            name = "role_permission", // Tên bảng kết nối trong database
-            joinColumns = @JoinColumn(name = "role_id"),
-            inverseJoinColumns = @JoinColumn(name = "permission_id")
-    )
-    @JsonIgnoreProperties(value = { "roles" })
-    private List<Permission> permissions;
+    @OneToMany(mappedBy = "role")
+    @JsonIgnore
+    private List<RolePermission> rolePermissions = new ArrayList<>();
 
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
     @JsonIgnore
     List<User> users;
+
+
 }
+
+//RBAC kết hợp phân quyền trực tiếp theo người dùng (user-level permissions).

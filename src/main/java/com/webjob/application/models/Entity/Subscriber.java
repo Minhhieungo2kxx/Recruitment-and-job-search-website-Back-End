@@ -18,6 +18,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -32,11 +33,9 @@ public class Subscriber {
     private Long id;
 
     @NotBlank(message = "Tên không được để trống")
+    @Column(unique = true, nullable = false)
     private String name;
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không hợp lệ")
-    private String email;
 
     @Pattern(
             regexp = "^\\+?[0-9]{9,15}$",
@@ -49,6 +48,9 @@ public class Subscriber {
 
     @Enumerated(EnumType.STRING)
     private SubscriberStatus status = SubscriberStatus.ACTIVE;
+
+    @Column(nullable = false)
+    private boolean subscribed = true;
 
     @Column(name = "created_at", updatable = false)
     @CreatedDate
@@ -80,12 +82,17 @@ public class Subscriber {
     @LastModifiedBy
     private String updatedBy;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JsonIgnoreProperties(value = { "subscribers" }) // để tránh vòng lặp JSON
-    @JoinTable(
-            name = "subscriber_skill",
-            joinColumns = @JoinColumn(name = "subscriber_id"),
-            inverseJoinColumns = @JoinColumn(name = "skill_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+
+    @OneToMany(
+            mappedBy = "subscriber",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
     )
-    private List<Skill> skills;
+    @JsonIgnoreProperties
+    private List<SubscriberSkill> subscriberSkills = new ArrayList<>();
 }

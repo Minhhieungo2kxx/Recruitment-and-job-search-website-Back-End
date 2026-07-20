@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public class PermissionAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
     private final PermissionCacheService permissionCacheService;
-    private final AntPathMatcher matcher = new AntPathMatcher();
+
 
     @Override
     public AuthorizationDecision check(
@@ -49,8 +49,8 @@ public class PermissionAuthorizationManager implements AuthorizationManager<Requ
                 request.getMethod(),
                 request.getRequestURI()
         );
-
         return new AuthorizationDecision(granted);
+
     }
 
 

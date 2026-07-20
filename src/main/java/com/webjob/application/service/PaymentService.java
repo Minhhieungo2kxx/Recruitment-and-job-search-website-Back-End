@@ -3,6 +3,7 @@ package com.webjob.application.service;
 import com.webjob.application.dto.Request.Payments.MomoPaymentCallback;
 import com.webjob.application.dto.Response.ApiResponse;
 import com.webjob.application.dto.record.PaymentSuccessEvent;
+import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.exception.Customs.BusinessException;
 import com.webjob.application.exception.Customs.PaymentExpiredException;
 import com.webjob.application.models.Entity.Job;
@@ -21,9 +22,9 @@ import com.webjob.application.service.PaymentGateway.MomoService;
 import com.webjob.application.service.Redis.RedisLockService;
 import com.webjob.application.service.SendEmail.ApplicationEmailService;
 import com.webjob.application.service.PaymentGateway.VNPayService;
-import com.webjob.application.utils.UtilFormat;
+import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.utils.common.UtilFormat;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -33,7 +34,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -59,9 +59,10 @@ public class PaymentService {
     private final RedisLockService redisLockService;
     private final MomoService momoService;
 
-    private static final Long COMPETITION_VIEW_PRICE =30000L;
-    private final ApplicationEventPublisher eventPublisher;
+    private final SecurityUtils securityUtils;
 
+    private static final Long COMPETITION_VIEW_PRICE = 30000L;
+    private final ApplicationEventPublisher eventPublisher;
 
 
     public PaymentResponse createPaymentVnpay(Long userId, PaymentCreateRequest request, HttpServletRequest httpRequest) {
@@ -69,7 +70,7 @@ public class PaymentService {
         String lockKey = "payment:create:" + userId + ":" + request.getJobId();
         String lockValue = UtilFormat.generate8CharToken();
 
-        boolean locked = redisLockService.tryLock(lockKey, lockValue,60, TimeUnit.SECONDS);
+        boolean locked = redisLockService.tryLock(lockKey, lockValue, 60, TimeUnit.SECONDS);
         if (!locked) {
             throw new BusinessException("Bạn đang có giao dịch đang xử lý. Vui lòng chờ.");
         }
@@ -85,13 +86,13 @@ public class PaymentService {
 
             // Kiểm tra mức độ cạnh tranh của công việc
             if (job.getCompetitionLevel() != CompetitionLevel.HIGH) {
-                throw new  BusinessException("Công việc này không yêu cầu thanh toán để xem thông tin ứng viên");
+                throw new BusinessException("Công việc này không yêu cầu thanh toán để xem thông tin ứng viên");
             }
             boolean hasPending = paymentRepository.existsByUserIdAndJobIdAndStatusAndExpiredAtAfter(
-                    userId, job.getId(), PaymentStatus.PENDING.name(),LocalDateTime.now()
+                    userId, job.getId(), PaymentStatus.PENDING.name(), LocalDateTime.now()
             );
             if (hasPending) {
-                throw new  BusinessException("Bạn đang có giao dịch đang xử lý cho công việc này. Vui lòng chờ.");
+                throw new BusinessException("Bạn đang có giao dịch đang xử lý cho công việc này. Vui lòng chờ.");
             }
             // Kiểm tra xem user đã thanh toán thành công cho job này chưa
             boolean hasPaid = paymentRepository.existsByUserIdAndJobIdAndStatus(userId, job.getId(), PaymentStatus.SUCCESS.name());
@@ -120,7 +121,7 @@ public class PaymentService {
             dataMap.put("orderInfo", orderInfo);
             dataMap.put("userId", userId);
             dataMap.put("txnRef", txnRef);
-            String paymentUrl = vnPayService.createOrder(httpRequest,dataMap);
+            String paymentUrl = vnPayService.createOrder(httpRequest, dataMap);
 
             // Tạo response
             PaymentResponse response = new PaymentResponse();
@@ -137,14 +138,13 @@ public class PaymentService {
 
             return response;
 
-        }finally {
+        } finally {
             // Luôn unlock dù success hay exception
             redisLockService.unlock(lockKey, lockValue); // unlock an toàn theo value
 
         }
 
     }
-
 
 
     public PaymentResponse handlePaymentCallbackVnPay(PaymentCallbackRequest callbackRequest, HttpServletRequest request) {
@@ -192,8 +192,8 @@ public class PaymentService {
 
         payment = paymentRepository.save(payment);
 
-        log.info("Payment {} for transactionRef: {}", status.toLowerCase(),callbackRequest.getVnp_TransactionNo());
-        if(payment.getStatus().equals(PaymentStatus.SUCCESS.name())){
+        log.info("Payment {} for transactionRef: {}", status.toLowerCase(), callbackRequest.getVnp_TransactionNo());
+        if (payment.getStatus().equals(PaymentStatus.SUCCESS.name())) {
             applicationEmailService.sendPaymentEmail(payment);
         }
         // 5. Tạo và trả về response
@@ -201,12 +201,10 @@ public class PaymentService {
     }
 
 
-
-
     public JobApplicantInfoResponse getJobApplicantInfo(Long userId, Long jobId) {
         // Kiểm tra job tồn tại
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+        Job job = jobRepository.findByIdAndDeletedFalse(jobId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy công việc"));
 
         JobApplicantInfoResponse response = new JobApplicantInfoResponse();
         response.setJobId(job.getId());
@@ -254,6 +252,7 @@ public class PaymentService {
                 })
                 .collect(Collectors.toList());
     }
+
     public PaymentCallbackRequest extractVNPayCallbackParams(HttpServletRequest request) {
         PaymentCallbackRequest callbackRequest = new PaymentCallbackRequest();
         callbackRequest.setVnp_Amount(request.getParameter("vnp_Amount"));
@@ -299,7 +298,7 @@ public class PaymentService {
         String lockKey = "payment:create:" + userId + ":" + request.getJobId();
         String lockValue = UtilFormat.generate8CharToken();
 
-        boolean locked = redisLockService.tryLock(lockKey, lockValue,60, TimeUnit.SECONDS);
+        boolean locked = redisLockService.tryLock(lockKey, lockValue, 60, TimeUnit.SECONDS);
         if (!locked) {
             throw new BusinessException("Bạn đang có giao dịch đang xử lý. Vui lòng chờ.");
         }
@@ -314,13 +313,13 @@ public class PaymentService {
 
             // Kiểm tra mức độ cạnh tranh của công việc
             if (job.getCompetitionLevel() != CompetitionLevel.HIGH) {
-                throw new  BusinessException("Công việc này không yêu cầu thanh toán để xem thông tin ứng viên");
+                throw new BusinessException("Công việc này không yêu cầu thanh toán để xem thông tin ứng viên");
             }
             boolean hasPending = paymentRepository.existsByUserIdAndJobIdAndStatusAndExpiredAtAfter(
-                    userId, job.getId(), PaymentStatus.PENDING.name(),LocalDateTime.now()
+                    userId, job.getId(), PaymentStatus.PENDING.name(), LocalDateTime.now()
             );
             if (hasPending) {
-                throw new  BusinessException("Bạn đang có giao dịch đang xử lý cho công việc này. Vui lòng chờ.");
+                throw new BusinessException("Bạn đang có giao dịch đang xử lý cho công việc này. Vui lòng chờ.");
             }
             // Kiểm tra xem user đã thanh toán thành công cho job này chưa
             boolean hasPaid = paymentRepository.existsByUserIdAndJobIdAndStatus(userId, job.getId(), PaymentStatus.SUCCESS.name());
@@ -330,7 +329,7 @@ public class PaymentService {
             // Tạo link thanh toán VNPay
             String orderInfo = String.format("Thanh toán xem thông tin ứng viên - Công việc: %s", job.getName());
             String requestId = "MOMO" + new Date().getTime();
-            String paymentUrl = momoService.createPaymentRequest(COMPETITION_VIEW_PRICE.toString(),requestId);
+            String paymentUrl = momoService.createPaymentRequest(COMPETITION_VIEW_PRICE.toString(), requestId);
             // Tạo bản ghi thanh toán
             Payment payment = new Payment();
             payment.setUser(user);
@@ -356,9 +355,9 @@ public class PaymentService {
             log.info("Payment created | userId: {}, jobId: {}, paymentId: {}", userId, job.getId(), payment.getId());
             return response;
 
-        }finally {
+        } finally {
             // Luôn unlock dù success hay exception
-            redisLockService.unlock(lockKey,lockValue);
+            redisLockService.unlock(lockKey, lockValue);
 
         }
 
@@ -366,7 +365,7 @@ public class PaymentService {
 
     public PaymentResponse handlePaymentMomo(MomoPaymentCallback callbackRequest) {
         // 1. Validate chữ ký
-        boolean validationResult=momoService.verifyMomoCallbackSignature(callbackRequest);
+        boolean validationResult = momoService.verifyMomoCallbackSignature(callbackRequest);
         if (!validationResult) {
             throw new RuntimeException("Chữ ký không hợp lệ");
         }
@@ -388,7 +387,7 @@ public class PaymentService {
         }
 
         // 4. Cập nhật trạng thái thanh toán
-        String status = (validationResult ==true)
+        String status = (validationResult == true)
                 ? PaymentStatus.SUCCESS.name()
                 : PaymentStatus.FAILED.name();
 
@@ -406,8 +405,8 @@ public class PaymentService {
         payment.setOrderType(callbackRequest.getOrderType());
         payment.setPayType(callbackRequest.getPayType());
         payment = paymentRepository.save(payment);
-        log.info("Payment {} for transactionRef: {}", status.toLowerCase(),callbackRequest.getResultCode());
-        if(payment.getStatus().equals(PaymentStatus.SUCCESS.name())){
+        log.info("Payment {} for transactionRef: {}", status.toLowerCase(), callbackRequest.getResultCode());
+        if (payment.getStatus().equals(PaymentStatus.SUCCESS.name())) {
 //            applicationEmailService.sendPaymentEmail(payment);
             eventPublisher.publishEvent(
                     new PaymentSuccessEvent(payment.getId())
@@ -430,16 +429,17 @@ public class PaymentService {
             paymentRepository.save(p);
         });
     }
+
     @Scheduled(cron = "0 0 3 * * ?") // 3h sáng
     @Transactional
     public void cleanupOldPayments() {
         int deleted = paymentRepository.deleteOldPayments();
         log.info("Deleted {} old payments", deleted);
     }
+
     @Transactional
-    public ResponseEntity<ApiResponse<PaymentResponse>> createPayment_Gateway(PaymentCreateRequest request,
-            HttpServletRequest httpRequest, Authentication authentication) {
-        User currentUser = userService.getById(Long.valueOf(authentication.getName()));
+    public PaymentResponse createPaymentGateway(PaymentCreateRequest request, HttpServletRequest httpRequest) {
+        User currentUser = securityUtils.getCurrentUser();
         PaymentResponse paymentResponse;
 
         if ("VNPAY".equals(request.getGateway())) {
@@ -449,77 +449,31 @@ public class PaymentService {
             paymentResponse = createPaymentMomo(
                     currentUser.getId(), request, httpRequest);
         }
-
-        ApiResponse<PaymentResponse> apiResponse = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "Tạo payment thành công",
-                paymentResponse
-        );
-
-        return ResponseEntity.ok(apiResponse);
+        return paymentResponse;
     }
 
+
     @Transactional
-    public ResponseEntity<ApiResponse<PaymentResponse>> handle_VNPayReturn(HttpServletRequest request) {
+    public PaymentResponse handleVNPayReturn(HttpServletRequest request) {
         // Parse VNPay callback parameters
         PaymentCallbackRequest callbackRequest = extractVNPayCallbackParams(request);
         // Xử lý callback
         PaymentResponse response = handlePaymentCallbackVnPay(callbackRequest, request);
-        // Xác định thông điệp phản hồi
-        String message = PaymentStatus.SUCCESS.name().equalsIgnoreCase(response.getStatus())
-                ? "Thanh toán thành công"
-                : "Thanh toán thất bại";
-
-        ApiResponse<PaymentResponse> apiResponse = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                message,
-                response
-        );
-        return ResponseEntity.ok(apiResponse);
+        return response;
     }
+
 
     @Transactional
-    public ResponseEntity<?> handle_MomoReturn(MomoPaymentCallback callback) {
+    public PaymentResponse handleMomoReturn(MomoPaymentCallback callback) {
 
-        PaymentResponse response = handlePaymentMomo(callback);
-        // Xác định thông điệp phản hồi
-        String message = PaymentStatus.SUCCESS.name().equalsIgnoreCase(response.getStatus())
-                ? "Thanh toán thành công"
-                : "Thanh toán thất bại";
-
-        ApiResponse<PaymentResponse> apiResponse = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                message,
-                response
-        );
-        return ResponseEntity.ok(apiResponse);
-
+        return handlePaymentMomo(callback);
     }
-    public ResponseEntity<?> getPayment_History(Authentication authentication) {
+
+    public List<PaymentResponse> getPaymentHistory() {
         // Lấy user ID từ authentication (giả sử có getUserId method)
-        User user = userService.getById(Long.valueOf(authentication.getName()));
-        List<PaymentResponse> history = getUserPaymentHistory(user.getId());
-        ApiResponse<?> apiResponse = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "Lấy lịch sử thanh toán thành công",
-                history
-        );
-
-        return ResponseEntity.ok(apiResponse);
+        User user = securityUtils.getCurrentUser();
+        return getUserPaymentHistory(user.getId());
     }
-
-
-
-
-
-
-
-
-
 
 
 }

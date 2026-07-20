@@ -1,12 +1,13 @@
 package com.webjob.application.dto.Request;
 
-import com.webjob.application.enums.CompetitionLevel;
-import com.webjob.application.enums.JobCategory;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.webjob.application.enums.*;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -16,65 +17,93 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class JobRequest {
 
     @NotBlank(message = "Tên công việc không được để trống")
-    @Size(max = 255, message = "Tên công việc không được vượt quá 255 ký tự")
+    @Size(max = 255)
     private String name;
 
-
     @NotBlank(message = "Địa điểm không được để trống")
-    @Size(max = 255, message = "Địa điểm không được vượt quá 255 ký tự")
+    @Size(max = 255)
     private String location;
 
+    @NotNull
+    @PositiveOrZero
+    private Double salaryMin;
 
-    @NotNull(message = "Mức lương không được để trống")
-    @PositiveOrZero(message = "Mức lương phải là số không âm")
-    private double salary;
+    @NotNull
+    @PositiveOrZero
+    private Double salaryMax;
 
-    @NotNull(message = "Số lượng không được để trống")
-    @Min(value = 1, message = "Số lượng phải lớn hơn hoặc bằng 1")
-    private int quantity;
+    private boolean negotiable;
 
-    @NotBlank(message = "Cấp độ không được để trống")
-    @Pattern(
-            regexp = "^(INTERN|FRESHER|JUNIOR|MIDDLE|SENIOR)$",
-            message = "Cấp độ không hợp lệ. Giá trị hợp lệ: INTERN, FRESHER, JUNIOR, MIDDLE, SENIOR"
-    )
-    private String level;
+    private String currency;
 
-    @Column(columnDefinition = "MEDIUMTEXT")
-    @NotBlank(message = "Mô tả công việc không được để trống")
-    private String description;
+    @NotNull
+    @Min(1)
+    private Integer quantity;
 
-    @NotNull(message = "Thời hạn bắt đầu không được để trống")
-    private Instant startDate;
+    @NotNull
+    private JobLevel level;
 
-    @NotNull(message = "Thời hạn kết thúc không được để trống")
-    private Instant endDate;
+    private Integer experienceRequired;
 
-    private boolean active;
+    @NotNull
+    private WorkingType workingType;
 
-    @NotNull(message = "Công ty không được để trống")
-    private Long companyId; // nếu cần
+    @NotNull
+    private WorkMode workMode;
 
-    @NotEmpty(message = "Danh sách kỹ năng không được rỗng")
-    private List<SkillIdDTO> skills;
+    private String benefits;
 
-    @NotNull(message = "Trạng thái không được để trống")
-    @Enumerated(EnumType.STRING) // Store enum as String in DB
+    private String requirement;
+
+    private String responsibility;
+
+    @NotNull
     private CompetitionLevel competitionLevel;
 
-    @NotNull(message = "Loại công việc không được để trống")
-    @Enumerated(EnumType.STRING)
-    @Column(name = "job_category", length = 50)
-    private JobCategory jobCategory;
+
+    @NotBlank
+    private String description;
+
+    @NotNull
+
+    private Instant startDate;
+
+    @NotNull
+    private Instant endDate;
+
+    @NotNull
+    private JobStatus status;
+
+    @NotEmpty(message = "Phải chọn ít nhất một kỹ năng")
+    private List<JobSkillRequest> skills;
+
+    @NotNull
+    private Long jobCategoryId;
 
     @Data
-    @AllArgsConstructor
     @NoArgsConstructor
-    public static class SkillIdDTO{
-        private Long id;
+    @AllArgsConstructor
+    @Builder
+    public static class JobSkillRequest{
+        @NotNull
+        private Long skillId;
+
+        @NotNull
+        private Boolean required;
+
+        @Min(1)
+        private Integer priority;
+
+        @Min(0)
+        private Integer experienceYear;
+
+        @NotNull
+        private SkillLevel level;
     }
+
 
 }

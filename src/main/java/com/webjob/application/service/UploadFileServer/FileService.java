@@ -7,8 +7,10 @@ import com.webjob.application.config.UploadfileServer.UploadProperties;
 import com.webjob.application.dto.Response.ApiResponse;
 import com.webjob.application.dto.Response.UploadFileResponse;
 import com.webjob.application.models.Entity.TemporaryUpload;
+import com.webjob.application.models.Entity.User;
 import com.webjob.application.repository.TemporaryUploadRepository;
-import com.webjob.application.utils.Base64Util;
+import com.webjob.application.utils.common.Base64Util;
+import com.webjob.application.utils.common.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -19,7 +21,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 @Service
@@ -44,6 +46,8 @@ public class FileService {
     private final UploadFile uploadFile;
 
     private final TemporaryUploadRepository temporaryUploadRepository;
+
+    private final SecurityUtils securityUtils;
 
 
     public ResponseEntity<?> handledownloadFile(String folder, String filename) {
@@ -156,12 +160,13 @@ public class FileService {
     }
 
     public void handleTemporaryUpload(String publicId, String secureUrl, String resourceType,Authentication authentication) {
+        User user=securityUtils.getCurrentUser();
         TemporaryUpload temporaryUpload=TemporaryUpload.builder()
                 .publicId(publicId)
                 .url(secureUrl)
                 .resourceType(resourceType)
+                .user(user)
                 .used(false)
-                .userId(Long.valueOf(authentication.getName()))
                 .build();
         temporaryUploadRepository.save(temporaryUpload);
 

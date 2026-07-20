@@ -3,7 +3,6 @@ package com.webjob.application.service.Socket;
 import com.webjob.application.config.Socket.MessageMapper;
 import com.webjob.application.dto.Request.Websockets.*;
 import com.webjob.application.dto.Response.ApiResponse;
-import com.webjob.application.dto.Response.Messensage.ApiResponseSocket;
 import com.webjob.application.models.Entity.Conversation;
 import com.webjob.application.models.Entity.Message;
 import com.webjob.application.models.Entity.User;
@@ -16,7 +15,6 @@ import com.webjob.application.repository.ConversationRepository;
 import com.webjob.application.repository.MessageRepository;
 import com.webjob.application.repository.UserRepository;
 import com.webjob.application.service.UserService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,14 +28,12 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -54,8 +50,6 @@ public class MessageService {
     private final SimpMessagingTemplate messagingTemplate;
     @Value("${upload.base-dir}")
     private String uploadBaseDir;
-
-
 
 
     public MessageResponseDTO sendMessage(String userID, MessageRequestDTO requestDTO) {
@@ -104,6 +98,7 @@ public class MessageService {
 
         return messageMapper.toResponseDTO(updatedMessage);
     }
+
     public MessageResponseDTO getMessageById(Long messageId) {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Tin nhắn không tồn tại"));
@@ -196,20 +191,49 @@ public class MessageService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public List<UserInfoDTO> searchUsers( String userID, String searchTerm) {
-         User currentUser = userService.getById(Long.valueOf(userID));
-         List<User> users = isHR(currentUser)
-                ? userRepository.findCandidatesByName(searchTerm)
-                : userRepository.findHRsByName(searchTerm);
+//    @Transactional(readOnly = true)
+//    public List<UserInfoDTO> searchUsers(String userID, String searchTerm) {
+//        User currentUser = userService.getById(Long.valueOf(userID));
+//        List<User> users = isHR(currentUser)
+//                ? userRepository.findCandidatesByName(searchTerm)
+//                : userRepository.findHRsByName(searchTerm);
+//
+//        return users.stream()
+//                .map(messageMapper::toUserInfoDTO)
+//                .collect(Collectors.toList());
+//    }
+@Transactional(readOnly = true)
+public List<UserInfoDTO> searchUsers(String userID, String searchTerm) {
 
-        return users.stream()
-                .map(messageMapper::toUserInfoDTO)
-                .collect(Collectors.toList());
+    User currentUser = userService.getById(Long.valueOf(userID));
+    String roleGroup = getRoleGroup(currentUser);
+
+    List<User> users;
+
+    if ("HR".equals(roleGroup)) {
+        users = userRepository.findCandidatesByName(searchTerm);
+    } else if ("USER".equals(roleGroup)) {
+        users = userRepository.findHRsByName(searchTerm);
+    } else {
+        users = Collections.emptyList();
     }
 
-    private boolean isHR(User user) {
-        return "HR".equalsIgnoreCase(user.getRole().getName());
+    return users.stream()
+            .map(messageMapper::toUserInfoDTO)
+            .collect(Collectors.toList());
+}
+
+//    private boolean isHR(User user) {
+//        return "HR".equals(getRoleGroup(user));
+//    }
+    private String getRoleGroup(User user) {
+        String code = user.getRole().getCode();
+
+        if (code.startsWith("HR")) return "HR";
+        if (code.startsWith("ADMIN")) return "ADMIN";
+        if (code.equals("USER")) return "USER";
+
+        return "UNKNOWN";
     }
 
 
@@ -231,19 +255,14 @@ public class MessageService {
     }
 
 
-
-    public ResponseDTO<?> getPaginated(MessageFilterRequest filterRequest) {
-        int page = 0;
-        int size = 8;
-        try {
-            page = Integer.parseInt(filterRequest.getPage());
-            if (page <= 0)
-                page = 1;
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
-            page = 1;
+    public ResponseDTO<List<MessagesDTO>> getPaginated(int page,int size,MessageFilterRequest filterRequest) {
+        if(filterRequest==null){
+            filterRequest=new MessageFilterRequest();
         }
-        Pageable pageable = PageRequest.of(page-1,filterRequest.getSize(),Sort.by("createdAt").descending());
+
+        size = Math.min(Math.max(size, 1), 50);
+        page = Math.max(page, 1);
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
         Page<Message> messages;
 
         if (filterRequest.getStatus() != null) {
@@ -258,15 +277,16 @@ public class MessageService {
         int currentpage = messages.getNumber() + 1;
         int pagesize = messages.getSize();
         int totalpage = messages.getTotalPages();
-        Long totalItem =messages.getTotalElements();
+        Long totalItem = messages.getTotalElements();
 
         MetaDTO metaDTO = new MetaDTO(currentpage, pagesize, totalpage, totalItem);
-        List<Message> list =messages.getContent();
-        List<MessagesDTO> listmessage=list.stream().map(messageMapper::toDTO).collect(Collectors.toList());
-        ResponseDTO<?> respond = new ResponseDTO<>(metaDTO,listmessage);
+        List<Message> list = messages.getContent();
+        List<MessagesDTO> listmessage = list.stream().map(messageMapper::toDTO).collect(Collectors.toList());
+        ResponseDTO<List<MessagesDTO>> respond = new ResponseDTO<>(metaDTO, listmessage);
         return respond;
 
     }
+
     public boolean softDeleteMessage(Long id) {
         return messageRepository.findById(id).map(message -> {
             message.setIsDeleted(true);
@@ -274,10 +294,12 @@ public class MessageService {
             return true;
         }).orElse(false);
     }
+
     @Transactional
     public void markMessageAsRead(Long receiverId, Long senderId) {
         messageRepository.markMessagesAsRead(receiverId, senderId);
     }
+
     // PHƯƠNG THỨC XÓA FILE
     private void deleteFileFromStorage(String fileName) {
         try {
@@ -294,20 +316,24 @@ public class MessageService {
             log.error("Lỗi khi xóa file: {}", fileName, e);
         }
     }
-    public ResponseEntity<?> getAllMessages( MessageFilterRequest filterRequest) {
-        ResponseDTO<?> respond=getPaginated(filterRequest);
-        ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
-                "Get all Messages Succesful",
-                respond
-        );
-        return ResponseEntity.ok(response);
+
+//    public ResponseEntity<?> getAllMessages(int page,int size,MessageFilterRequest filterRequest) {
+//        ResponseDTO<?> respond = getPaginated(page,size,filterRequest);
+//
+//    }
+    public ResponseDTO<List<MessagesDTO>> getAllMessages(int page,int size,MessageFilterRequest filterRequest) {
+        ResponseDTO<List<MessagesDTO>> respond = getPaginated(page,size,filterRequest);
+        return respond;
     }
+
     public ResponseEntity<Void> deleteMessage(Long id) {
         boolean deleted = softDeleteMessage(id);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
-   @Transactional
-    public ResponseEntity<?> sendMessage(MessageRequestDTO requestDTO, Authentication authentication) {
+
+
+    @Transactional
+    public  MessageResponseDTO sendMessage(MessageRequestDTO requestDTO, Authentication authentication) {
         MessageResponseDTO message = sendMessage(authentication.getName(), requestDTO);
         // Gửi tin nhắn qua WebSocket đến người nhận
         messagingTemplate.convertAndSendToUser(
@@ -321,10 +347,12 @@ public class MessageService {
                 "/queue/messages",
                 message
         );
-        return ResponseEntity.ok(ApiResponseSocket.success(message));
+       return message;
     }
+
+
     @Transactional
-    public ResponseEntity<?> updateMessage(MessageUpdateDTO updateDTO, Authentication authentication) {
+    public MessageResponseDTO updateMessage(MessageUpdateDTO updateDTO, Authentication authentication) {
 
         MessageResponseDTO updatedMessage = updateMessage(authentication.getName(), updateDTO);
 
@@ -339,15 +367,9 @@ public class MessageService {
                 "/queue/message-updates",
                 updatedMessage
         );
+        return updatedMessage;
 
-        return ResponseEntity.ok(ApiResponseSocket.success(updatedMessage));
     }
-
-
-
-
-
-
 
 
 }

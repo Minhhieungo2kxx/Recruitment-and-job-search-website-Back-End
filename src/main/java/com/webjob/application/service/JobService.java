@@ -1,38 +1,40 @@
 package com.webjob.application.service;
 
 import com.webjob.application.dto.Response.*;
-import com.webjob.application.models.Entity.Company;
-import com.webjob.application.models.Entity.Job;
-import com.webjob.application.models.Entity.Skill;
+import com.webjob.application.dto.Request.JobFilterAdminRequest;
+import com.webjob.application.dto.Request.JobFilterClient;
+import com.webjob.application.dto.Request.JobFilterHrRequest;
+import com.webjob.application.enums.CompanyStatus;
+import com.webjob.application.enums.JobStatus;
+import com.webjob.application.exception.Customs.BadRequestException;
+import com.webjob.application.exception.Customs.ForbiddenException;
+import com.webjob.application.exception.Customs.UnauthorizedException;
+import com.webjob.application.mapper.JobMapper;
+import com.webjob.application.models.Entity.*;
 import com.webjob.application.dto.Request.JobRequest;
-import com.webjob.application.dto.Request.Search.JobFiltersearch;
-import com.webjob.application.models.Entity.User;
 import com.webjob.application.repository.CompanyRepository;
 import com.webjob.application.repository.JobRepository;
 import com.webjob.application.repository.SkillRepository;
 import com.webjob.application.service.Specification.JobSpecification;
+import com.webjob.application.utils.common.SecurityUtils;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,55 +49,118 @@ public class JobService {
 
     private final CompanyService companyService;
 
-    private final UserService userService;
     private final PaymentService paymentService;
+    private final SecurityUtils securityUtils;
+
+    private final JobCategoryService jobCategoryService;
+    private final JobMapper jobMapper;
 
 
-    public Job createJob(JobRequest request) {
-        List<Skill> validSkills = getValidSkills(request.getSkills());
-
-        if (validSkills.isEmpty()) {
-            throw new IllegalArgumentException("Không có kỹ năng nào hợp lệ.");
-        }
-
-
+    @Transactional
+    @CacheEvict(value = "jobsCache", allEntries = true)
+    public JobResponse createJob(JobRequest request) {
+        checkNameJob(request.getName());
+        User user = securityUtils.getCurrentUser();
+        validateCompany(user);
+        JobCategory category = jobCategoryService.findById(request.getJobCategoryId());
         Job job = modelMapper.map(request, Job.class);
-        job.setSkills(validSkills);
 
-        if (request.getCompanyId() != null) {
-            Company company = companyRepository.findById(request.getCompanyId())
-                    .orElseThrow(() -> new IllegalArgumentException("Company không tồn tại"));
-            job.setCompany(company);
+
+        job.setCompany(user.getCompany());
+        job.setJobCategory(category);
+        job.setViewCount(0L);
+        job.setAppliedCount(0);
+
+        List<JobSkill> jobSkills = new ArrayList<>();
+        if (request.getSkills() != null) {
+            Map<Long, Skill> skillMaps = getSkillMapFromRequest(request);
+            for (JobRequest.JobSkillRequest item : request.getSkills()) {
+                Skill skill = skillMaps.get(item.getSkillId());
+                if (skill == null) {
+                    throw new BadRequestException("Skill not found with id: " + item.getSkillId());
+                }
+                JobSkill jobSkill = new JobSkill();
+                jobSkill.setJob(job);
+                jobSkill.setSkill(skill);
+                jobSkill.setRequired(item.getRequired());
+                jobSkill.setPriority(item.getPriority());
+                jobSkill.setExperienceYear(item.getExperienceYear());
+                jobSkill.setLevel(item.getLevel());
+
+                jobSkills.add(jobSkill);
+            }
+
         }
 
-        return jobRepository.save(job);
+
+        job.setJobSkills(jobSkills);
+        return jobMapper.toResponse(jobRepository.save(job));
+    }
+
+    private List<Skill> getValidSkills(List<Long> skills) {
+
+        List<Skill> lists = skillRepository.findByIdIn(skills);
+        if (lists.isEmpty()) {
+            throw new BadRequestException("Không có kỹ năng nào hợp lệ.");
+        }
+        return lists;
     }
 
 
-    public Job updateJob(Long id, JobRequest request) {
+    @Transactional
+    @CacheEvict(value = "jobsCache", allEntries = true)
+    public JobResponse updateJob(Long id, JobRequest request) {
         Job job = getById(id);
-        Instant create = job.getCreatedAt();
+        User user = securityUtils.getCurrentUser();
+        validateCompany(user);
 
-        List<Skill> validSkills = getValidSkills(request.getSkills());
-
-        if (validSkills.isEmpty()) {
-            throw new IllegalArgumentException("Không có kỹ năng nào hợp lệ.");
-        }
+        // Giữ lại các field không được thay đổi
+        Instant createdAt = job.getCreatedAt();
+        String createdBy = job.getCreatedBy();
+        Company company = job.getCompany();
 
         modelMapper.map(request, job);
-        job.setSkills(validSkills);
-        job.setCreatedAt(create);
-        if (request.getCompanyId() != null) {
-            Company company = companyRepository.findById(request.getCompanyId())
-                    .orElseThrow(() -> new IllegalArgumentException("Company không tồn tại"));
-            job.setCompany(company);
-        }
 
-        return jobRepository.save(job);
+        job.setCreatedAt(createdAt);
+        job.setCreatedBy(createdBy);
+        job.setCompany(company);
+
+        // Update JobCategory
+
+        if (request.getJobCategoryId() != null) {
+            JobCategory category = jobCategoryService.findById(request.getJobCategoryId());
+            job.setJobCategory(category);
+        }
+        if (request.getSkills() != null) {
+            job.getJobSkills().clear();
+            jobRepository.flush();   // Thực hiện DELETE ngay
+            List<JobSkill> jobSkills = new ArrayList<>();
+            Map<Long, Skill> skillMaps = getSkillMapFromRequest(request);
+            for (JobRequest.JobSkillRequest item : request.getSkills()) {
+                Skill skill = skillMaps.get(item.getSkillId());
+                if (skill == null) {
+                    throw new BadRequestException("Skill not found with id: " + item.getSkillId());
+                }
+                JobSkill jobSkill = new JobSkill();
+
+                jobSkill.setJob(job);
+                jobSkill.setSkill(skill);
+
+                jobSkill.setRequired(item.getRequired());
+                jobSkill.setPriority(item.getPriority());
+                jobSkill.setExperienceYear(item.getExperienceYear());
+                jobSkill.setLevel(item.getLevel());
+
+                jobSkills.add(jobSkill);
+            }
+            job.getJobSkills().addAll(jobSkills);
+        }
+        Job edit = jobRepository.save(job);
+        return jobMapper.toResponse(edit);
     }
 
     public boolean checkNameJob(String name) {
-        boolean exist = jobRepository.existsByName(name);
+        boolean exist = jobRepository.existsByNameAndDeletedFalse(name);
         if (exist) {
             throw new IllegalArgumentException("Job name " + name + " da ton tai, vui long tao Job khac");
         }
@@ -103,183 +168,284 @@ public class JobService {
     }
 
     public Job getById(Long id) {
-        Job getjob = jobRepository.findById(id).
+        Job job = jobRepository.findByIdAndDeletedFalse(id).
                 orElseThrow(() -> new IllegalArgumentException("Job not found with ID: " + id));
-        return getjob;
+        User user = securityUtils.getCurrentUser();
+        validateCompany(user);
+        return job;
     }
 
 
-    private List<Skill> getValidSkills(List<JobRequest.SkillIdDTO> skillDTOs) {
-        List<Long> ids = skillDTOs.stream()
-                .map(JobRequest.SkillIdDTO::getId)
-                .collect(Collectors.toList());
-        return skillRepository.findByIdIn(ids);
-    }
+    public Page<Job> getAllPage(int page, int size, JobFilterAdminRequest request) {
+        Specification<Job> specification =
+                Specification.where(JobSpecification.keyword(request.getKeyword()));
+        if (Boolean.TRUE.equals(request.getActiveOnly())) {
+            specification = specification.and(
+                    JobSpecification.activeOnly()
+            );
+        }
 
-
-    public Page<Job> getAllPage(int page, int size) {
-        Sort.Direction direction = Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, "name");
-        Pageable pageable = PageRequest.of(page, size, sort);
-        return jobRepository.findAll(pageable);
-
-    }
-
-
-    public Page<Job> AllsearchJobs(int page, JobFiltersearch jobFilter) {
-        Specification<Job> spec = Specification.where(JobSpecification.hasNameLike(jobFilter.getName())
-                .and(JobSpecification.hasLocationLike(jobFilter.getLocation()))
-                .and(JobSpecification.hasLevel(jobFilter.getLevel()))
-                .and(JobSpecification.hasDescriptionLike(jobFilter.getDescription()))
-                .and(JobSpecification.hasSalaryBetween(jobFilter.getMinSalary(), jobFilter.getMaxSalary()))
-                .and(JobSpecification.hasDateRange(jobFilter.getStartDate(), jobFilter.getEndDate()))
-                .and(JobSpecification.isActive(jobFilter.getActive()))
-                .and(JobSpecification.hasSkills(jobFilter.getSkillIds()))
-                .and(JobSpecification.hasCompetitionLevel(jobFilter.getCompetitionLevel()))
-                .and(JobSpecification.hasJobCategory(jobFilter.getJobCategory()))
-        );
-        Sort.Direction direction = Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, "name");
-        Pageable pageable = PageRequest.of(page, jobFilter.getSize(), sort);
-
-        Page<Job> result = jobRepository.findAll(spec, pageable);
-        System.out.println(" Saved to Redis cache for key: page_" + page + "_size_" + jobFilter.getSize());
-        return result;
-
+        specification = specification
+                .and(JobSpecification.hasStatus(request.getStatus()))
+                .and(JobSpecification.hasDeleted(request.getDeleted()))
+                .and(JobSpecification.hasCompanies(request.getCompanyIds()))
+                .and(JobSpecification.hasJobCategory(request.getJobCategoryId()))
+                .and(JobSpecification.hasWorkingTypes(request.getWorkingTypes()))
+                .and(JobSpecification.hasWorkModes(request.getWorkModes()))
+                .and(JobSpecification.hasSalary(
+                        request.getMinSalary(),
+                        request.getMaxSalary()))
+                .and(JobSpecification.hasExperience(
+                        request.getExperience()))
+                .and(JobSpecification.hasLevels(
+                        request.getLevels()))
+                .and(JobSpecification.createdBetween(request.getFrom(), request.getTo()))
+                .and(JobSpecification.hasNegotiable(
+                        request.getNegotiable()));
+        Pageable pageable = PageRequest.of(page, size, jobMapper.toSort(request.getSort()));
+        return jobRepository.findAll(specification, pageable);
 
     }
 
 
+    public ResponseDTO<List<JobResponse>> searchJob(int page, int size, JobFilterClient request) {
+        request = request == null ? new JobFilterClient() : request;
 
-
-    public void deleteJob(Job job) {
-        job.getSkills().clear();
-        jobRepository.delete(job);
-    }
-
-
-
-    public ResponseDTO<?> getPaginated(JobFiltersearch jobFiltersearch, String type) {
-        int page = 0;
-        int size = 8;
-        try {
-            page = Integer.parseInt(jobFiltersearch.getPage());
-            if (page <= 0)
-                page = 1;
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
+        if (page <= 0) {
             page = 1;
         }
-        Page<Job> pagelist;
-        if (type.equals("filter-job")) {
-            pagelist = AllsearchJobs(page - 1, jobFiltersearch);
-        } else {
-            pagelist = getAllPage(page - 1, jobFiltersearch.getSize());
+        if (size <= 0) {
+            size = 10;
         }
+        Pageable pageable = PageRequest.of(page - 1, size, jobMapper.toSort(request.getSort()));
+        Specification<Job> specification =
+                Specification.where(JobSpecification.notDeleted())
+                        .and(JobSpecification.activeOnly())
+                        .and(JobSpecification.keyword(request.getKeyword()))
+                        .and(JobSpecification.hasLocation(request.getLocation()))
+                        .and(JobSpecification.hasJobCategory(request.getJobCategoryId()))
+                        .and(JobSpecification.hasCompanies(request.getCompanyIds()))
+                        .and(JobSpecification.companyActive())
+                        .and(JobSpecification.hasSkills(request.getSkillIds()))
+                        .and(JobSpecification.hasSalary(
+                                request.getMinSalary(),
+                                request.getMaxSalary()
+                        ))
+                        .and(JobSpecification.hasExperience(
+                                request.getExperience()
+                        ))
+                        .and(JobSpecification.hasLevels(
+                                request.getLevels()
+                        ))
+                        .and(JobSpecification.hasWorkingTypes(
+                                request.getWorkingTypes()
+                        ))
+                        .and(JobSpecification.hasWorkModes(
+                                request.getWorkModes()
+                        ))
+                        .and(JobSpecification.createdWithin(
+                                request.getPostedDate()
+                        ))
+                        .and(JobSpecification.hasNegotiable(
+                                request.getNegotiable()
+                        ));
+        Page<Job> result = jobRepository.findAll(specification, pageable);
+        return convertToJobResponseDTO(result);
+
+    }
+
+    public Page<Job> getJobsCompany(int page, int size, JobFilterHrRequest request) {
+
+        User user = securityUtils.getCurrentUser();
+        validateCompany(user);
+        Pageable pageable = PageRequest.of(page, size, jobMapper.toSort(request.getSort()));
+        Specification<Job> specification =
+                Specification.where(JobSpecification.hasCompany(user.getCompany().getId()));
+        if (Boolean.TRUE.equals(request.getActiveOnly())) {
+            specification = specification.and(
+                    JobSpecification.activeOnly()
+            );
+        }
+
+        specification=specification
+                        .and(JobSpecification.keyword(request.getKeyword()))
+                        .and(JobSpecification.hasStatus(request.getStatus()))
+                        .and(JobSpecification.hasDeleted(request.getDeleted()))
+                        .and(JobSpecification.hasJobCategory(request.getJobCategoryId()))
+                        .and(JobSpecification.hasWorkingTypes(request.getWorkingTypes()))
+                        .and(JobSpecification.hasWorkModes(request.getWorkModes()))
+                        .and(JobSpecification.hasSalary(
+                                request.getMinSalary(),
+                                request.getMaxSalary()))
+                        .and(JobSpecification.hasExperience(
+                                request.getExperience()))
+                        .and(JobSpecification.hasLevels(
+                                request.getLevels()))
+                        .and(JobSpecification.createdBetween(request.getFrom(), request.getTo()))
+                        .and(JobSpecification.hasNegotiable(
+                                request.getNegotiable()));
+
+        return jobRepository.findAll(specification, pageable);
+    }
+
+
+    @Transactional
+    @CacheEvict(value = "jobsCache", allEntries = true)
+    public void deleteJob(Long id) {
+        Job job = getById(id);
+
+        User user = securityUtils.getCurrentUser();
+        validateCompany(user);
+        job.setDeleted(true);
+        job.setDeletedAt(Instant.now());
+        job.setStatus(JobStatus.CLOSED);
+        job.setDeletedBy(user.getEmail());
+        jobRepository.save(job);
+    }
+
+    @Transactional
+    @CacheEvict(value = "jobsCache", allEntries = true)
+    public void restoreJob(Long id) {
+        User user = securityUtils.getCurrentUser();
+        validateCompany(user);
+        Job job = jobRepository.findByIdAndDeletedTrue(id)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy Job nào đã xóa với ID: " + id));
+        if (job.getCompany() == null) {
+            throw new BadRequestException("Không thể khôi phục vì công ty không còn hoạt động.");
+        }
+        if (job.getJobCategory() == null) {
+            throw new BadRequestException("Không thể khôi phục vì danh mục công việc không tồn tại.");
+        }
+
+        job.setDeleted(false);
+        job.setDeletedAt(null);
+        job.setDeletedBy(null);
+        Instant now = Instant.now();
+
+        if (job.getEndDate().isBefore(now)) {
+            job.setStatus(JobStatus.EXPIRED);
+        } else {
+            job.setStatus(JobStatus.OPEN);
+        }
+
+        jobRepository.save(job);
+    }
+
+
+    public ResponseDTO<List<JobResponse>> getAllAdmin(int page, int size, JobFilterAdminRequest request) {
+        if (request == null) {
+            request = new JobFilterAdminRequest();
+
+        }
+
+
+        // Bỏ hoàn toàn try-catch, chỉ giữ lại logic kiểm tra số âm/bằng 0
+        if (page <= 0) {
+            page = 1;
+        }
+        if (size <= 0) {
+            size = 10;
+        }
+        Page<Job> pagelist = getAllPage(page - 1, size, request);
+        return convertToJobResponseDTO(pagelist);
+
+    }
+
+    public ResponseDTO<List<JobResponse>> getMyCompanyJobs(int page, int size, JobFilterHrRequest request) {
+        request = request == null ? new JobFilterHrRequest() : request;
+        // Bỏ hoàn toàn try-catch, chỉ giữ lại logic kiểm tra số âm/bằng 0
+        if (page <= 0) {
+            page = 1;
+        }
+        if (size <= 0) {
+            size = 10;
+        }
+        Page<Job> pagelist = getJobsCompany(page - 1, size, request);
+        return convertToJobResponseDTO(pagelist);
+
+    }
+
+    public ResponseDTO<List<JobResponse>> convertToJobResponseDTO(Page<Job> pagelist) {
 
         int currentpage = pagelist.getNumber() + 1;
         int pagesize = pagelist.getSize();
         int totalpage = pagelist.getTotalPages();
         Long totalItem = pagelist.getTotalElements();
 
+
         MetaDTO metaDTO = new MetaDTO(currentpage, pagesize, totalpage, totalItem);
+
+
         List<Job> jobsList = pagelist.getContent();
-        List<JobDTO> list = jobsList.stream().map(job -> modelMapper.map(job, JobDTO.class)).toList();
-        ResponseDTO<?> respond = new ResponseDTO<>(metaDTO, list);
-        return respond;
+        List<JobResponse> list = jobsList.stream()
+                .map(this.jobMapper::toResponse)
+                .toList();
 
+        // 4. Trả về kết quả
+        return new ResponseDTO<>(metaDTO, list);
     }
 
+
+
+
     @Transactional
-    @CacheEvict(value = "jobsCache", allEntries = true)
-    public ResponseEntity<?> create_newJob(JobRequest request) {
-        checkNameJob(request.getName());
-        Job created = createJob(request);
-        JobResponse response = modelMapper.map(created, JobResponse.class);
-        List<String> skillNames = created.getSkills().stream().map(Skill::getName)
-                .collect(Collectors.toList());
-        response.setSkills(skillNames);
-        Company company = companyService.getbyID(request.getCompanyId())
-                .orElseThrow(() -> new IllegalArgumentException("Company not found with ID: " + request.getCompanyId()));
-        if (company != null) {
-            response.setCompanyName(company.getName());
+    public JobResponse detailJobId(Long id) {
+        User user = securityUtils.getCurrentUser();
+        validateCompany(user);
+        int updated = jobRepository.increaseViewCount(id);
+        if (updated == 0) {
+            throw new BadRequestException("Job không tồn tại hoặc đã bị xóa");
         }
-        ApiResponse<?> apiResponse = new ApiResponse<>(HttpStatus.CREATED.value(), null,
-                "Tạo job thành công",
-                response);
-        return new ResponseEntity<>(apiResponse, HttpStatus.CREATED);
+        Job job = getById(id);
+        return jobMapper.toResponse(job);
 
     }
-    @Transactional
-    @CacheEvict(value = "jobsCache", allEntries = true)
-    public ResponseEntity<?> edit_Job( Long id, JobRequest request) {
-        Job update = updateJob(id,request);
-        JobResponse response=modelMapper.map(update,JobResponse.class);
-        List<String> skillNames = update.getSkills().stream().map(Skill::getName)
-                .collect(Collectors.toList());
-        response.setSkills(skillNames);
-        Company company=companyService.getbyID(request.getCompanyId())
-                .orElseThrow(() -> new IllegalArgumentException("Company not found with ID: " +request.getCompanyId()));
-        if (company!=null){
-            response.setCompanyName(company.getName());
+
+
+    public JobApplicantInfoResponse getJobApplicantInfo(Long jobId) {
+        User userHR = securityUtils.getCurrentUser();
+        validateCompany(userHR);
+        return paymentService.getJobApplicantInfo(userHR.getId(), jobId);
+
+    }
+
+    private Map<Long, Skill> getSkillMapFromRequest(JobRequest request) {
+
+        if (request.getSkills() == null || request.getSkills().isEmpty()) {
+            return Map.of();
         }
-        ApiResponse<?> apiResponse=new ApiResponse<>(HttpStatus.OK.value(), null,
-                "Update job thành công",
-                response);
-        return new ResponseEntity<>(apiResponse,HttpStatus.OK);
+        Set<Long> ids = request.getSkills()
+                .stream()
+                .map(JobRequest.JobSkillRequest::getSkillId)
+                .collect(Collectors.toSet());
 
-    }
-    @Cacheable(value = "jobsCache", key = "'page_'+#jobFiltersearch.getPage() + '_size_'+#jobFiltersearch.getSize()")
-    public ResponseEntity<?> GetallPageList(JobFiltersearch jobFiltersearch){
-        ResponseDTO<?> respond=getPaginated(jobFiltersearch,"default");
-        ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null
-                ,"fetch all Jobs"
-                ,getPaginated(jobFiltersearch,"default")
-        );
-        return ResponseEntity.ok(response);
-    }
-    public ResponseEntity<?> detailJob_Id( Long id) {
-        Job job=getById(id);
-        ApiResponse<?> apiResponse=new ApiResponse<>(HttpStatus.OK.value(), null,
-                "Detail job thành công with "+id,
-                job);
-        return new ResponseEntity<>(apiResponse,HttpStatus.OK);
-    }
-    @Transactional
-    @CacheEvict(value = "jobsCache", allEntries = true)
-    public ResponseEntity<?> deleteJob_byId(Long id) {
-        Job job=getById(id);
-        deleteJob(job);
-        ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(),
-                null,
-                "Delete Job successful with "+id,
-                null
+        List<Skill> skills = skillRepository.findAllById(ids);
 
-        );
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
+        Map<Long, Skill> skillMap = skills.stream()
+                .collect(Collectors.toMap(Skill::getId, Function.identity()));
+        return skillMap;
     }
-    @Cacheable(value = "jobsCache", key = "'page_'+#jobFiltersearch.getPage() + '_size_'+#jobFiltersearch.getSize()")
-    public ResponseEntity<?> GetallSearch_Job( JobFiltersearch jobFiltersearch){
-        ResponseDTO<?> respond=getPaginated(jobFiltersearch,"filter-job");
-        ApiResponse<?> response=new ApiResponse<>(HttpStatus.OK.value(), null,
-                "Filter all Jobs with condition Succesful",
-                respond
-        );
-        return ResponseEntity.ok(response);
+    private void validateCompany(User user) {
 
-    }
-    public ResponseEntity<?> getJob_ApplicantInfo(Long jobId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User userHR = userService.getById(Long.valueOf(authentication.getName()));
-        JobApplicantInfoResponse response = paymentService.getJobApplicantInfo(userHR.getId(), jobId);
-        ApiResponse<?> apiResponse=new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "Lấy thông tin ứng viên thành công",
-                response
-        );
-        return ResponseEntity.ok(apiResponse);
+        String code = user.getRole().getCode();
 
+        if (!code.startsWith("HR")) {
+            return;
+        }
+
+        Company company = user.getCompany();
+
+        if (company == null) {
+            throw new ForbiddenException("No company is associated with this account.");
+        }
+
+        if (company.getDeleted()) {
+            throw new ForbiddenException("Your company has been deleted.");
+        }
+
+        if (company.getStatus() != CompanyStatus.ACTIVE) {
+            throw new ForbiddenException("Your company is inactive.");
+        }
     }
 
 

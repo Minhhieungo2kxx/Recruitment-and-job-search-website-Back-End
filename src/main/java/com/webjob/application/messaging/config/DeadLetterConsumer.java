@@ -49,8 +49,8 @@ public class DeadLetterConsumer {
             
             """,
                 event.getEmail(),
-                event.getUsername(),
-                event.getUsernameHR(),
+                event.getCandidateName(),
+                event.getHrName(),
                 event.getCompanyName(),
                 event.getJobName()
 

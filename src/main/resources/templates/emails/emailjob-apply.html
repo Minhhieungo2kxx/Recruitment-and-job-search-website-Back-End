@@ -188,7 +188,7 @@
 
         <div class="content">
 
-            <h2 th:text="'Xin chào ' + ${username} + ','">
+            <h2 th:text="'Xin chào ' + ${candidateName} + ','">
                 Xin chào
             </h2>
 
@@ -196,11 +196,11 @@
 
                 Cảm ơn bạn đã ứng tuyển vào vị trí
 
-                <strong th:text="${nameJob}"></strong>
+                <strong th:text="${jobName}"></strong>
 
                 tại
 
-                <strong th:text="${namecompany}"></strong>.
+                <strong th:text="${companyName}"></strong>
 
             </p>
 
@@ -221,24 +221,20 @@
 
                             <img
                                     class="company-logo"
-                                    th:if="${logo!=null}"
-                                    th:src="${logo}"
+                                    th:if="${companyLogo!=null}"
+                                    th:src="${companyLogo}"
                                     alt="Logo">
 
                         </td>
 
                         <td>
 
-                            <div
-                                    class="job-title"
-                                    th:text="${nameJob}">
-                                Backend Developer
+                            <div class="job-title"
+                                 th:text="${jobName}">
                             </div>
 
-                            <div
-                                    class="company-name"
-                                    th:text="${namecompany}">
-                                ABC Company
+                            <div class="company-name"
+                                 th:text="${companyName}">
                             </div>
 
                             <div class="badge">
@@ -257,7 +253,7 @@
 
                         <td class="label">👤 Ứng viên</td>
 
-                        <td th:text="${username}"></td>
+                        <td th:text="${candidateName}"></td>
 
                     </tr>
 
@@ -273,7 +269,7 @@
 
                         <td class="label">🏢 Công ty</td>
 
-                        <td th:text="${namecompany}"></td>
+                        <td th:text="${companyName}"></td>
 
                     </tr>
 
@@ -281,7 +277,7 @@
 
                         <td class="label">💼 Vị trí</td>
 
-                        <td th:text="${nameJob}"></td>
+                        <td th:text="${jobName}"></td>
 
                     </tr>
 
@@ -290,6 +286,31 @@
                         <td class="label">📍 Địa điểm</td>
 
                         <td th:text="${location}"></td>
+
+                    </tr>
+                    <tr>
+
+                        <td class="label">🎯 Cấp bậc</td>
+
+                        <td th:text="${level}"></td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td class="label">🕒 Loại hình</td>
+
+                        <td th:text="${workingType}"></td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td class="label">🏠 Hình thức làm việc</td>
+
+                        <td th:text="${workMode}"></td>
 
                     </tr>
 
@@ -308,7 +329,7 @@
 
                         <td class="label">📅 Ngày bắt đầu</td>
 
-                        <td th:text="${starttime}"></td>
+                        <td th:text="${startDate}"></td>
 
                     </tr>
 
@@ -316,7 +337,14 @@
 
                         <td class="label">⏳ Hạn ứng tuyển</td>
 
-                        <td th:text="${endtime}"></td>
+                        <td th:text="${endDate}"></td>
+
+                    </tr>
+                    <tr>
+
+                        <td class="label">📝 Thời gian ứng tuyển</td>
+
+                        <td th:text="${appliedAt}"></td>
 
                     </tr>
 
@@ -338,8 +366,7 @@
 
                 <p>
 
-                    <strong th:text="${usernameHR}">
-                        Nguyễn Văn A
+                    <strong th:text="${hrName}">
                     </strong>
 
                 </p>
