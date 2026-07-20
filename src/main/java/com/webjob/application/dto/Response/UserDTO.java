@@ -1,12 +1,14 @@
 package com.webjob.application.dto.Response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.webjob.application.enums.UserStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -26,25 +28,21 @@ public class UserDTO {
 
     private String address;
 
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
+    private LocalDate dateOfBirth;
+
+    private UserStatus status;
+
+    private boolean deleted;
+
+
     private Instant createdAt;
 
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
-    private Instant updatedAt;
+
 
     private String createdBy;
 
-    private String updatedBy;
+
+
 
     private Company company;
     private Role role;
@@ -65,7 +63,7 @@ public class UserDTO {
     @AllArgsConstructor
     public static class Role{
         private Long id;
-        private String name;
+        private String code;
 
     }
 

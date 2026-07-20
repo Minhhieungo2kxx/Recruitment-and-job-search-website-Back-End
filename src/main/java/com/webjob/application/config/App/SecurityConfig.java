@@ -31,6 +31,8 @@ public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
+
+
     private final CustomOAuth2UserService customOAuth2UserService;
     private final JwtAuthenticationConverter jwtAuthenticationConverter;
     private final PermissionAuthorizationManager permissionAuthorizationManager;
@@ -42,9 +44,9 @@ public class SecurityConfig {
         String[] publicEndpoints = {"/", "/api/v1/auth/login", "/api/v1/auth/refresh",
                 "/api/v1/auth/register", "/storage/**", "/api/v1/subscribers/send-mails",
                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api/v1/password/forgot"
-                ,"/api/v1/password/reset",
+                , "/api/v1/password/reset",
                 "/oauth2/**", "/login/oauth2/**" // OAuth2 login Google
-                , "/api/v1/payments/vnpay-return", "/login-chat", "/chat",
+                , "/api/v1/payments/vnpay-return", "/login-chat", "/chat","/reset-password",
                 "/js/**", "/css/**", "/img/**", "/ws/**", "/audio/**", "/login-success"
                 , "/api/v1/payments/momo-return"
         };
@@ -53,14 +55,16 @@ public class SecurityConfig {
         http
                 .addFilterBefore(jwtBlacklistFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(publicEndpoints).permitAll()
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/v1/companies/**",
-                                "/api/v1/jobs/**",
-                                "/api/v1/skills/**"
-                        ).permitAll()
+                                .requestMatchers(publicEndpoints).permitAll()
+                                .requestMatchers(HttpMethod.GET,
+                                        "/api/v1/companies/**",
+                                        "/api/v1/jobs/**",
+                                        "/api/v1/skills/**",
+                                        "/api/v1/industries/**"
+                                ).permitAll()
 //                        .anyRequest().access(permissionAuthorizationManager)
-                        .anyRequest().authenticated()
+                                .anyRequest().authenticated()
+//                                .anyRequest().permitAll()
                 )
                 .formLogin(form -> form.disable())
 

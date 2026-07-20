@@ -44,7 +44,7 @@ public class SecurityUtil {
                 .subject(user.getId().toString())
                 .claim("email",user.getEmail().trim())
                 .claim("username",user.getFullName().trim())
-                .claim("roles", List.of(user.getRole().getName().trim().toUpperCase()))
+                .claim("roles", List.of(user.getRole().getCode().trim().toUpperCase()))
                 .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader,
@@ -60,7 +60,7 @@ public class SecurityUtil {
                 .subject(user.getId().toString())
                 .claim("email",user.getEmail().trim())
                 .claim("username",user.getFullName().trim())
-                .claim("roles", List.of(user.getRole().getName().trim().toUpperCase()))
+                .claim("roles", List.of(user.getRole().getCode().trim().toUpperCase()))
                 .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader,

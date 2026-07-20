@@ -51,9 +51,13 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         try {
             // Lấy thông tin user từ Google OAuth2
-            String email = ((DefaultOAuth2User) authentication.getPrincipal()).getAttribute("email");
-            User userEntity = userService.getbyEmail(email);
-
+//            String email = ((DefaultOAuth2User) authentication.getPrincipal()).getAttribute("email");
+//            User userEntity = userService.getbyEmail(email);
+            DefaultOAuth2User oauthUser = (DefaultOAuth2User) authentication.getPrincipal();
+            Map<String, Object> attributes = oauthUser.getAttributes();
+            String email = oauthUser.getAttribute("email");
+            String userId = oauthUser.getAttribute("userId"); //ở CustomOAuth2UserService
+            User userEntity = userService.getById(Long.valueOf(userId));
             // Tạo JWT tokens
             LoginResponse.User userDto = modelMapper.map(userEntity, LoginResponse.User.class);
             String accessToken = securityUtil.createacessToken(userEntity);

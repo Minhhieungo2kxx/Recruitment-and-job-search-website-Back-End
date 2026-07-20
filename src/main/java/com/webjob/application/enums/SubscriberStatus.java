@@ -5,3 +5,6 @@ public enum SubscriberStatus {
     INACTIVE,
     BANNED
 }
+
+//ACTIVE → Đăng ký nhận email thông báo.
+//INACTIVE → Không nhận email thông báo.

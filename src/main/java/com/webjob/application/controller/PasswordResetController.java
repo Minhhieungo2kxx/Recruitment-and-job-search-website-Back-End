@@ -1,12 +1,10 @@
 package com.webjob.application.controller;
 
 import com.webjob.application.annotation.RateLimit;
-import com.webjob.application.models.Entity.User;
 import com.webjob.application.dto.Request.ForgotPasswordRequest;
 import com.webjob.application.dto.Request.ResetPasswordRequest;
 import com.webjob.application.dto.Response.ApiResponse;
 import com.webjob.application.service.PasswordResetService;
-import com.webjob.application.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,13 +23,25 @@ public class PasswordResetController {
 
     @RateLimit(maxRequests = 3, timeWindowSeconds = 300, keyType = "IP")
     @PostMapping("/forgot")
-    public ResponseEntity<?> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
-        return passwordResetService.forgotPassword(request);
+    public ResponseEntity<ApiResponse<Object>> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
+        passwordResetService.forgotPassword(request);
+        ApiResponse<Object> apiResponse = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                null,
+                "Password reset link has been sent to your email.",
+                null);
+        return ResponseEntity.ok(apiResponse);
     }
 
     @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "IP")
     @PostMapping("/reset")
-    public ResponseEntity<?> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
-        return passwordResetService.reset_Password(request);
+    public ResponseEntity<ApiResponse<Object>> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request);
+        ApiResponse<Object> apiResponse = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                null,
+                "Password has been successfully reset.",
+                null);
+        return ResponseEntity.ok(apiResponse);
     }
 }

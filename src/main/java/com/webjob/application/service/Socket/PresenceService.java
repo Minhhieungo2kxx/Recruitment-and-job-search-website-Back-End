@@ -68,6 +68,12 @@ public class PresenceService {
             userRepository.save(user);
         });
     }
+   public List<UserPresenceDTO> getAllUserPresence(List<Long> userIds){
+       return userIds.stream()
+                .map(this::getUserPresence)
+                .filter(Objects::nonNull)
+                .toList();
+    }
 
     // Lấy trạng thái người dùng với text tiếng Việt
     public UserPresenceDTO getUserPresence(Long userId) {

@@ -33,12 +33,20 @@ public class TemporaryUpload {
     @Column(nullable = false)
     private String resourceType;
 
-    @Column(nullable = false)
-    private Long userId;
+    /**
+     * Người upload
+     */
+    @ManyToOne
+    @JoinColumn(name="user_id")
+    private User user;
 
+    /**
+     * Thời điểm upload
+     */
     @Column(nullable = false)
     @CreatedDate
     private Instant createdAt;
+
 
     @Column(nullable = false)
     private boolean used;

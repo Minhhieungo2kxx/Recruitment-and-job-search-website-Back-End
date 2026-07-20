@@ -16,6 +16,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -41,6 +42,9 @@ public class Permission {
 
     @NotBlank(message = "Module không được để trống")
     private String module;
+
+    @Column(unique = true, nullable = false)
+    private String code;   // JOB_CREATE
 
 
     @Column(name = "created_at", updatable = false)
@@ -73,7 +77,10 @@ public class Permission {
     @LastModifiedBy
     private String updatedBy;
 
-    @ManyToMany(mappedBy = "permissions")
+
+    @OneToMany(
+            mappedBy = "permission"
+    )
     @JsonIgnore
-    private List<Role> roles;
+    private List<RolePermission> rolePermissions = new ArrayList<>();
 }

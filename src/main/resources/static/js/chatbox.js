@@ -91,15 +91,26 @@ async function sendMessage() {
             handleRateLimit(res);
             return;
         }
-        if (res.statusCode === 200 && res.data) {
+
+        if (res.statusCode === 200) {
             displayAIMessage(res.data);
         } else {
-            displayAIMessage(res?.message || "Xin lỗi, đã có lỗi xảy ra.");
+            handleApiError(res);
         }
 
     } catch (err) {
         hideTypingIndicator();
-        displayAIMessage("Không thể kết nối đến server.");
+        // displayAIMessage("Không thể kết nối đến server.");
+
+            if (!navigator.onLine) {
+                displayAIMessage("📡 Không có kết nối Internet.");
+                return;
+            }
+
+            displayAIMessage(
+                "❌ Không thể kết nối tới máy chủ. Vui lòng thử lại sau."
+            );
+
     } finally {
         if (!rateLimitUntil || Date.now() >= rateLimitUntil) {
             setLoadingState(false);
@@ -263,11 +274,11 @@ async function loadChatHistory() {
             method: "GET"
         });
 
-        if (res.httpStatus === 429) {
-            handleRateLimit(res);
+
+        if (res.statusCode !== 200) {
+            handleApiError(res);
             return;
         }
-        if (res.statusCode !== 200 || !res.data) return;
 
         if (!res.data || res.data.length === 0) {
             renderDefaultSystemMessage();
@@ -294,10 +305,10 @@ async function clearChatHistory() {
             method: "DELETE"
         });
 
-        if (res?.statusCode === 200) {
+        if (res.statusCode === 200) {
             renderDefaultSystemMessage();
         } else {
-            alert("Không thể xóa lịch sử chat.");
+            handleApiError(res);
         }
     } catch (err) {
         console.error(err);
@@ -436,11 +447,21 @@ const AuthService = {
         let body = null;
         try {
             body = await response.json();
-        } catch {}
+        } catch (e) {
+            body = {
+                statusCode: response.status,
+                message: response.statusText,
+                error: "Unknown Error"
+            };
+        }
 
         return {
             httpStatus: response.status,
-            ...body
+            statusCode: body.statusCode || response.status,
+            message: body.message,
+            error: body.error,
+            timestamp: body.timestamp,
+            data: body.data
         };
     },
 
@@ -516,6 +537,71 @@ function startRateLimitCountdown() {
         const seconds = Math.ceil(remaining / 1000);
         chatSend.innerHTML = `Gửi`;
     }, 1000);
+}
+function handleApiError(res) {
+
+    if (!res) {
+        displayAIMessage("❌ Không nhận được phản hồi từ máy chủ.");
+        return;
+    }
+
+    switch (res.statusCode) {
+
+        case 400:
+            displayAIMessage(res.message || "❌ Dữ liệu gửi lên không hợp lệ.");
+            break;
+
+        case 401:
+            displayAIMessage(res.message || "🔒 Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+            break;
+
+        case 403:
+            displayAIMessage(res.message || "⛔ Bạn không có quyền thực hiện chức năng này.");
+            break;
+
+        case 404:
+            displayAIMessage(res.message || "❓ Không tìm thấy dữ liệu yêu cầu.");
+            break;
+
+        case 405:
+            displayAIMessage(res.message || "❌ Phương thức HTTP không được hỗ trợ.");
+            break;
+
+        case 409:
+            displayAIMessage(res.message || "⚠ Dữ liệu đã tồn tại hoặc xảy ra xung đột.");
+            break;
+
+        case 422:
+            displayAIMessage(res.message || "⚠ Dữ liệu không hợp lệ.");
+            break;
+
+        case 429:
+            handleRateLimit(res);
+            break;
+
+        case 500:
+            displayAIMessage(res.message || "💥 Máy chủ đang gặp sự cố.");
+            break;
+
+        case 502:
+            displayAIMessage(res.message || "💥 Gateway Error.");
+            break;
+
+        case 503:
+            displayAIMessage(res.message || "🚧 Hệ thống đang bảo trì.");
+            break;
+
+        case 504:
+            displayAIMessage(res.message || "⌛ Máy chủ phản hồi quá lâu.");
+            break;
+
+        default:
+            displayAIMessage(
+                res.message ||
+                res.error ||
+                "Đã xảy ra lỗi không xác định."
+            );
+    }
 }
 
 

@@ -1088,7 +1088,7 @@ class ChatApp {
                 const avatarHtml = user.avatar
                     ? `
                         <img
-                            src="http://localhost:8081/storage/user/${user.avatar}"
+                            src="${user.avatar}"
                             alt="${user.fullName}"
                             class="avatar-img"
                         />
@@ -1200,7 +1200,7 @@ class ChatApp {
        toast.lastTime = message.createdAt || Date.now();
 
        const avatarHTML = message.sender.avatar
-           ? `<img src="http://localhost:8081/storage/user/${message.sender.avatar}"
+           ? `<img src="${message.sender.avatar}"
                     class="toast-avatar" />`
            : `<div class="toast-avatar initials">
                   ${this.getInitials(message.sender.fullName)}

@@ -9,8 +9,10 @@ import java.util.Optional;
 
 public interface TemporaryUploadRepository extends JpaRepository<TemporaryUpload,Long> {
 
-    Optional<TemporaryUpload> findByPublicId(String publicId);
+    Optional<TemporaryUpload> findByPublicIdAndUsedFalse(String publicId);
     List<TemporaryUpload> findByUsedFalseAndCreatedAtBefore(Instant cutoff);
+
+    Optional<TemporaryUpload> findByPublicId (String publicId );
 
 
 }

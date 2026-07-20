@@ -10,8 +10,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ConversationFilter {
-    private String page;
-    private int size = 20;
+
     private Long userId;
     private Instant startDate;
     private Instant endDate;

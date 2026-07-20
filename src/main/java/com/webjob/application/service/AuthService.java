@@ -1,6 +1,7 @@
 package com.webjob.application.service;
 
 import com.webjob.application.dto.record.LoginSuccessEvent;
+import com.webjob.application.exception.Customs.UnauthorizedException;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.dto.Request.LoginDTO;
 import com.webjob.application.dto.Request.Userrequest;
@@ -9,6 +10,7 @@ import com.webjob.application.dto.Response.LoginResponse;
 import com.webjob.application.dto.Response.UserDTO;
 import com.webjob.application.service.Redis.TokenBlacklistService;
 import com.webjob.application.service.SendEmail.ApplicationEmailService;
+import com.webjob.application.utils.common.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +47,8 @@ public class AuthService {
     private final UserService userService;
     private final ModelMapper modelMapper;
 
+    private final SecurityUtils securityUtils;
+
     @Value("${security.jwt.refresh-token-validity-in-seconds}")
     private Long jwtRefreshExpiration;
     private final JwtDecoder jwtDecoder;
@@ -55,23 +59,14 @@ public class AuthService {
     private final ApplicationEventPublisher eventPublisher;
 
 
-
-
     @Transactional
-    public ResponseEntity<?> handleLogin(LoginDTO loginDTO, HttpServletRequest request) {
+    public LoginResponse handleLogin(LoginDTO loginDTO, HttpServletRequest request) {
         Authentication authentication = authenticateUser(loginDTO);
         User user = getUserFromAuthentication(authentication);
         LoginResponse loginResponse = buildLoginResponse(user);
         ResponseCookie refreshCookie = createRefreshCookie(user);
         userService.updateRefreshtoken(user.getId(), refreshCookie.getValue());
-
-        ApiResponse<LoginResponse> response = new ApiResponse<>(HttpStatus.OK.value(), null,
-                "Call API Login successful",
-                loginResponse
-        );
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+        loginResponse.setRefreshCookie(refreshCookie.toString());
         //send Email
         eventPublisher.publishEvent(
                 new LoginSuccessEvent(
@@ -81,30 +76,23 @@ public class AuthService {
                         LocalDateTime.now()
                 )
         );
-        return ResponseEntity.ok().headers(headers).body(response);
+       return loginResponse;
     }
 
-    public ResponseEntity<?> getCurrentUserInfo() {
+    public LoginResponse.User getCurrentUserInfo() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!isAuthenticated(authentication)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-        }
         User user = getUserFromAuthentication(authentication);
         LoginResponse.User userDTO = modelMapper.map(user, LoginResponse.User.class);
-        ApiResponse<?> response = new ApiResponse<>(HttpStatus.OK.value(), null,
-                "Get Account successful",
-                userDTO
-        );
-        return ResponseEntity.ok(response);
+        return userDTO;
+//
     }
 
     @Transactional
-    public ResponseEntity<?> refreshToken(String refreshToken) {
+    public LoginResponse refreshToken(String refreshToken) {
 
         // 1. Nếu không có token → reject
         if ("default".equals(refreshToken) || refreshToken == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(401, "No refresh token found.", null, null));
+            throw new UnauthorizedException("No refresh token found");
         }
 
         // 2. Lấy user theo refresh token từ DB
@@ -112,8 +100,7 @@ public class AuthService {
         try {
             user = userService.getUserByRefreshToken(refreshToken);
         } catch (UsernameNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(401, "Refresh token expired or revoked.", null, null));
+            throw new UnauthorizedException("Refresh token expired or revoked");
         }
 
         // 3. Decode JWT chỉ để lấy email (không dùng để kiểm tra validity!)
@@ -121,16 +108,13 @@ public class AuthService {
         try {
             decodedJwt = jwtDecoder.decode(refreshToken);
         } catch (JwtException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(401, "Invalid refresh token.", null, null));
+            throw new UnauthorizedException("Invalid refresh token.");
         }
 
         // 4. Kiểm tra email từ JWT có khớp user DB
         if (!decodedJwt.getClaim("email").equals(user.getEmail())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(401, "Refresh token does not match user.", null, null));
+            throw new UnauthorizedException("Refresh token does not match user");
         }
-
         // 5. Build login response (tạo access token mới)
         LoginResponse loginResponse = buildLoginResponse(user);
 
@@ -140,54 +124,34 @@ public class AuthService {
         // 7. Cập nhật refresh token mới vào DB (revoke token cũ)
         userService.updateRefreshtoken(user.getId(), newRefreshCookie.getValue());
 
-        // 8. Trả response
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.SET_COOKIE, newRefreshCookie.toString());
-        ApiResponse<?> response = new ApiResponse<>(200, null,
-                "Refresh token successful", loginResponse);
+        loginResponse.setRefreshCookie(newRefreshCookie.toString());
+        return loginResponse;
 
-        return ResponseEntity.ok().headers(headers).body(response);
     }
 
 
-    @Transactional
-    public ResponseEntity<?> logout(HttpServletRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!isAuthenticated(authentication)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-        }
-        String token = extractBearerToken(request);
-        if (token != null) {
-            blacklistToken(token);
-        }
-        User user = getUserFromAuthentication(authentication);
-        clearRefreshToken(user);
-        HttpHeaders headers = clearRefreshCookie();
-        ApiResponse<Object> response = new ApiResponse<>(
-                HttpStatus.OK.value(),
-                null,
-                "Logout User Success",
-                null
-        );
-        return ResponseEntity.ok().headers(headers).body(response);
+@Transactional
+public void logout(HttpServletRequest request) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (!isAuthenticated(authentication)) {
+        throw new UnauthorizedException("Unauthorized");
     }
+    String token = extractBearerToken(request);
+    if (token != null) {
+        blacklistToken(token);
+    }
+    User user = getUserFromAuthentication(authentication);
+    clearRefreshToken(user);
+
+}
+
 
     @Transactional
-    public ResponseEntity<?> register(Userrequest userrequest) {
-
-        User user = modelMapper.map(userrequest, User.class);
-
-        User savedUser = userService.handleUser(user);
-
+    public UserDTO register(Userrequest userrequest) {
+        User savedUser = userService.registerClientUser(userrequest);
         UserDTO userDTO = modelMapper.map(savedUser, UserDTO.class);
         // Tạo response
-        ApiResponse<UserDTO> response = new ApiResponse<>(
-                HttpStatus.CREATED.value(),
-                null,
-                "Register Account successful",
-                userDTO
-        );
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return userDTO;
     }
 
 
@@ -212,7 +176,7 @@ public class AuthService {
         userService.updateRefreshtoken(user.getId(), null);
     }
 
-    private HttpHeaders clearRefreshCookie() {
+    public HttpHeaders clearRefreshCookie() {
         ResponseCookie deleteCookie = ResponseCookie.from("refresh", "")
                 .httpOnly(true)
                 .secure(true)
@@ -239,16 +203,35 @@ public class AuthService {
     }
 
     public User getUserFromAuthentication(Authentication authentication) {
-//        String email = authentication.getName();
         Long userId = Long.parseLong(authentication.getName());
-        return userService.getById(userId);
+
+        User user = userService.getById(userId);
+
+        switch (user.getStatus()) {
+            case ACTIVE:
+                return user;
+
+            case BLOCKED:
+                throw new UnauthorizedException("Your account has been blocked.");
+
+            case PENDING:
+                throw new UnauthorizedException("Your account is pending verification.");
+
+            case INACTIVE:
+                throw new UnauthorizedException("Your account has been deactivated.");
+
+            default:
+                throw new UnauthorizedException("Invalid account status.");
+        }
     }
 
     private LoginResponse buildLoginResponse(User user) {
         LoginResponse.User userDTO = modelMapper.map(user, LoginResponse.User.class);
         String accessToken = securityUtil.createacessToken(user);
-
-        return new LoginResponse(accessToken, userDTO);
+        return LoginResponse.builder()
+                .accessToken(accessToken)
+                .user(userDTO)
+                .build();
     }
 
     private ResponseCookie createRefreshCookie(User user) {
@@ -265,17 +248,6 @@ public class AuthService {
     }
 
 
-//    public void handleLoginNotification(HttpServletRequest request, String email) {
-//        // Trong Controller hoặc nơi gọi async
-//        String ip = getClientIp(request);
-//        String userAgent = request.getHeader("User-Agent");
-//        Map<String, Object> emailVars = new HashMap<>();
-//        emailVars.put("email", email);
-//        emailVars.put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
-//        emailVars.put("ip", ip);
-//        emailVars.put("userAgent", userAgent);
-//        applicationEmailService.LoginNotification(emailVars);
-//    }
     public String getClientIp(HttpServletRequest request) {
         String[] headers = {
                 "X-Forwarded-For",

@@ -1,6 +1,7 @@
 package com.webjob.application.exception;
 
 import com.webjob.application.exception.Customs.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -19,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
@@ -111,7 +113,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.UNAUTHORIZED.value(),
                 "Authentication Error",
                 LocalDateTime.now(),
-                "Sai tài khoản hoặc mật khẩu.",
+                "Sai tài khoản hoặc mật khẩu hoac Khong co quyen truy cap !",
                 null
         );
         return new ResponseEntity<>(errorResponException, HttpStatus.CONFLICT);
@@ -276,6 +278,122 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
+    @ExceptionHandler(GeminiUnavailableException.class)
+    public ResponseEntity<?>  handleGeminiUnavailableException(GeminiUnavailableException ex) {
+        log.error("Gemini service is unavailable", ex);
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                "Gemini service is unavailable",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
+    }
+    @ExceptionHandler(ChatProcessingException.class)
+    public ResponseEntity<?> handleChatProcessingException(ChatProcessingException ex) {
+        log.error("Đã có lỗi xảy ra khi xử lý tin nhắn", ex);
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Đã có lỗi xảy ra khi xử lý tin nhắn",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+    @ExceptionHandler(ChatHistoryException.class)
+    public ResponseEntity<?> handleChatHistoryException(ChatHistoryException ex) {
+        log.error("Lỗi lịch sử chat", ex);
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Không thể lấy lịch sử chat",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+    @ExceptionHandler(CompanyAlreadyExistsException.class)
+    public ResponseEntity<?> handleCompanyAlreadyExistsException(CompanyAlreadyExistsException ex) {
+
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<?> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.NOT_FOUND.value(),
+                "Bad Request",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<?> handleResourceNotFoundException(UnauthorizedException ex) {
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.UNAUTHORIZED.value(),
+                "UnauthorizedException",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<?> handleBadRequestException(BadRequestException ex) {
+        ErrorResponException<?> errorResponse=ErrorResponException.builder()
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .message("Bad Request")
+                .error(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<?> handleForbiddenException(ForbiddenException ex) {
+        ErrorResponException<?> errorResponse=ErrorResponException.builder()
+                .statusCode(HttpStatus.FORBIDDEN.value())
+                .message("Bad Request")
+                .error(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<?> handleConflictException(ConflictException ex) {
+        ErrorResponException<?> errorResponse=ErrorResponException.builder()
+                .statusCode(HttpStatus.CONFLICT.value())
+                .message("Bad Request")
+                .error(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+    @ExceptionHandler(RedisUnavailableException.class)
+    public ResponseEntity<?> handleRedisUnavailableException(RedisUnavailableException ex) {
+        ErrorResponException<?> errorResponse=ErrorResponException.builder()
+                .statusCode(HttpStatus.SERVICE_UNAVAILABLE.value())
+                .message("Redis service is unavailable")
+                .error(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
+    }
+
 
 
 }

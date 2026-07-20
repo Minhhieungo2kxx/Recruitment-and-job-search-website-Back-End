@@ -8,8 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MessageFilterRequest {
-    private String page;
-    private int size = 20;
     private String status;
     private String type;
     private Boolean isDeleted;

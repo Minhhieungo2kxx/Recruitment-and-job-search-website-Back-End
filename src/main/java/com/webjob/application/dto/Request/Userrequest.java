@@ -1,10 +1,13 @@
 package com.webjob.application.dto.Request;
 
+import com.webjob.application.enums.UserStatus;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -28,42 +31,26 @@ public class Userrequest {
     @Size(max = 500, message = "Đường dẫn avatar không được vượt quá 500 ký tự")
     private String avatar;
 
-
-    @NotNull(message = "Tuổi không được để trống")
-    @Min(value = 0, message = "Tuổi không được nhỏ hơn 0")
-    @Max(value = 150, message = "Tuổi không được lớn hơn 150")
-    private Integer age;
+    @NotNull(message = "Ngày sinh không được để trống")
+    private LocalDate dateOfBirth;
 
     @NotBlank(message = "Giới tính không được để trống")
     @Pattern(regexp = "MALE|FEMALE", message = "Giới tính phải là MALE hoặc FEMALE")
-    private String gender; // MALE/FEMALE
+    private String gender;
+
+    @Size(max = 20, message = "Số điện thoại không được vượt quá 20 ký tự")
+    private String phone;
 
     @NotBlank(message = "Địa chỉ không được để trống")
     @Size(max = 500, message = "Địa chỉ không được vượt quá 500 ký tự")
     private String address;
 
-    private Company company;
+    private UserStatus status;
 
-    private Role role;
+    private Long companyId;
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Company{
-        private Long id;
-        private String name;
 
-    }
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Role{
-        private Long id;
-
-    }
-
+    private Long roleId;
 
 
 }

@@ -14,6 +14,12 @@ public class ResetPasswordRequest {
     @NotBlank
     private String token;
 
-    @NotBlank
+    @NotBlank(message = "Mật khẩu cũ không được để trống")
+    private String oldPassword;
+
+    @NotBlank(message = "Mật khẩu mới không được để trống")
     private String newPassword;
+
+    @NotBlank(message = "Xác nhận mật khẩu mới không được để trống")
+    private String confirmNewPassword;
 }

@@ -58,22 +58,12 @@ public class Message {
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
+
     private Instant createdAt;
 
     @LastModifiedDate
     @Column(name = "updated_at")
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
+
     private Instant updatedAt;
 
     @Column(name = "is_deleted")
@@ -83,16 +73,13 @@ public class Message {
     private Boolean isEdited = false;
 
 
-
     public enum MessageStatus {
         SENT, DELIVERED, READ
     }
-
     public enum MessageType {
         CHAT, JOIN, LEAVE
     }
     public enum MessageContentType {
         TEXT, IMAGE, FILE
     }
-
 }
