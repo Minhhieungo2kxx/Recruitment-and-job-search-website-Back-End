@@ -2,6 +2,7 @@ package com.webjob.application.messaging.config;
 
 import com.webjob.application.messaging.dto.EmailJobMessage;
 import com.webjob.application.messaging.dto.ForgotPasswordEmailEvent;
+import com.webjob.application.messaging.dto.JobAlertMessage;
 import com.webjob.application.messaging.dto.JobAppliedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -18,6 +19,12 @@ public class DeadLetterConsumer {
         log.error("Dead Letter Queue {}",message.getSubscriberId());
 
     }
+    @RabbitListener(queues = RabbitMQConfig.JOB_ALERT_DLQ,
+            containerFactory = "rabbitListenerContainerFactory")
+    public void receive(JobAlertMessage message){
+        log.error("Dead Letter Queue {}",message.getJobAlertId());
+    }
+
     @RabbitListener(queues = RabbitMQConfig.FORGOT_DLQ,
             containerFactory = "rabbitListenerContainerFactory")
     public void receive(ForgotPasswordEmailEvent event){

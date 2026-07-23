@@ -33,7 +33,15 @@ public class RabbitMQConfig {
     public static final String JOB_APPLY_DLQ = "job.apply.dead.queue";
     public static final String JOB_APPLY_DLQ_ROUTING = "job.apply.dead";
 
-//chung
+    //    job alert
+    public static final String JOB_ALERT_QUEUE = "job.alert.queue";
+    public static final String JOB_ALERT_ROUTING_KEY = "job.alert";
+    public static final String JOB_ALERT_DLX = "job.alert.dlx";
+    public static final String JOB_ALERT_DLQ = "job.alert.dead.queue";
+    public static final String JOB_ALERT_DLQ_ROUTING = "job.alert.dead";
+
+
+    //chung
     @Bean
     public TopicExchange emailExchange() {
         return ExchangeBuilder
@@ -41,6 +49,7 @@ public class RabbitMQConfig {
                 .durable(true)
                 .build();
     }
+
     //    cron subscriberId job with skill
     @Bean
     public TopicExchange deadLetterExchange() {
@@ -167,7 +176,52 @@ public class RabbitMQConfig {
                 .with(JOB_APPLY_DLQ_ROUTING);
     }
 
+    //    Config Job Alert
+    @Bean
+    public TopicExchange jobAlertDlx() {
+        return ExchangeBuilder
+                .topicExchange(JOB_ALERT_DLX)
+                .durable(true)
+                .build();
+    }
 
+    @Bean
+    public Queue jobAlertQueue() {
+        return QueueBuilder
+                .durable(JOB_ALERT_QUEUE)
+                .withArgument(
+                        "x-dead-letter-exchange",
+                        JOB_ALERT_DLX
+                )
+                .withArgument(
+                        "x-dead-letter-routing-key",
+                        JOB_ALERT_DLQ_ROUTING
+                )
+                .build();
+    }
+
+    @Bean
+    public Queue jobAlertDlq() {
+        return QueueBuilder
+                .durable(JOB_ALERT_DLQ)
+                .build();
+    }
+
+    @Bean
+    public Binding bindingJobAlertQueue() {
+        return BindingBuilder
+                .bind(jobAlertQueue())
+                .to(emailExchange())
+                .with(JOB_ALERT_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding bindingJobAlertDlq() {
+        return BindingBuilder
+                .bind(jobAlertDlq())
+                .to(jobAlertDlx())
+                .with(JOB_ALERT_DLQ_ROUTING);
+    }
 
 
 }

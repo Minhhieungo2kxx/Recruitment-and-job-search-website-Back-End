@@ -32,7 +32,7 @@ public class JobResponse {
 
     private boolean negotiable;
 
-    private String currency;
+
 
     private Integer quantity;
 

@@ -38,7 +38,6 @@ public class JobRequest {
 
     private boolean negotiable;
 
-    private String currency;
 
     @NotNull
     @Min(1)

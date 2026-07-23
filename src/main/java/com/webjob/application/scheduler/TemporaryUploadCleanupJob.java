@@ -1,4 +1,4 @@
-package com.webjob.application.utils.Cron;
+package com.webjob.application.scheduler;
 
 import com.webjob.application.models.Entity.TemporaryUpload;
 import com.webjob.application.repository.TemporaryUploadRepository;

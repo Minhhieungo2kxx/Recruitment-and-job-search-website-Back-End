@@ -4,6 +4,7 @@ package com.webjob.application.service;
 import com.webjob.application.dto.Request.Search.SubscriberFilterRequest;
 import com.webjob.application.dto.Response.*;
 import com.webjob.application.enums.ResumeStatus;
+import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.exception.Customs.ConflictException;
 import com.webjob.application.exception.Customs.ForbiddenException;
 import com.webjob.application.exception.Customs.ResourceNotFoundException;
@@ -24,6 +25,10 @@ import com.webjob.application.utils.common.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.redisson.RedissonMultiLock;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,7 +40,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.NumberFormat;
+import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -53,76 +60,143 @@ public class SubscriberService {
 
     private final SecurityUtils securityUtils;
 
+    private final RedissonClient redissonClient;
+
 
     @Transactional
     public SubscriberResponse createSubscriber(SubscriberRequest request) {
+        Long userId = securityUtils.getCurrentUserId();
+        RLock userLock =
+                redissonClient.getLock("subscriber:create:user:" + userId);
 
-        Subscriber subscriber = new Subscriber();
-        modelMapper.map(request,subscriber);
+        RLock nameLock =
+                redissonClient.getLock("subscriber:name:" + request.getName().trim().toLowerCase());
 
-        Map<Long, Skill> skillMap = getSkillMap(request.getSkillIds());
+        RedissonMultiLock multiLock = new RedissonMultiLock(userLock, nameLock);
 
-        if (skillMap.size() != request.getSkillIds().size()) {
-            throw new ResourceNotFoundException("Một hoặc nhiều Skill không tồn tại.");
+        boolean acquired = false;
+        try {
+            acquired = multiLock.tryLock(3, 10, TimeUnit.SECONDS);
+
+            if (!acquired) {
+                throw new BadRequestException("System is busy. Please retry.");
+            }
+            if (subscriberRepository.countByUserId(userId) >= 5) {
+                throw new BadRequestException("Maximum number of subscriber reached.");
+            }
+
+            Subscriber subscriber = new Subscriber();
+            modelMapper.map(request, subscriber);
+
+            Map<Long, Skill> skillMap = getSkillMap(request.getSkillIds());
+
+            if (skillMap.size() != request.getSkillIds().size()) {
+                throw new ResourceNotFoundException("Một hoặc nhiều Skill không tồn tại.");
+            }
+            if (subscriberRepository.existsByName(request.getName())) {
+                throw new BadRequestException("Tên subscriber đã tồn tại.");
+            }
+            List<SubscriberSkill> subscriberSkills =
+                    request.getSkillIds()
+                            .stream()
+                            .map(id -> {
+                                SubscriberSkill ss = new SubscriberSkill();
+                                ss.setSubscriber(subscriber);
+                                ss.setSkill(skillMap.get(id));
+                                return ss;
+                            })
+                            .toList();
+            subscriber.setSubscriberSkills(subscriberSkills);
+            subscriber.setUser(securityUtils.getCurrentUser());
+            Subscriber saved = subscriberRepository.save(subscriber);
+            return subscriberMapper.mapToResponse(saved);
+
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (DataIntegrityViolationException ex) {
+            throw new BadRequestException("Tên subscriber đã tồn tại.");
+
+        } finally {
+            if (acquired && multiLock.isHeldByCurrentThread()) {
+                multiLock.unlock();
+            }
         }
 
-        List<SubscriberSkill> subscriberSkills =
-                request.getSkillIds()
-                        .stream()
-                        .map(id -> {
-                            SubscriberSkill ss = new SubscriberSkill();
-                            ss.setSubscriber(subscriber);
-                            ss.setSkill(skillMap.get(id));
-                            return ss;
-                        })
-                        .toList();
-        subscriber.setSubscriberSkills(subscriberSkills);
-        subscriber.setUser(securityUtils.getCurrentUser());
-        Subscriber saved = subscriberRepository.save(subscriber);
-        return subscriberMapper.mapToResponse(saved);
     }
 
 
     @Transactional
-    public SubscriberResponse updateSubscriber(Long id,SubscriberRequest request) {
+    public SubscriberResponse updateSubscriber(Long id, SubscriberRequest request) {
+        RLock subscriberLock =
+                redissonClient.getLock("subscriber:" + id);
 
+        RLock nameLock =
+                redissonClient.getLock("subscriber:name:" + request.getName());
 
-        Subscriber subscriber = getById(id);
+        RedissonMultiLock multiLock =
+                new RedissonMultiLock(subscriberLock, nameLock);
+        boolean acquired = false;
+        try {
+            acquired = multiLock.tryLock(3, 10, TimeUnit.SECONDS);
 
-        if(!subscriber.getUser().getId().equals(securityUtils.getCurrentUserId())){
-            throw new ForbiddenException("You dont permission !");
+            if (!acquired) {
+                throw new BadRequestException("System is busy. Please retry.");
+            }
+            Subscriber subscriber = getById(id);
+
+            if (!subscriber.getUser().getId().equals(securityUtils.getCurrentUserId())) {
+                throw new ForbiddenException("You dont permission !");
+            }
+            modelMapper.map(request, subscriber);
+
+            Map<Long, Skill> skillMap = getSkillMap(request.getSkillIds());
+
+            if (skillMap.size() != request.getSkillIds().size()) {
+                throw new ResourceNotFoundException("Một hoặc nhiều Skill không tồn tại.");
+            }
+            if (subscriberRepository.existsByName(request.getName())) {
+                throw new BadRequestException("Tên subscriber đã tồn tại.");
+            }
+
+            subscriber.getSubscriberSkills().clear();
+
+            subscriberRepository.flush();
+            List<SubscriberSkill> subscriberSkills = request.getSkillIds()
+                    .stream()
+                    .map(skillId -> {
+
+                        SubscriberSkill ss = new SubscriberSkill();
+
+                        ss.setSubscriber(subscriber);
+                        ss.setSkill(skillMap.get(skillId));
+
+                        return ss;
+                    })
+                    .toList();
+            subscriber.getSubscriberSkills().addAll(subscriberSkills);
+            subscriber.setLastCheckedAt(Instant.now());
+
+            Subscriber saved = subscriberRepository.save(subscriber);
+            return subscriberMapper.mapToResponse(saved);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+
+        } catch (DataIntegrityViolationException e) {
+            throw new BadRequestException("Tên subscriber đã tồn tại.");
+
+        } finally {
+            if (acquired && multiLock.isHeldByCurrentThread()) {
+                multiLock.unlock();
+            }
+
         }
 
-        modelMapper.map(request,subscriber);
 
-        Map<Long, Skill> skillMap = getSkillMap(request.getSkillIds());
-
-        if (skillMap.size() != request.getSkillIds().size()) {
-            throw new ResourceNotFoundException("Một hoặc nhiều Skill không tồn tại.");
-        }
-
-        subscriber.getSubscriberSkills().clear();
-
-        subscriberRepository.flush();
-        List<SubscriberSkill> subscriberSkills = request.getSkillIds()
-                .stream()
-                .map(skillId -> {
-
-                    SubscriberSkill ss = new SubscriberSkill();
-
-                    ss.setSubscriber(subscriber);
-                    ss.setSkill(skillMap.get(skillId));
-
-                    return ss;
-                })
-                .toList();
-        subscriber.getSubscriberSkills().addAll(subscriberSkills);
-
-        Subscriber saved = subscriberRepository.save(subscriber);
-        return subscriberMapper.mapToResponse(saved);
     }
-
-
 
 
     private Map<Long, Skill> getSkillMap(List<Long> skillIds) {
@@ -130,6 +204,7 @@ public class SubscriberService {
         if (skillIds == null || skillIds.isEmpty()) {
             return Map.of();
         }
+
 
         List<Skill> skills = skillRepository.findAllById(skillIds);
 
@@ -148,10 +223,10 @@ public class SubscriberService {
 
 
     @Transactional
-    public void deleteSubscriber(Long id){
+    public void deleteSubscriber(Long id) {
 
         Subscriber subscriber = getById(id);
-        if(!subscriber.getUser().getId().equals(securityUtils.getCurrentUserId())){
+        if (!subscriber.getUser().getId().equals(securityUtils.getCurrentUserId())) {
             throw new ForbiddenException("You dont permission !");
         }
 
@@ -161,23 +236,20 @@ public class SubscriberService {
 
         subscriberRepository.delete(subscriber);
     }
+
     @Transactional(readOnly = true)
-    public SubscriberResponse getDetail(Long id){
+    public SubscriberResponse getDetail(Long id) {
 
         Subscriber subscriber = getById(id);
         return subscriberMapper.mapToResponse(subscriber);
     }
 
 
-
-
-
-
-//cho client
+    //cho client
     @Transactional(readOnly = true)
     public ResponseDTO<List<SubscriberListResponse>> getAllSubscriber(int page, int size, SubscriberFilterRequest request) {
-        if(request==null){
-            request=new SubscriberFilterRequest();
+        if (request == null) {
+            request = new SubscriberFilterRequest();
         }
 
 
@@ -210,6 +282,7 @@ public class SubscriberService {
         return new ResponseDTO<>(metaDTO, list);
 
     }
+
     @Transactional
     public void updateSubscription(Long id, boolean subscribed) {
         Subscriber subscriber = getById(id);
@@ -220,8 +293,6 @@ public class SubscriberService {
 
         subscriber.setSubscribed(subscribed);
     }
-
-
 
 
 }

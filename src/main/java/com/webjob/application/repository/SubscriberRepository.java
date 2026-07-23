@@ -23,7 +23,12 @@ public interface SubscriberRepository extends JpaRepository<Subscriber, Long>, J
     Page<Subscriber> findAll(Specification<Subscriber> spec, Pageable pageable);
 
 
-    @Query("SELECT s.id FROM Subscriber s")
+    @Query("""
+            select s.id
+            from Subscriber s
+            where s.subscribed = true
+            and s.status = com.webjob.application.enums.SubscriberStatus.ACTIVE
+            """)
     Page<Long> findPageIds(Pageable pageable);
 
     @Query("""
@@ -34,10 +39,13 @@ public interface SubscriberRepository extends JpaRepository<Subscriber, Long>, J
             left join fetch ss.skill
             where s.id = :id
             and s.subscribed = true
-            
+                        
             """)
     Optional<Subscriber> findSubscriberDetail(@Param("id") Long id);
 
+    boolean existsByName(String name);
+
+    long countByUserId(Long userId);
 
 //    JOIN: chỉ dùng để nối bảng hoặc lọc dữ liệu, không đảm bảo entity liên quan được nạp vào đối tượng.
 //    JOIN FETCH: vừa nối bảng, vừa yêu cầu Hibernate nạp luôn entity/collection liên quan vào bộ nhớ.
