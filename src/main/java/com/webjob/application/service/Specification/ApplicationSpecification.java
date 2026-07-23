@@ -1,7 +1,6 @@
 package com.webjob.application.service.Specification;
 
 import com.webjob.application.models.Entity.Application;
-import com.webjob.application.models.Entity.Resume;
 import com.webjob.application.enums.ResumeStatus;
 import org.springframework.data.jpa.domain.Specification;
 

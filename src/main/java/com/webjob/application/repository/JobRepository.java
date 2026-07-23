@@ -1,6 +1,9 @@
 package com.webjob.application.repository;
 
+import com.webjob.application.enums.JobLevel;
 import com.webjob.application.enums.JobStatus;
+import com.webjob.application.enums.WorkMode;
+import com.webjob.application.enums.WorkingType;
 import com.webjob.application.utils.common.JobCountDto;
 import com.webjob.application.models.Entity.Job;
 import com.webjob.application.models.Entity.Skill;
@@ -42,11 +45,16 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
             AND j.deleted = false
             AND j.status =com.webjob.application.enums.JobStatus.OPEN
             AND j.endDate >= :now
+            AND (
+                j.createdAt > :lastCheckedAt
+                OR j.updatedAt > :lastCheckedAt
+            )
             ORDER BY j.createdAt DESC
             """)
     List<Job> findTop10BySkills(
             @Param("skills") List<Skill> skills,
             @Param("now") Instant now,
+            @Param("lastCheckedAt") Instant lastCheckedAt,
             Pageable pageable);
 
 
@@ -103,6 +111,117 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     int increaseViewCount(@Param("id") Long id);
 
     int countByCompanyIdAndDeletedFalse(Long companyId);
+
+    @Query("""
+                SELECT j
+                FROM Job j
+                JOIN FETCH j.company
+                WHERE 
+                    j.deleted = false
+                    AND j.status = 'OPEN'
+                    AND j.endDate > CURRENT_TIMESTAMP
+
+                    AND (
+                        :keyword IS NULL 
+                        OR LOWER(j.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                    )
+
+                ORDER BY
+
+                (
+                    CASE 
+                        WHEN :keyword IS NOT NULL 
+                        AND LOWER(j.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        THEN 40
+                        ELSE 0
+                    END
+
+                    +
+
+                    CASE 
+                        WHEN :keyword IS NOT NULL 
+                        AND LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        THEN 15
+                        ELSE 0
+                    END
+
+
+                    +
+
+                    CASE
+                        WHEN :location IS NOT NULL
+                        AND LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))
+                        THEN 20
+                        ELSE 0
+                    END
+
+
+                    +
+
+                    CASE
+                        WHEN :categoryId IS NOT NULL
+                        AND j.jobCategory.id = :categoryId
+                        THEN 30
+                        ELSE 0
+                    END
+
+
+                    +
+
+                    CASE
+                        WHEN :level IS NOT NULL
+                        AND j.level = :level
+                        THEN 15
+                        ELSE 0
+                    END
+
+
+                    +
+
+                    CASE
+                        WHEN :workMode IS NOT NULL
+                        AND j.workMode = :workMode
+                        THEN 15
+                        ELSE 0
+                    END
+                    
+                    +
+                    
+                    CASE
+                        WHEN :workingType IS NOT NULL
+                        AND j.workingType = :workingType
+                        THEN 15
+                        ELSE 0
+                    END
+
+
+                    +
+
+                    CASE
+                        WHEN :salaryMin IS NOT NULL
+                        AND :salaryMax IS NOT NULL
+                        AND j.salaryMin <= :salaryMax
+                        AND j.salaryMax >= :salaryMin
+                        THEN 25
+                        ELSE 0
+                    END
+
+                ) DESC,
+
+                j.createdAt DESC
+            """)
+    List<Job> findTopJobsForAlert(
+            @Param("keyword") String keyword,
+            @Param("location") String location,
+            @Param("categoryId") Long categoryId,
+            @Param("level") JobLevel level,
+            @Param("workMode") WorkMode workMode,
+            @Param("salaryMin") Double salaryMin,
+            @Param("salaryMax") Double salaryMax,
+            @Param("workingType") WorkingType workingType,
+            Pageable pageable
+    );
 
 
 }

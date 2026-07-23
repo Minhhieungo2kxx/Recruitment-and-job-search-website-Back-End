@@ -3,6 +3,7 @@ package com.webjob.application.service.SendEmail;
 
 import com.webjob.application.dto.Request.PaymentSuccessDto;
 import com.webjob.application.dto.Response.RespondEmailJob;
+import com.webjob.application.dto.Response.RespondEmailJobAlert;
 import com.webjob.application.messaging.dto.JobAppliedEvent;
 import com.webjob.application.models.Entity.*;
 import com.webjob.application.utils.common.UtilFormat;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.client.RestTemplate;
 
 import java.text.NumberFormat;
@@ -139,6 +141,26 @@ public class ApplicationEmailService {
         log.info("Sent job email to {}", email);
 
     }
+    public void sendJobAlertEmail(JobAlert jobAlert, List<Job> jobs) {
+        List<RespondEmailJobAlert> jobSummaries = Optional.ofNullable(jobs)
+                .orElseGet(Collections::emptyList)  // nếu jobs null → dùng list rỗng
+                .stream()
+                .map(this::convertJobAlertToEmail)
+                .filter(Objects::nonNull)          // loại bỏ các kết quả null
+                .collect(Collectors.toList());      // Java 8
+
+        String email = jobAlert.getUser().getEmail();
+
+        emailService.sendTemplateEmail(
+                email,
+                "Gợi ý việc làm phù hợp dành riêng cho bạn!",
+                "emails/job-alert",
+                jobAlert.getUser().getFullName(),
+                jobSummaries
+        );
+        log.info("Sent job email to {}", email);
+
+    }
 
     public void sendResetPasswordEmail(String email, String fullName, String token, Instant expiresAt) {
         // Tạo link reset
@@ -215,6 +237,40 @@ public class ApplicationEmailService {
 
         return respond;
     }
+    public RespondEmailJobAlert convertJobAlertToEmail(Job job) {
+        if (job == null) {
+            throw new IllegalArgumentException("Job must not be null");
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+        String formattedSalary = job.isNegotiable() ? "Thỏa thuận" : String.format("%,.0f - %,.0f VNĐ",
+                job.getSalaryMin(),
+                job.getSalaryMax());
+
+        RespondEmailJobAlert respond = RespondEmailJobAlert.builder()
+                .name(job.getName())
+                .category(job.getJobCategory() != null ? job.getJobCategory().getName() : null)
+                .description(job.getDescription())
+                .companyName(job.getCompany().getName())
+                .location(job.getLocation())
+                .level(job.getLevel().name())
+                .quantity(job.getQuantity())
+                .experienceRequired(job.getExperienceRequired())
+                .workingType(job.getWorkingType() != null ? job.getWorkingType().name() : null)
+                .workMode(job.getWorkMode() != null ? job.getWorkMode().name() : null)
+                .competitionLevel(job.getCompetitionLevel() != null ? job.getCompetitionLevel().name() : null)
+                .benefits(job.getBenefits())
+                .formattedSalary(formattedSalary)
+                .requirement(job.getRequirement())
+                .responsibility(job.getResponsibility())
+                .startDate(formatter.format(job.getStartDate()))
+                .endDate(formatter.format(job.getEndDate()))
+                .build();
+
+        return respond;
+    }
+
 
     public String getLocationByIp(String ip) {
 

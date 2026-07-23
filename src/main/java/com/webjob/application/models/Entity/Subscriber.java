@@ -82,6 +82,9 @@ public class Subscriber {
     @LastModifiedBy
     private String updatedBy;
 
+    @Column(name = "last_checked_at")
+    private Instant lastCheckedAt = Instant.now();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -93,6 +96,7 @@ public class Subscriber {
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
+    @Size(max = 20, message = "Không được vượt quá 20 skill")
     @JsonIgnoreProperties
     private List<SubscriberSkill> subscriberSkills = new ArrayList<>();
 }

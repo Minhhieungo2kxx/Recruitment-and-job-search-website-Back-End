@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Cơ hội nghề nghiệp phù hợp dành riêng cho bạn</title>
+    <style type="text/css">
+        /* Client-specific Resets */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+
+        /* Mobile Responsive Overrides */
+        @media only screen and (max-width: 600px) {
+            .main-card { width: 100% !important; border-radius: 0 !important; }
+            .content-padding { padding: 20px 16px !important; }
+            .job-card-padding { padding: 16px !important; }
+            .job-title { font-size: 16px !important; }
+            .stack-column { display: block !important; width: 100% !important; box-sizing: border-box; }
+            .badge-item { display: inline-block !important; margin-bottom: 6px !important; }
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; background-color: #f4f6f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f4f6f9; padding: 20px 0;">
+    <tr>
+        <td align="center">
+            <!-- MAIN CONTAINER -->
+            <table class="main-card" role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
+
+                <!-- HEADER & LOGO -->
+                <tr>
+                    <td style="background-color: #ffffff; padding: 24px 30px; text-align: center; border-bottom: 2px solid #f0f4f8;">
+                        <a href="https://www.vietnamworks.com/" target="_blank" style="text-decoration: none;">
+                            <img src="cid:webjobLogo" alt="VietnamWorks Logo" width="160" style="display: block; margin: 0 auto; border: 0; max-width: 100%; height: auto;"/>
+                        </a>
+                    </td>
+                </tr>
+
+                <!-- HERO / WELCOME TEXT -->
+                <tr>
+                    <td class="content-padding" style="padding: 28px 32px 20px 32px; background-color: #f8fafc;">
+                        <p style="font-size: 18px; color: #0f172a; margin: 0; font-weight: 700;">
+                            Xin chào <span th:text="${name}" style="color: #00b14f;">bạn</span> 👋
+                        </p>
+                        <p style="font-size: 14.5px; color: #475569; line-height: 1.6; margin: 10px 0 0 0;">
+                            Dựa trên Thông báo việc làm bạn đã tạo, <strong>VietnamWorks</strong> xin gửi đến bạn danh sách các cơ hội nghề nghiệp mới nhất, phù hợp nhất với mục tiêu phát triển sự nghiệp của bạn."
+                        </p>
+
+                    </td>
+                </tr>
+
+                <!-- JOB LISTING LOOP -->
+                <tr th:each="job : ${listjob}">
+                    <td class="content-padding" style="padding: 12px 24px;">
+                        <!-- SINGLE JOB CARD -->
+                        <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; border-left: 4px solid #00b14f;">
+                            <tr>
+                                <td class="job-card-padding" style="padding: 20px;">
+
+                                    <!-- Job Title -->
+                                    <h3 class="job-title" style="margin: 0 0 6px 0; font-size: 17px; font-weight: 700; line-height: 1.4;">
+                                        <a th:href="@{'https://www.vietnamworks.com/'}" th:text="${job.name}" style="color: #0f172a; text-decoration: none;" target="_blank">
+                                            Tên vị trí công việc
+                                        </a>
+                                    </h3>
+
+                                    <!-- Company Name -->
+                                    <p style="margin: 0 0 14px 0; font-size: 14px; color: #64748b; font-weight: 600;">
+                                        <a th:href="@{'https://www.vietnamworks.com/'}" th:text="${job.companyName}" style="color: #475569; text-decoration: none;" target="_blank">
+                                            Tên Công ty
+                                        </a>
+                                    </p>
+
+                                    <!-- Quick Badges (Salary, Location, Exp) -->
+                                    <div style="margin-bottom: 14px;">
+                                        <span class="badge-item" style="display: inline-block; margin-right: 6px; margin-bottom: 6px;">
+                                            <span th:text="${job.formattedSalary}" style="background-color: #fef2f2; color: #dc2626; font-weight: 700; padding: 5px 10px; border-radius: 6px; font-size: 12.5px; border: 1px solid #fecaca; display: inline-block;">
+                                                💵 Mức lương
+                                            </span>
+                                        </span>
+                                        <span class="badge-item" style="display: inline-block; margin-right: 6px; margin-bottom: 6px;">
+                                            <span th:text="${job.location}" style="background-color: #f1f5f9; color: #334155; font-weight: 500; padding: 5px 10px; border-radius: 6px; font-size: 12.5px; border: 1px solid #e2e8f0; display: inline-block;">
+                                                📍 Địa điểm
+                                            </span>
+                                        </span>
+                                        <span class="badge-item" style="display: inline-block; margin-bottom: 6px;">
+                                            <span th:text="${job.experienceRequired + ' năm kinh nghiệm'}" style="background-color: #f1f5f9; color: #334155; font-weight: 500; padding: 5px 10px; border-radius: 6px; font-size: 12.5px; border: 1px solid #e2e8f0; display: inline-block;">
+                                                ⏳ Kinh nghiệm
+                                            </span>
+                                        </span>
+                                    </div>
+
+                                    <!-- Technical Details Table -->
+                                    <table role="presentation" width="100%" border="0" cellpadding="8" cellspacing="0" style="background-color: #f8fafc; border-radius: 8px; font-size: 13px; color: #475569; margin-bottom: 14px; border: 1px solid #f1f5f9;">
+                                        <tr>
+                                            <td class="stack-column" width="50%" style="border-bottom: 1px solid #edf2f7;">
+                                                💼 <strong>Hình thức:</strong> <span th:text="${job.workingType + ' | ' + job.workMode}"></span>
+                                            </td>
+                                            <td class="stack-column" width="50%" style="border-bottom: 1px solid #edf2f7;">
+                                                🎯 <strong>Cấp bậc:</strong> <span th:text="${job.level}"></span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="stack-column" width="50%" style="border-bottom: 1px solid #edf2f7;">
+                                                👥 <strong>Số lượng tuyển:</strong> <span th:text="${job.quantity}"></span> ứng viên
+                                            </td>
+                                            <td class="stack-column" width="50%" style="border-bottom: 1px solid #edf2f7;">
+                                                📂 <strong>Ngành nghề:</strong> <span th:text="${job.category}"></span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="stack-column" width="50%">
+                                                🔥 <strong>Mức độ cạnh tranh:</strong> <span th:text="${job.competitionLevel}"></span>
+                                            </td>
+                                            <td class="stack-column" width="50%">
+                                                ⏰ <strong>Hạn nộp hồ sơ:</strong> <span th:text="${job.endDate}" style="color: #dc2626; font-weight: 600;"></span>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <!-- Job Short Description -->
+                                    <p th:if="${job.description != null}" th:text="${job.description}" style="margin: 0 0 12px 0; color: #64748b; font-size: 13.5px; line-height: 1.5;">
+                                        Mô tả tóm tắt công việc...
+                                    </p>
+
+                                    <!-- Detailed Sections -->
+                                    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-top: 1px dashed #cbd5e1; font-size: 13px;">
+                                        <tr th:if="${job.responsibility != null}">
+                                            <td style="padding-top: 12px;">
+                                                <strong style="color: #1e293b;">📌 Trách nhiệm công việc:</strong>
+                                                <p th:text="${job.responsibility}" style="margin: 4px 0 8px 0; color: #475569; line-height: 1.5;"></p>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${job.requirement != null}">
+                                            <td style="padding-top: 6px;">
+                                                <strong style="color: #1e293b;">✅ Yêu cầu ứng viên:</strong>
+                                                <p th:text="${job.requirement}" style="margin: 4px 0 8px 0; color: #475569; line-height: 1.5;"></p>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${job.benefits != null}">
+                                            <td style="padding-top: 6px;">
+                                                <strong style="color: #1e293b;">🎁 Quyền lợi được hưởng:</strong>
+                                                <p th:text="${job.benefits}" style="margin: 4px 0 8px 0; color: #475569; line-height: 1.5;"></p>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <!-- Call To Action Button -->
+                                    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top: 16px;">
+                                        <tr>
+                                            <td align="center">
+                                                <a th:href="@{'https://www.vietnamworks.com/'}" target="_blank" style="display: inline-block; background-color: #00b14f; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: 700; font-size: 14px; text-align: center;">
+                                                    Ứng tuyển ngay
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- FOOTER -->
+                <tr>
+                    <td style="background-color: #f8fafc; padding: 28px; text-align: center; border-top: 1px solid #e2e8f0;">
+                        <p style="margin: 0 0 6px 0; font-size: 12.5px; color: #64748b; line-height: 1.5;">
+                            Bạn nhận được thông báo này vì đã đăng ký nhận gợi ý việc làm phù hợp tại <strong>VietnamWorks</strong>.
+                        </p>
+                        <p style="margin: 0 0 12px 0; font-size: 12.5px; color: #94a3b8;">
+                            &copy; VietnamWorks. Tất cả các quyền được bảo hộ.
+                        </p>
+                        <p style="margin: 0; font-size: 12.5px;">
+                            <a href="#" style="color: #64748b; text-decoration: underline;">Cài đặt thông báo</a>
+                            <span style="color: #cbd5e1; margin: 0 6px;">|</span>
+                            <a href="#" style="color: #64748b; text-decoration: underline;">Hủy đăng ký nhận email</a>
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

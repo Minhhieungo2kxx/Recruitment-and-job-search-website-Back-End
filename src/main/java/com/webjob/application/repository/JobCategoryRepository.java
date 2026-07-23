@@ -43,4 +43,5 @@ public interface JobCategoryRepository extends JpaRepository<JobCategory, Long>,
     @Query("select c from JobCategory c where c.id=:id")
     Optional<JobCategory> findDetailById(Long id);
 
+
 }

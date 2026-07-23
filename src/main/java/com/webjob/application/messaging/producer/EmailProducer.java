@@ -3,6 +3,7 @@ package com.webjob.application.messaging.producer;
 import com.webjob.application.messaging.config.RabbitMQConfig;
 import com.webjob.application.messaging.dto.EmailJobMessage;
 import com.webjob.application.messaging.dto.ForgotPasswordEmailEvent;
+import com.webjob.application.messaging.dto.JobAlertMessage;
 import com.webjob.application.messaging.dto.JobAppliedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,17 @@ public class EmailProducer {
         log.info("Published subscriber {}", subscriberId);
 
     }
+    public void publishJobAlerts(Long jobAlertId) {
+        JobAlertMessage message=JobAlertMessage.builder()
+                .jobAlertId(jobAlertId)
+                .build();
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.EMAIL_EXCHANGE,
+                RabbitMQConfig.JOB_ALERT_ROUTING_KEY,
+                message
+        );
+        log.info("Published JobAlert {}",jobAlertId);
+    }
     @TransactionalEventListener(
             phase = TransactionPhase.AFTER_COMMIT
     )
@@ -58,4 +70,5 @@ public class EmailProducer {
         log.info("Published email Job Applied Event {}", event.getEmail());
 
     }
+
 }
