@@ -21,6 +21,8 @@ public class ApplicationHrDetailResponse {
     private Instant appliedAt;
 
 
+
+
     // Người ứng tuyển
     private CandidateInfo candidate;
 
@@ -31,6 +33,13 @@ public class ApplicationHrDetailResponse {
 
     // Job mà HR đăng
     private JobInfo job;
+
+//    hr danh gia
+    private String hrNote;
+
+    private String reviewByHr;
+
+    private Instant reviewedAt;
 
 
     @Getter

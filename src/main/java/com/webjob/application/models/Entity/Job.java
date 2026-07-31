@@ -80,6 +80,9 @@ public class Job {
     @Column(columnDefinition = "MEDIUMTEXT")
     private String responsibility;
 
+    @Column(columnDefinition = "TEXT")
+    private String howToApply;
+
     private Long viewCount= 0L;
 
 

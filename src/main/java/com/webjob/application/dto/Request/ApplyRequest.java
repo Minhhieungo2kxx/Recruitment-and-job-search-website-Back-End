@@ -20,6 +20,9 @@ public class ApplyRequest {
     @NotNull
     private Long jobId;
 
+//    private String fullName;
+
+//    private String email;
 
     //chọn CV cũ
     private Long resumeId;

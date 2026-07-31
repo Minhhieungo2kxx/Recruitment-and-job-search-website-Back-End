@@ -1,11 +1,13 @@
-package com.webjob.application.config.Socket;
+package com.webjob.application.scheduler;
 
+import com.webjob.application.event.PresenceNotifier;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.dto.Response.UserPresenceDTO;
 import com.webjob.application.repository.UserRepository;
 import com.webjob.application.service.Socket.PresenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -21,8 +23,10 @@ public class PresenceScheduler {
     private final PresenceNotifier notifier;
     private final UserRepository userRepository;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     //     Chạy mỗi phút để cập nhật trạng thái "x phút trước"
-    @Scheduled(fixedDelay = 120000) // 2 phút
+    @Scheduled(fixedDelay = 600000) // 10 minute
     public void updatePresenceStatus() {
         log.info(" Bắt đầu task updatePresenceStatus()...");
         List<User> recentlyOfflineUsers = userRepository.findRecentlyOfflineUsers(
@@ -33,9 +37,8 @@ public class PresenceScheduler {
 
                 if (!user.isOnline()) {
                     UserPresenceDTO presence = presenceService.get_UserPresence(user);
-                    notifier.notifyUserPresence(presence);
+                    eventPublisher.publishEvent(presence);
                 }
-
             } catch (Exception e) {
                 log.error(
                         "Presence update failed for user {}",

@@ -1,19 +1,24 @@
 package com.webjob.application.service.Socket;
 
-import com.webjob.application.config.Socket.MessageMapper;
+import com.webjob.application.dto.Response.Messensage.MessageMapper;
 import com.webjob.application.dto.Request.Websockets.*;
-import com.webjob.application.dto.Response.ApiResponse;
+import com.webjob.application.exception.Customs.ResourceNotFoundException;
 import com.webjob.application.models.Entity.Conversation;
 import com.webjob.application.models.Entity.Message;
+import com.webjob.application.models.Entity.TemporaryUpload;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.dto.Request.Search.MessageFilterRequest;
 import com.webjob.application.dto.Response.MessagesDTO;
 import com.webjob.application.dto.Response.Messensage.MessageResponseDTO;
 import com.webjob.application.dto.Response.MetaDTO;
 import com.webjob.application.dto.Response.ResponseDTO;
+import com.webjob.application.pubsub.dto.RedisMessage;
+import com.webjob.application.pubsub.publisher.RedisPublisher;
 import com.webjob.application.repository.ConversationRepository;
 import com.webjob.application.repository.MessageRepository;
+import com.webjob.application.repository.TemporaryUploadRepository;
 import com.webjob.application.repository.UserRepository;
+import com.webjob.application.service.UploadFileServer.FileService;
 import com.webjob.application.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +27,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
@@ -48,8 +52,14 @@ public class MessageService {
     private final UserService userService;
     private final MessageMapper messageMapper;
     private final SimpMessagingTemplate messagingTemplate;
-    @Value("${upload.base-dir}")
-    private String uploadBaseDir;
+
+    private final RedisPublisher redisPublisher;
+//    @Value("${upload.base-dir}")
+//    private String uploadBaseDir;
+
+    private final TemporaryUploadRepository temporaryUploadRepository;
+
+    private final FileService fileService;
 
 
     public MessageResponseDTO sendMessage(String userID, MessageRequestDTO requestDTO) {
@@ -72,6 +82,15 @@ public class MessageService {
             message.setFileUrl(requestDTO.getFileUrl());
             message.setFileName(requestDTO.getFileName());
             message.setFileSize(requestDTO.getFileSize());
+
+        }
+        if(requestDTO.getPublicId() !=null && !requestDTO.getPublicId().isEmpty()){
+            message.setPublicId(requestDTO.getPublicId());
+            TemporaryUpload temporaryUpload=temporaryUploadRepository
+                    .findByPublicIdAndUsedFalse(requestDTO.getPublicId())
+                    .orElseThrow(()-> new ResourceNotFoundException("TemporaryUpload Not found"));
+            temporaryUpload.setUsed(true);
+            temporaryUploadRepository.save(temporaryUpload);
         }
         Message savedMessage = messageRepository.save(message);
 
@@ -121,10 +140,14 @@ public class MessageService {
         if (message.getFileUrl() != null && !message.getFileUrl().isEmpty() &&
                 (message.getContentType() == Message.MessageContentType.IMAGE
                         || message.getContentType() == Message.MessageContentType.FILE)) {
-            deleteFileFromStorage(message.getFileUrl());
+            TemporaryUpload upload=temporaryUploadRepository.findByPublicId(message.getPublicId())
+                            .orElseThrow(() -> new ResourceNotFoundException("TemporaryUpload not found"));
+            upload.setUsed(false);
+            temporaryUploadRepository.save(upload);
             log.info("User {} xóa message {} kèm file {}", user.getEmail(), messageId, message.getFileUrl());
 
         }
+
         message.setIsDeleted(true);
         message.setContent("Tin nhắn đã bị xóa");
         message.setFileUrl(null);
@@ -132,21 +155,23 @@ public class MessageService {
         message.setFileSize(null);
         messageRepository.save(message);
 
-        // Gửi thông báo xóa tin nhắn cho cả sender và receiver
-        MessageDeleteDTO deleteDTO = new MessageDeleteDTO(message.getId(), "Tin nhắn đã bị xóa",
-                user.getId());
 
-        messagingTemplate.convertAndSendToUser(
-                message.getSender().getId().toString(),
-                "/queue/message-deletes",
-                deleteDTO
-        );
+        MessageDeleteDTO deleteDTO=MessageDeleteDTO.builder()
+                .messageId(message.getId())
+                .status("Tin nhắn đã bị xóa")
+                .deletedByUserId(user.getId())
+                .receiverId(message.getReceiver().getId())
+                .senderId(message.getSender().getId())
+                .build();
 
-        messagingTemplate.convertAndSendToUser(
-                message.getReceiver().getId().toString(),
-                "/queue/message-deletes",
-                deleteDTO
-        );
+        // 1. Tạo RedisMessage với type là "DELETE_MESSAGE"
+        RedisMessage redisMessage = RedisMessage.builder()
+                .type("DELETE_MESSAGE")
+                .payload(deleteDTO)
+                .destination("/queue/message-deletes")
+                .build();
+        // 2. Publish lên kênh Redis
+        redisPublisher.publish("chat.private", redisMessage);
     }
 
     @Transactional
@@ -191,17 +216,7 @@ public class MessageService {
                 .collect(Collectors.toList());
     }
 
-//    @Transactional(readOnly = true)
-//    public List<UserInfoDTO> searchUsers(String userID, String searchTerm) {
-//        User currentUser = userService.getById(Long.valueOf(userID));
-//        List<User> users = isHR(currentUser)
-//                ? userRepository.findCandidatesByName(searchTerm)
-//                : userRepository.findHRsByName(searchTerm);
-//
-//        return users.stream()
-//                .map(messageMapper::toUserInfoDTO)
-//                .collect(Collectors.toList());
-//    }
+
 @Transactional(readOnly = true)
 public List<UserInfoDTO> searchUsers(String userID, String searchTerm) {
 
@@ -223,9 +238,7 @@ public List<UserInfoDTO> searchUsers(String userID, String searchTerm) {
             .collect(Collectors.toList());
 }
 
-//    private boolean isHR(User user) {
-//        return "HR".equals(getRoleGroup(user));
-//    }
+
     private String getRoleGroup(User user) {
         String code = user.getRole().getCode();
 
@@ -301,21 +314,21 @@ public List<UserInfoDTO> searchUsers(String userID, String searchTerm) {
     }
 
     // PHƯƠNG THỨC XÓA FILE
-    private void deleteFileFromStorage(String fileName) {
-        try {
-            Path filePath = Paths.get(uploadBaseDir, "chat-files", fileName);
-
-            if (Files.exists(filePath)) {
-                Files.delete(filePath);
-                log.info("Đã xóa file: {}", filePath);
-            } else {
-                log.warn("File không tồn tại: {}", filePath);
-            }
-
-        } catch (IOException e) {
-            log.error("Lỗi khi xóa file: {}", fileName, e);
-        }
-    }
+//    private void deleteFileFromStorage(String fileName) {
+//        try {
+//            Path filePath = Paths.get(uploadBaseDir, "chat-files", fileName);
+//
+//            if (Files.exists(filePath)) {
+//                Files.delete(filePath);
+//                log.info("Đã xóa file: {}", filePath);
+//            } else {
+//                log.warn("File không tồn tại: {}", filePath);
+//            }
+//
+//        } catch (IOException e) {
+//            log.error("Lỗi khi xóa file: {}", fileName, e);
+//        }
+//    }
 
 //    public ResponseEntity<?> getAllMessages(int page,int size,MessageFilterRequest filterRequest) {
 //        ResponseDTO<?> respond = getPaginated(page,size,filterRequest);
@@ -336,17 +349,12 @@ public List<UserInfoDTO> searchUsers(String userID, String searchTerm) {
     public  MessageResponseDTO sendMessage(MessageRequestDTO requestDTO, Authentication authentication) {
         MessageResponseDTO message = sendMessage(authentication.getName(), requestDTO);
         // Gửi tin nhắn qua WebSocket đến người nhận
-        messagingTemplate.convertAndSendToUser(
-                message.getReceiver().getId().toString(),
-                "/queue/messages",
-                message
-        );
-        // Gửi lại tin nhắn cho chính người gửi
-        messagingTemplate.convertAndSendToUser(
-                message.getSender().getId().toString(),
-                "/queue/messages",
-                message
-        );
+        RedisMessage redisMessage = RedisMessage.builder()
+                .type("CHAT_MESSAGE")
+                .payload(message)
+                .destination("/queue/messages")
+                .build();
+        redisPublisher.publish("chat.private", redisMessage);
        return message;
     }
 
@@ -356,17 +364,15 @@ public List<UserInfoDTO> searchUsers(String userID, String searchTerm) {
 
         MessageResponseDTO updatedMessage = updateMessage(authentication.getName(), updateDTO);
 
-        // Thông báo cập nhật qua WebSocket
-        messagingTemplate.convertAndSendToUser(
-                updatedMessage.getReceiver().getId().toString(),
-                "/queue/message-updates",
-                updatedMessage
-        );
-        messagingTemplate.convertAndSendToUser(
-                updatedMessage.getSender().getId().toString(),
-                "/queue/message-updates",
-                updatedMessage
-        );
+        // 1. Tạo RedisMessage với type phân loại là "UPDATE_MESSAGE"
+        RedisMessage redisMessage = RedisMessage.builder()
+                .type("UPDATE_MESSAGE")
+                .payload(updatedMessage)
+                .destination("/queue/message-updates")
+                .build();
+
+        // 2. Publish lên kênh Redis
+        redisPublisher.publish("chat.private", redisMessage);
         return updatedMessage;
 
     }

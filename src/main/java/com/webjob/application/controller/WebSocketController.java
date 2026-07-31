@@ -26,23 +26,20 @@ import java.security.Principal;
 public class WebSocketController {
    private final WebsocketService websocketService;
 
+    private final SimpMessagingTemplate messagingTemplate;
 
-    @MessageMapping("/chat.sendMessage")
-    @SendTo("/topic/public")
-    public MessageResponseDTO sendMessage(@Payload MessageRequestDTO messageRequest,
-                                          Principal principal) {
-        return websocketService.sendMessage(messageRequest,principal);
-
-    }
-
-
+//    @MessageMapping("/chat.sendMessage")
+//    @SendTo("/topic/public")
+//    public MessageResponseDTO sendMessage(@Payload MessageRequestDTO messageRequest,
+//                                          Principal principal) {
+//        return websocketService.sendMessage(messageRequest,principal);
+//
+//    }
 
     @MessageMapping("/chat.seen")
     public void seenMessage(SeenRequest seenRequest, Principal principal) {
+
         websocketService.seenMessage(seenRequest);
     }
-
-
-
 
 }

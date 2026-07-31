@@ -82,24 +82,24 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             response.sendRedirect(redirectUrl);
             //send Email
 
-            handleLoginNotification(request,email);
+//            handleLoginNotification(request,email);
 
         } catch (Exception e) {
             // Nếu có lỗi, chuyển hướng đến trang login với thông báo lỗi
             response.sendRedirect("/login-chat?error=oauth_failed");
         }
     }
-    public void handleLoginNotification(HttpServletRequest request, String email) {
-        // Trong Controller hoặc nơi gọi async
-        String ip = getClientIp(request);
-        String userAgent = request.getHeader("User-Agent");
-        Map<String, Object> emailVars = new HashMap<>();
-        emailVars.put("email", email);
-        emailVars.put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
-        emailVars.put("ip", ip);
-        emailVars.put("userAgent", userAgent);
-        applicationEmailService.LoginNotification(emailVars);
-    }
+//    public void handleLoginNotification(HttpServletRequest request, String email) {
+//        // Trong Controller hoặc nơi gọi async
+//        String ip = getClientIp(request);
+//        String userAgent = request.getHeader("User-Agent");
+//        Map<String, Object> emailVars = new HashMap<>();
+//        emailVars.put("email", email);
+//        emailVars.put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
+//        emailVars.put("ip", ip);
+//        emailVars.put("userAgent", userAgent);
+//        applicationEmailService.LoginNotification(emailVars);
+//    }
     public String getClientIp(HttpServletRequest request) {
         String[] headers = {
                 "X-Forwarded-For",

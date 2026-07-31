@@ -29,6 +29,8 @@ public interface ApplicationRepository extends JpaRepository<Application,Long>, 
 """)
     Page<Application> findApplicationsByCompany(Long companyId, Pageable pageable);
 
+
+    @EntityGraph(attributePaths = {"job","user"})
     Optional<Application> findById(Long id);
 
     @Query("""
@@ -38,6 +40,7 @@ public interface ApplicationRepository extends JpaRepository<Application,Long>, 
     join fetch j.company
     join fetch a.user
     join fetch a.resume
+    LEFT JOIN FETCH a.reviewedBy
     where a.id=:id
 """)
     Optional<Application> findDetailById(Long id);

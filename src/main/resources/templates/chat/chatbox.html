@@ -3,7 +3,7 @@
 <body>
 
 <div th:fragment="chatbox">
-    <div id="chat-icon" onclick="toggleChatBox()">
+    <div id="chat-icon">
         <span style="font-size: 24px;">💬</span>
     </div>
 
@@ -14,7 +14,8 @@
                 <span>AI Career Advisor</span>
             </div>
             <div class="header-actions">
-                <button id="clear-history-btn" onclick="clearChatHistory()" title="Xóa lịch sử">🗑️</button>
+                <button id="clear-history-btn"  title="Xóa lịch sử">🗑️</button>
+
 
             </div>
         </div>
@@ -40,11 +41,11 @@
 
         <div id="chat-box-footer">
             <div class="input-wrapper">
-                <input type="text"
-                       id="chat-input"
-                       placeholder="Hỏi tôi về sự nghiệp..."
-                       onkeydown="handleKey(event)" />
-                <button id="chat-send" onclick="sendMessage()">
+                <input
+                        type="text"
+                        id="chat-input"
+                        placeholder="Hỏi tôi về sự nghiệp..." />
+                <button id="chat-send" type="button">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                         <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
                     </svg>

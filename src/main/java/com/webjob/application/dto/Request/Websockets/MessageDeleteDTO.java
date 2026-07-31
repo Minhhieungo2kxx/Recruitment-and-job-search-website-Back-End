@@ -1,16 +1,17 @@
 package com.webjob.application.dto.Request.Websockets;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class MessageDeleteDTO {
     private Long messageId;
     private String status;
     private Long deletedByUserId;
+
+    private Long senderId;
+    private Long receiverId;
 }

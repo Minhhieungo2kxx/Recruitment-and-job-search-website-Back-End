@@ -18,6 +18,13 @@ public class ResumeHistoryResponse {
     private String jobName;
     private String companyLogo;
     private Instant appliedAt;
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss a z",
+            timezone = "Asia/Ho_Chi_Minh",
+            locale = "en_US"
+    )
+    private Instant updatedAt;
     private String cvUrl;
     private Double salaryMin;
     private Double salaryMax;

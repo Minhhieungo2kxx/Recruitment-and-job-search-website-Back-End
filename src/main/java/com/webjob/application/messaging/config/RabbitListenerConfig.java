@@ -24,6 +24,8 @@ public class RabbitListenerConfig {
 
         factory.setConnectionFactory(connectionFactory);
 
+        factory.setPrefetchCount(1);
+
         factory.setMessageConverter(converter);
 
         factory.setConcurrentConsumers(3);

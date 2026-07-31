@@ -6,6 +6,7 @@ import com.webjob.application.dto.Request.JobFilterClient;
 import com.webjob.application.dto.Request.JobFilterHrRequest;
 import com.webjob.application.enums.CompanyStatus;
 import com.webjob.application.enums.JobStatus;
+import com.webjob.application.event.dto.JobCreatedEvent;
 import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.exception.Customs.ForbiddenException;
 import com.webjob.application.exception.Customs.UnauthorizedException;
@@ -19,8 +20,10 @@ import com.webjob.application.service.Specification.JobSpecification;
 import com.webjob.application.utils.common.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +42,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class JobService {
 
     private final SkillRepository skillRepository;
@@ -54,6 +58,7 @@ public class JobService {
 
     private final JobCategoryService jobCategoryService;
     private final JobMapper jobMapper;
+    private final ApplicationEventPublisher publisher;
 
 
     @Transactional
@@ -62,48 +67,72 @@ public class JobService {
         checkNameJob(request.getName());
         User user = securityUtils.getCurrentUser();
         validateCompany(user);
+        validateSalary(request.getSalaryMin(),request.getSalaryMax());
+
         JobCategory category = jobCategoryService.findById(request.getJobCategoryId());
         Job job = modelMapper.map(request, Job.class);
-
 
         job.setCompany(user.getCompany());
         job.setJobCategory(category);
         job.setViewCount(0L);
         job.setAppliedCount(0);
 
-        List<JobSkill> jobSkills = new ArrayList<>();
-        if (request.getSkills() != null) {
-            Map<Long, Skill> skillMaps = getSkillMapFromRequest(request);
-            for (JobRequest.JobSkillRequest item : request.getSkills()) {
-                Skill skill = skillMaps.get(item.getSkillId());
-                if (skill == null) {
-                    throw new BadRequestException("Skill not found with id: " + item.getSkillId());
-                }
-                JobSkill jobSkill = new JobSkill();
-                jobSkill.setJob(job);
-                jobSkill.setSkill(skill);
-                jobSkill.setRequired(item.getRequired());
-                jobSkill.setPriority(item.getPriority());
-                jobSkill.setExperienceYear(item.getExperienceYear());
-                jobSkill.setLevel(item.getLevel());
-
-                jobSkills.add(jobSkill);
-            }
-
-        }
-
+        List<JobSkill> jobSkills = buildJobSkills(job, request);
 
         job.setJobSkills(jobSkills);
-        return jobMapper.toResponse(jobRepository.save(job));
+
+        Job saved=jobRepository.save(job);
+        JobCreatedEvent event = JobCreatedEvent.builder()
+                .companyId(saved.getCompany().getId())
+                .companyName(saved.getCompany().getName())
+                .local(saved.getLocation()).SalaryMin(saved.getSalaryMin())
+                .SalaryMax(saved.getSalaryMax()).jobName(saved.getName())
+                .jobId(saved.getId())
+                .build();
+        publisher.publishEvent(event);
+        log.info("Publishing JobCreatedEvent for jobId: {}, jobName: {}, companyId: {}",
+                event.getJobId(), event.getJobName(), event.getCompanyId());
+        return jobMapper.toResponse(saved);
+    }
+    public List<JobSkill> buildJobSkills(Job job, JobRequest request) {
+        List<JobSkill> jobSkills = new ArrayList<>();
+
+        if (request.getSkills() == null || request.getSkills().isEmpty()) {
+            return jobSkills;
+        }
+
+        Map<Long, Skill> skillMaps = getSkillMapFromRequest(request);
+
+        for (JobRequest.JobSkillRequest item : request.getSkills()) {
+            Skill skill = skillMaps.get(item.getSkillId());
+            if (skill == null) {
+                throw new BadRequestException("Skill not found with id: " + item.getSkillId());
+            }
+
+            JobSkill jobSkill = new JobSkill();
+            jobSkill.setJob(job);
+            jobSkill.setSkill(skill);
+            jobSkill.setRequired(item.getRequired());
+            jobSkill.setPriority(item.getPriority());
+            jobSkill.setExperienceYear(item.getExperienceYear());
+            jobSkill.setLevel(item.getLevel());
+
+            jobSkills.add(jobSkill);
+        }
+
+        return jobSkills;
     }
 
-    private List<Skill> getValidSkills(List<Long> skills) {
 
-        List<Skill> lists = skillRepository.findByIdIn(skills);
-        if (lists.isEmpty()) {
-            throw new BadRequestException("Không có kỹ năng nào hợp lệ.");
+    public void validateSalary(Double salaryMin, Double salaryMax) {
+
+        if (salaryMin != null
+                && salaryMax != null
+                && salaryMin > salaryMax) {
+
+            throw new BadRequestException(
+                    "Salary minimum cannot be greater than salary maximum.");
         }
-        return lists;
     }
 
 
@@ -113,52 +142,28 @@ public class JobService {
         Job job = getById(id);
         User user = securityUtils.getCurrentUser();
         validateCompany(user);
+        validateSalary(request.getSalaryMin(),request.getSalaryMax());
 
-        // Giữ lại các field không được thay đổi
-        Instant createdAt = job.getCreatedAt();
-        String createdBy = job.getCreatedBy();
-        Company company = job.getCompany();
-
+        if (!job.getCompany().getId().equals(user.getCompany().getId())) {
+            throw new ForbiddenException("You are not allowed to access this job.");
+        }
         modelMapper.map(request, job);
 
-        job.setCreatedAt(createdAt);
-        job.setCreatedBy(createdBy);
-        job.setCompany(company);
-
         // Update JobCategory
-
         if (request.getJobCategoryId() != null) {
             JobCategory category = jobCategoryService.findById(request.getJobCategoryId());
             job.setJobCategory(category);
         }
+        List<JobSkill> jobSkills = new ArrayList<>();
         if (request.getSkills() != null) {
             job.getJobSkills().clear();
             jobRepository.flush();   // Thực hiện DELETE ngay
-            List<JobSkill> jobSkills = new ArrayList<>();
-            Map<Long, Skill> skillMaps = getSkillMapFromRequest(request);
-            for (JobRequest.JobSkillRequest item : request.getSkills()) {
-                Skill skill = skillMaps.get(item.getSkillId());
-                if (skill == null) {
-                    throw new BadRequestException("Skill not found with id: " + item.getSkillId());
-                }
-                JobSkill jobSkill = new JobSkill();
-
-                jobSkill.setJob(job);
-                jobSkill.setSkill(skill);
-
-                jobSkill.setRequired(item.getRequired());
-                jobSkill.setPriority(item.getPriority());
-                jobSkill.setExperienceYear(item.getExperienceYear());
-                jobSkill.setLevel(item.getLevel());
-
-                jobSkills.add(jobSkill);
-            }
-            job.getJobSkills().addAll(jobSkills);
+            jobSkills=buildJobSkills(job, request);
         }
+        job.setJobSkills(jobSkills);
         Job edit = jobRepository.save(job);
         return jobMapper.toResponse(edit);
     }
-
     public boolean checkNameJob(String name) {
         boolean exist = jobRepository.existsByNameAndDeletedFalse(name);
         if (exist) {
@@ -296,6 +301,9 @@ public class JobService {
 
         User user = securityUtils.getCurrentUser();
         validateCompany(user);
+        if (!job.getCompany().getId().equals(user.getCompany().getId())) {
+            throw new ForbiddenException("You are not allowed to access this job.");
+        }
         job.setDeleted(true);
         job.setDeletedAt(Instant.now());
         job.setStatus(JobStatus.CLOSED);
@@ -315,6 +323,9 @@ public class JobService {
         }
         if (job.getJobCategory() == null) {
             throw new BadRequestException("Không thể khôi phục vì danh mục công việc không tồn tại.");
+        }
+        if (!job.getCompany().getId().equals(user.getCompany().getId())) {
+            throw new ForbiddenException("You are not allowed to access this job.");
         }
 
         job.setDeleted(false);
@@ -392,11 +403,13 @@ public class JobService {
     public JobResponse detailJobId(Long id) {
         User user = securityUtils.getCurrentUser();
         validateCompany(user);
+
         int updated = jobRepository.increaseViewCount(id);
         if (updated == 0) {
             throw new BadRequestException("Job không tồn tại hoặc đã bị xóa");
         }
         Job job = getById(id);
+
         return jobMapper.toResponse(job);
 
     }

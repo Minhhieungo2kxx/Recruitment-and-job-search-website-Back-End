@@ -214,7 +214,7 @@ public class ChatService {
             List<ChatMessage> messages = chatMessageRepository.findByUserOrderByCreatedAtAsc(user);
 
             return messages.stream()
-                    .map(m -> new ChatMessageDto(m.getMessage(), m.getResponse(), m.getCreatedAt()))
+                    .map(m -> new ChatMessageDto(m.getMessage(),extractOkContent(m.getResponse()), m.getCreatedAt()))
                     .collect(Collectors.toList());
 
         } catch (Exception e) {

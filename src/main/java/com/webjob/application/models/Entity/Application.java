@@ -42,6 +42,18 @@ public class Application {
     @Enumerated(EnumType.STRING)
     private ResumeStatus status=ResumeStatus.PENDING;
 
+//    hr
+    @Column(length = 1000)
+    private String hrNote;
+
+//    hr cap nhat
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reviewed_by")
+    private User reviewedBy;
+
+//    time hr update status applicatiob
+    private Instant reviewedAt;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
 
@@ -50,6 +62,8 @@ public class Application {
     @LastModifiedDate
     @Column(name = "updated_at")
     private Instant updatedAt;
+
+
 
     /**
      * Người ứng tuyển

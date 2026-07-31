@@ -22,6 +22,8 @@ public class MessageResponseDTO {
     private String fileName;
     private Long fileSize;
 
+    private String publicId;
+
     private UserInfoDTO sender;
     private UserInfoDTO receiver;
     private Instant createdAt;

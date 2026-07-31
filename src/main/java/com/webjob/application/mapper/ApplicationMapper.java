@@ -80,13 +80,10 @@ public class ApplicationMapper {
         }
 
         ApplicationHRResponse response = new ApplicationHRResponse();
-
-
         response.setApplicationId(application.getId());
         response.setEmail(application.getEmail());
         response.setStatus(application.getStatus());
         response.setAppliedAt(application.getCreatedAt());
-
 
         if (application.getUser() != null) {
             response.setCandidateName(application.getUser().getFullName());
@@ -118,6 +115,7 @@ public class ApplicationMapper {
                 .companyLogo(application.getJob().getCompany().getLogo())
                 .jobName(application.getJob().getName())
                 .appliedAt(application.getCreatedAt())
+                .updatedAt(application.getUpdatedAt())
                 .cvUrl(application.getResume().getUrl())
                 .salaryMin(application.getJob().getSalaryMin())
                 .salaryMax(application.getJob().getSalaryMax())
@@ -139,6 +137,7 @@ public class ApplicationMapper {
                 .applicationId(application.getId())
                 .status(application.getStatus())
                 .appliedAt(application.getCreatedAt())
+                .updatedAt(application.getUpdatedAt())
                 .job(
                         ApplicationUserDetailResponse.JobInfo.builder()
                                 .id(job.getId())
@@ -169,7 +168,7 @@ public class ApplicationMapper {
                 .build();
     }
 
-    public ApplicationHrDetailResponse toApplicationHrDetailResponse(Application application) {
+    public ApplicationHrDetailResponse toApplicationHrDetailResponse(Application application,String nameHr) {
         if (application == null) {
             return null;
         }
@@ -180,11 +179,11 @@ public class ApplicationMapper {
 
         return ApplicationHrDetailResponse.builder()
                 .applicationId(application.getId())
-
                 .status(application.getStatus())
-
                 .appliedAt(application.getCreatedAt())
-
+                .reviewByHr(nameHr)
+                .hrNote(application.getHrNote()==null ? null :application.getHrNote())
+                .reviewedAt(application.getReviewedAt()==null ? null: application.getReviewedAt())
                 .candidate(
                         ApplicationHrDetailResponse.CandidateInfo.builder()
                                 .id(candidate.getId())
