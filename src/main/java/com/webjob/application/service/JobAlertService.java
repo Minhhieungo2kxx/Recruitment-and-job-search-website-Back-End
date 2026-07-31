@@ -8,6 +8,7 @@ import com.webjob.application.dto.Response.ResponseDTO;
 import com.webjob.application.dto.Response.SubscriberListResponse;
 import com.webjob.application.enums.AlertFrequency;
 import com.webjob.application.exception.Customs.BadRequestException;
+import com.webjob.application.exception.Customs.ForbiddenException;
 import com.webjob.application.exception.Customs.ResourceNotFoundException;
 import com.webjob.application.models.Entity.JobAlert;
 import com.webjob.application.models.Entity.JobCategory;
@@ -166,6 +167,7 @@ public class JobAlertService {
             JobAlert alert = jobAlertRepository.findByIdAndUserId(alertId, userId)
                     .orElseThrow(() -> new ResourceNotFoundException("Job Alert Not found"));
             validateSalary(request.getSalaryMin(), request.getSalaryMax());
+
             modelMapper.map(request, alert);
 
             alert.setKeyword(normalize(request.getKeyword()));
@@ -207,7 +209,7 @@ public class JobAlertService {
     public void enable(Long alertId) {
         Long userId = securityUtils.getCurrentUserId();
         JobAlert alert = jobAlertRepository.findByIdAndUserId(alertId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Job Alert Not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Job Alert is already enabled"));
         if (alert.getActive()) {
             throw new BadRequestException("Job Alert is True");
         }
@@ -222,7 +224,7 @@ public class JobAlertService {
         JobAlert alert = jobAlertRepository.findByIdAndUserId(alertId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job Alert Not found"));
         if (!alert.getActive()) {
-            throw new BadRequestException("Job Alert is False");
+            throw new BadRequestException("Job Alert is already disabled");
         }
         alert.setActive(false);
         jobAlertRepository.save(alert);
@@ -259,7 +261,8 @@ public class JobAlertService {
 
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        Page<JobAlert> pagelist = jobAlertRepository.findAll(pageable);
+        Long userId= securityUtils.getCurrentUserId();
+        Page<JobAlert> pagelist = jobAlertRepository.findByUserId(userId,pageable);
 
         int currentpage = pagelist.getNumber() + 1;
         int pagesize = pagelist.getSize();

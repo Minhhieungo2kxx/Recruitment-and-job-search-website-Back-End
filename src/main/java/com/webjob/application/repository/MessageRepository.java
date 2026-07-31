@@ -4,6 +4,7 @@ import com.webjob.application.models.Entity.Message;
 import com.webjob.application.models.Entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -44,10 +45,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     Optional<Message> findLastMessageBetweenUsers(@Param("userId1") Long userId1,
                                                   @Param("userId2") Long userId2);
 
-//    @Modifying
-//    @Query("UPDATE Message m SET m.status = 'READ' WHERE " +
-//            "m.receiver.id = :userId AND m.sender.id = :senderId AND m.status != 'read'")
-//    void markMessagesAsRead(@Param("userId") Long userId, @Param("senderId") Long senderId);
+
 
     @Modifying
     @Query("""
@@ -70,5 +68,8 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     Page<Message> findAllByType(Message.MessageType type, Pageable pageable);
 
     Page<Message> findAllByIsDeleted(Boolean isDeleted, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"sender", "receiver"})
+    Optional<Message> findById(Long id);
 
 }

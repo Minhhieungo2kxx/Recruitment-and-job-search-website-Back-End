@@ -39,6 +39,7 @@ public class JobRequest {
     private boolean negotiable;
 
 
+
     @NotNull
     @Min(1)
     private Integer quantity;
@@ -59,6 +60,9 @@ public class JobRequest {
     private String requirement;
 
     private String responsibility;
+
+
+    private String howToApply;
 
     @NotNull
     private CompetitionLevel competitionLevel;

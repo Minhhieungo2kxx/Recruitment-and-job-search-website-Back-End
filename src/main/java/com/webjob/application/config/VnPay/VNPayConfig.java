@@ -1,5 +1,6 @@
 package com.webjob.application.config.VnPay;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import java.io.UnsupportedEncodingException;
@@ -9,32 +10,54 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
-@Configuration
+import org.springframework.stereotype.Component;
+
+@Component
+@Slf4j
 public class VNPayConfig {
     @Value("${vnp.tmncode}")
-    private String vnp_TmnCode;
+    private  String vnp_TmnCode;
 
     @Value("${vnp.hashsecret}")
     private String vnp_HashSecret;
+    @Value("${vnp.return-url}")
+    private String vnp_ReturnUrl;
 
-    private final String vnp_PayUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-    private final String vnp_ReturnUrl = "http://localhost:8081/api/v1/payments/vnpay-return";
+    @Value("${vnp-payUrl}")
+    private String vnp_PayUrl ;
+
+    public String getVnp_PayUrl() {
+        return vnp_PayUrl;
+    }
+
+    public void setVnp_PayUrl(String vnp_PayUrl) {
+        this.vnp_PayUrl = vnp_PayUrl;
+    }
 
     public String getVnp_TmnCode() {
         return vnp_TmnCode;
+    }
+
+    public void setVnp_TmnCode(String vnp_TmnCode) {
+        this.vnp_TmnCode = vnp_TmnCode;
     }
 
     public String getVnp_HashSecret() {
         return vnp_HashSecret;
     }
 
-    public String getVnp_PayUrl() {
-        return vnp_PayUrl;
+    public void setVnp_HashSecret(String vnp_HashSecret) {
+        this.vnp_HashSecret = vnp_HashSecret;
     }
 
     public String getVnp_ReturnUrl() {
         return vnp_ReturnUrl;
     }
+
+    public void setVnp_ReturnUrl(String vnp_ReturnUrl) {
+        this.vnp_ReturnUrl = vnp_ReturnUrl;
+    }
+
 
     public static String md5(String message) {
         String digest = null;
@@ -78,7 +101,7 @@ public class VNPayConfig {
             String fieldValue = fields.get(fieldName);
             if (fieldValue != null && fieldValue.length() > 0) {
                 try {
-                    fieldValue = URLEncoder.encode(fieldValue, "UTF-8"); // ✅ Quan trọng
+                    fieldValue = URLEncoder.encode(fieldValue, "UTF-8"); //  Quan trọng
                 } catch (UnsupportedEncodingException e) {
                     throw new RuntimeException(e);
                 }
@@ -90,7 +113,7 @@ public class VNPayConfig {
                 first = false;
             }
         }
-        System.out.println("✅ Chuoi chu ki VNP: " + sb.toString());
+        log.info(" Chuoi chu ki VNP: " + sb.toString());
 
         return hmacSHA512(vnp_HashSecret, sb.toString());
     }

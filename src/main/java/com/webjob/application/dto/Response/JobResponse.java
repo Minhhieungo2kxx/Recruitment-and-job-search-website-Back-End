@@ -52,6 +52,8 @@ public class JobResponse {
 
     private String responsibility;
 
+    private String howToApply;
+
     private Long viewCount;
 
     private Integer appliedCount;

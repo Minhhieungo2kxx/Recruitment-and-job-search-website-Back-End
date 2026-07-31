@@ -1,5 +1,6 @@
 package com.webjob.application.messaging.config;
 
+import com.webjob.application.event.dto.JobCreatedEvent;
 import com.webjob.application.messaging.dto.EmailJobMessage;
 import com.webjob.application.messaging.dto.ForgotPasswordEmailEvent;
 import com.webjob.application.messaging.dto.JobAlertMessage;
@@ -49,13 +50,10 @@ public class DeadLetterConsumer {
            Job Applied Email moved to DLQ
             Username      : {}
             UsernameHR     : {}
-            Expired At : {}
             CompanyName : {}
             JobName : {}
             
-            
             """,
-                event.getEmail(),
                 event.getCandidateName(),
                 event.getHrName(),
                 event.getCompanyName(),
@@ -64,5 +62,19 @@ public class DeadLetterConsumer {
 
         );
 
+    }
+    @RabbitListener(queues = RabbitMQConfig.FOLLOW_COMPANY_JOB_DLQ,
+            containerFactory = "rabbitListenerContainerFactory")
+    public void receive(JobCreatedEvent event) {
+        log.error("""
+                JobCreated Notification moved to DLQ
+                jobName     : {}
+                companyName : {}
+                UserID      : {}
+                """,
+                event.getJobName(),
+                event.getCompanyName(),
+                event.getUserId()
+        );
     }
 }

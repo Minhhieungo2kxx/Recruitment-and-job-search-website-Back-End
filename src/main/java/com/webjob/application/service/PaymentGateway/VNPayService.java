@@ -2,7 +2,10 @@ package com.webjob.application.service.PaymentGateway;
 
 import com.webjob.application.config.VnPay.VNPayConfig;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
@@ -12,10 +15,11 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
-
+@Slf4j
+@RequiredArgsConstructor
 public class VNPayService {
-    @Autowired
-    private VNPayConfig vnPayConfig;
+    private final VNPayConfig vnPayConfig;
+
     public String createOrder(HttpServletRequest request,Map<String, Object> dataMap) {
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
@@ -79,7 +83,7 @@ public class VNPayService {
         String queryUrl = query.toString();
         String vnp_SecureHash = vnPayConfig.hmacSHA512(vnPayConfig.getVnp_HashSecret(), hashData.toString());
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
-        String paymentUrl = vnPayConfig.getVnp_PayUrl() + "?" + queryUrl;
+        String paymentUrl =vnPayConfig.getVnp_PayUrl() + "?" + queryUrl;
         return paymentUrl;
     }
 
@@ -101,9 +105,9 @@ public class VNPayService {
             fields.remove("vnp_SecureHash");
         }
         String signValue =vnPayConfig.hashAllFields(fields);
-        System.out.println(" Chữ ký hệ thống tạo: " + signValue);
-        System.out.println(" Chữ ký VNPAY gửi về: " + vnp_SecureHash);
-        System.out.println(" Trạng thái giao dịch: " + request.getParameter("vnp_TransactionStatus"));
+        log.info(" Chữ ký hệ thống tạo: " + signValue);
+        log.info(" Chữ ký VNPAY gửi về: " + vnp_SecureHash);
+        log.info(" Trạng thái giao dịch: " + request.getParameter("vnp_TransactionStatus"));
 
         if (signValue.equals(vnp_SecureHash)) {
             if ("00".equals(request.getParameter("vnp_TransactionStatus"))) {

@@ -4,6 +4,8 @@ import com.webjob.application.dto.Request.Websockets.MessageRequestDTO;
 import com.webjob.application.dto.Request.Websockets.SeenRequest;
 import com.webjob.application.dto.Response.Messensage.MessageResponseDTO;
 import com.webjob.application.models.Entity.Message;
+import com.webjob.application.pubsub.dto.RedisMessage;
+import com.webjob.application.pubsub.publisher.RedisPublisher;
 import com.webjob.application.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -23,6 +25,8 @@ public class WebsocketService {
     private final SimpMessagingTemplate messagingTemplate;
 
     private final UserService userService;
+
+    private final RedisPublisher redisPublisher;
 
     public MessageResponseDTO sendMessage( MessageRequestDTO messageRequest,
                                           Principal principal) {
@@ -44,7 +48,14 @@ public class WebsocketService {
             leaveMessage.setType(Message.MessageType.LEAVE);
             leaveMessage.setContent(username + " đã rời khỏi cuộc trò chuyện");
 
-            messagingTemplate.convertAndSend("/topic/public", leaveMessage);
+//            messagingTemplate.convertAndSend("/topic/public", leaveMessage);
+
+            RedisMessage redisMessage = RedisMessage.builder()
+                    .type("USER_LEAVE")
+                    .destination("/topic/public") // Điểm đến công khai
+                    .payload(leaveMessage)
+                    .build();
+            redisPublisher.publish("chat.public", redisMessage);
         }
     }
     public void seenMessage(SeenRequest seenRequest) {
@@ -56,11 +67,13 @@ public class WebsocketService {
         MessageResponseDTO updatedMessage =
                 messageService.getMessageById(messageId);
 
-        messagingTemplate.convertAndSendToUser(
-                updatedMessage.getSender().getId().toString(),
-                "/queue/message-status",
-                updatedMessage
-        );
+        RedisMessage redisMessage = RedisMessage.builder()
+                .type("MESSAGE_SEEN")
+                .userId(updatedMessage.getSender().getId().toString()) // Gửi về cho người gửi tin nhắn gốc
+                .destination("/queue/message-status")
+                .payload(updatedMessage)
+                .build();
+        redisPublisher.publish("chat.private", redisMessage);
     }
 
 

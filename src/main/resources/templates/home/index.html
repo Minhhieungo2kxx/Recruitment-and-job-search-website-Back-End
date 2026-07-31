@@ -15,7 +15,8 @@
     <div class="container flex-header">
         <div class="logo">
             <a th:href="@{/}">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Logo_TopCV_no_slogan.png" alt="TopCV Logo">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Logo_TopCV_no_slogan.png"
+                     alt="TopCV Logo">
             </a>
         </div>
         <nav class="main-menu">
@@ -26,10 +27,59 @@
                 <li><a href="#">Công cụ</a></li>
             </ul>
         </nav>
+
         <div class="auth-buttons">
+
+            <!-- Notification -->
+            <div class="notification-wrapper">
+
+                <div class="notification-icon" id="notificationIcon">
+                    <i class="fa-solid fa-bell"></i>
+                    <!-- Hiển thị số lượng thông báo chưa đọc -->
+                    <span class="notification-count" id="notificationCount"></span>
+                </div>
+
+                <div class="notification-dropdown" id="notificationDropdown">
+
+                    <div class="dropdown-title">
+                        <span>Thông báo</span>
+
+                        <div class="notification-actions">
+                            <button id="markAllReadBtn" class="action-btn primary" title="Đánh dấu tất cả thông báo là đã đọc">
+                                <i class="fa-solid fa-check-double"></i>
+                                Đã đọc
+                            </button>
+
+                            <button id="deleteAllBtn" class="action-btn danger" title="Xóa toàn bộ danh sách thông báo">
+                                <i class="fa-regular fa-trash-can"></i>
+                                Xóa hết
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Danh sách thông báo mẫu -->
+                    <div id="notificationList">
+
+                    </div>
+                        <button id="loadMoreBtn">
+                            Xem thêm
+                        </button>
+
+                        <!-- Khi không có thông báo -->
+                        <div id="emptyNotification" style="display:none">
+                            <i class="fa-regular fa-bell-slash"></i>
+                            <p>Chưa có thông báo nào.</p>
+                        </div>
+
+                </div>
+
+
+            </div>
+
             <a href="/login-chat" class="btn-login">Đăng nhập</a>
             <a href="#" class="btn-register">Đăng ký</a>
             <a href="#" class="btn-recruiter">Nhà tuyển dụng</a>
+
         </div>
     </div>
 </header>
@@ -62,7 +112,8 @@
         <div class="job-grid">
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://media.licdn.com/dms/image/v2/D4E0BAQEO0dbBzELItw/company-logo_200_200/company-logo_200_200/0/1694500701793/techsolutions_logo?e=2147483647&v=beta&t=ZngMB0v1CpsL3tNlGZ5VUKEDxxIjvawVSKi5RtmJzhc" alt="Tech Solutions">
+                    <img src="https://media.licdn.com/dms/image/v2/D4E0BAQEO0dbBzELItw/company-logo_200_200/company-logo_200_200/0/1694500701793/techsolutions_logo?e=2147483647&v=beta&t=ZngMB0v1CpsL3tNlGZ5VUKEDxxIjvawVSKi5RtmJzhc"
+                         alt="Tech Solutions">
                 </div>
                 <div class="job-info">
                     <h3 class="job-title" title="Java Backend Developer (Spring)">Java Backend Developer (Spring)</h3>
@@ -77,10 +128,12 @@
 
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjNrth9D12U-w1YDVelzT5eSzetDjf_zGJ4Q&s" alt="FPT Software">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjNrth9D12U-w1YDVelzT5eSzetDjf_zGJ4Q&s"
+                         alt="FPT Software">
                 </div>
                 <div class="job-info">
-                    <h3 class="job-title" title="Senior Frontend Developer (ReactJS)">Senior Frontend Developer (ReactJS)</h3>
+                    <h3 class="job-title" title="Senior Frontend Developer (ReactJS)">Senior Frontend Developer
+                        (ReactJS)</h3>
                     <p class="company-name">FPT Software</p>
                     <p class="salary">20 - 45 triệu</p>
                     <div class="tags">
@@ -92,10 +145,12 @@
 
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMOfEGbR6U-dPgsKO0Ng01-T_jw94r8wwuTw&s" alt="VNG">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMOfEGbR6U-dPgsKO0Ng01-T_jw94r8wwuTw&s"
+                         alt="VNG">
                 </div>
                 <div class="job-info">
-                    <h3 class="job-title" title="Mobile App Developer (Flutter/Dart)">Mobile App Developer (Flutter)</h3>
+                    <h3 class="job-title" title="Mobile App Developer (Flutter/Dart)">Mobile App Developer
+                        (Flutter)</h3>
                     <p class="company-name">VNG Corporation</p>
                     <p class="salary">18 - 35 triệu</p>
                     <div class="tags">
@@ -107,7 +162,8 @@
 
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://cdn-new.topcv.vn/unsafe/https://static.topcv.vn/company_logos/WZedclI8ZfWN03oLCkYv9DQ8TYxD5T0i_1694575361____9af0c441a9a8411a4d49f4906653ced7.png" alt="Viettel">
+                    <img src="https://cdn-new.topcv.vn/unsafe/https://static.topcv.vn/company_logos/WZedclI8ZfWN03oLCkYv9DQ8TYxD5T0i_1694575361____9af0c441a9a8411a4d49f4906653ced7.png"
+                         alt="Viettel">
                 </div>
                 <div class="job-info">
                     <h3 class="job-title" title="Data Analyst (SQL, Python)">Data Analyst</h3>
@@ -122,7 +178,8 @@
 
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://deo.shopeemobile.com/shopee/shopee-pcmall-live-sg/assets/ca5d12864c12916c05640b36e47ac5c9.png" alt="Shopee">
+                    <img src="https://deo.shopeemobile.com/shopee/shopee-pcmall-live-sg/assets/ca5d12864c12916c05640b36e47ac5c9.png"
+                         alt="Shopee">
                 </div>
                 <div class="job-info">
                     <h3 class="job-title" title="DevOps Engineer (AWS/Docker)">DevOps Engineer</h3>
@@ -137,7 +194,8 @@
 
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://media-vnpt.vnptvas.vn/Media/Images/28082023/logo%20VNPT.png" alt="Creative Agency">
+                    <img src="https://media-vnpt.vnptvas.vn/Media/Images/28082023/logo%20VNPT.png"
+                         alt="Creative Agency">
                 </div>
                 <div class="job-info">
                     <h3 class="job-title" title="UI/UX Designer (Figma)">UI/UX Designer</h3>
@@ -151,10 +209,12 @@
             </div>
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://photo2.tinhte.vn/data/attachment-files/2025/12/8914358_22.jpg" alt="VNG Corporation">
+                    <img src="https://photo2.tinhte.vn/data/attachment-files/2025/12/8914358_22.jpg"
+                         alt="VNG Corporation">
                 </div>
                 <div class="job-info">
-                    <h3 class="job-title" title="Backend Engineer (NodeJS/Microservices)">Backend Engineer (NodeJS/Microservices)</h3>
+                    <h3 class="job-title" title="Backend Engineer (NodeJS/Microservices)">Backend Engineer
+                        (NodeJS/Microservices)</h3>
                     <p class="company-name">VNG Corporation</p>
                     <p class="salary">25 - 50 triệu</p>
                     <div class="tags">
@@ -165,10 +225,12 @@
             </div>
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://solutions.viettel.vn/storage/recruitment/tuyendung-noilamviectimkiem-slide16.png" alt="Viettel Solutions">
+                    <img src="https://solutions.viettel.vn/storage/recruitment/tuyendung-noilamviectimkiem-slide16.png"
+                         alt="Viettel Solutions">
                 </div>
                 <div class="job-info">
-                    <h3 class="job-title" title="Mobile App Developer (Flutter/Dart)">Mobile App Developer (Flutter/Dart)</h3>
+                    <h3 class="job-title" title="Mobile App Developer (Flutter/Dart)">Mobile App Developer
+                        (Flutter/Dart)</h3>
                     <p class="company-name">Viettel Solutions</p>
                     <p class="salary">18 - 40 triệu</p>
                     <div class="tags">
@@ -179,7 +241,8 @@
             </div>
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZcQPC-zWVyFOu9J2OGl0j2D220D49D0Z7BQ&s" alt="MoMo">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZcQPC-zWVyFOu9J2OGl0j2D220D49D0Z7BQ&s"
+                         alt="MoMo">
                 </div>
                 <div class="job-info">
                     <h3 class="job-title" title="Senior UI/UX Product Designer">Senior UI/UX Product Designer</h3>
@@ -193,10 +256,12 @@
             </div>
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMHqfzKjnBKuh_y76LaHQgzi1kKAxFPQ_igA&s" alt="VNG">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMHqfzKjnBKuh_y76LaHQgzi1kKAxFPQ_igA&s"
+                         alt="VNG">
                 </div>
                 <div class="job-info">
-                    <h3 class="job-title" title="Senior Backend Engineer (Java/Go)">Senior Backend Engineer (Java/Go)</h3>
+                    <h3 class="job-title" title="Senior Backend Engineer (Java/Go)">Senior Backend Engineer
+                        (Java/Go)</h3>
                     <p class="company-name">VNG Corporation</p>
                     <p class="salary">40 - 70 triệu</p>
                     <div class="tags">
@@ -208,7 +273,8 @@
 
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://cdnphoto.dantri.com.vn/GjiUhERntfWNWTD_keifahSqtCA=/zoom/1200_630/2025/03/19/techcombank-crop-1742353082593.jpeg" alt="Techcombank">
+                    <img src="https://cdnphoto.dantri.com.vn/GjiUhERntfWNWTD_keifahSqtCA=/zoom/1200_630/2025/03/19/techcombank-crop-1742353082593.jpeg"
+                         alt="Techcombank">
                 </div>
                 <div class="job-info">
                     <h3 class="job-title" title="Data Analyst">Data Analyst (Kinh Doanh)</h3>
@@ -238,7 +304,8 @@
 
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnZFY7VARQFUrQGiwzOYaG_ZnnFWO32LmFTw&s" alt="FPT Software">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnZFY7VARQFUrQGiwzOYaG_ZnnFWO32LmFTw&s"
+                         alt="FPT Software">
                 </div>
                 <div class="job-info">
                     <h3 class="job-title" title="Frontend Developer (ReactJS)">Frontend Developer (ReactJS)</h3>
@@ -253,7 +320,8 @@
 
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://ircdn.vingroup.net/storage/uploads/0_Tintuchoatdong/2019/April/Logo%20VinAI.jpg" alt="VinFast">
+                    <img src="https://ircdn.vingroup.net/storage/uploads/0_Tintuchoatdong/2019/April/Logo%20VinAI.jpg"
+                         alt="VinFast">
                 </div>
                 <div class="job-info">
                     <h3 class="job-title" title="AI Engineer">AI Engineer (Computer Vision)</h3>
@@ -268,7 +336,8 @@
 
             <div class="job-card">
                 <div class="job-logo">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSo7bzUuPdIKkPXUiU3yiUI1GKsqdhuPQaQBg&s" alt="Grab">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSo7bzUuPdIKkPXUiU3yiUI1GKsqdhuPQaQBg&s"
+                         alt="Grab">
                 </div>
                 <div class="job-info">
                     <h3 class="job-title" title="Product Manager">Product Manager</h3>
@@ -285,12 +354,13 @@
 </main>
 
 
-
 <footer class="footer">
     <div class="container footer-grid">
         <div class="footer-col">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Logo_TopCV_no_slogan.png" alt="Logo" width="140" style="filter: brightness(0) invert(1); margin-bottom: 20px;">
-            <p style="color: #a7afb7; font-size: 14px;">Nền tảng công nghệ tuyển dụng hàng đầu Việt Nam. Giúp ứng viên tìm việc và nhà tuyển dụng kết nối nhanh chóng.</p>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Logo_TopCV_no_slogan.png" alt="Logo"
+                 width="140" style="filter: brightness(0) invert(1); margin-bottom: 20px;">
+            <p style="color: #a7afb7; font-size: 14px;">Nền tảng công nghệ tuyển dụng hàng đầu Việt Nam. Giúp ứng viên
+                tìm việc và nhà tuyển dụng kết nối nhanh chóng.</p>
         </div>
         <div class="footer-col">
             <h4>Về TopCV</h4>
@@ -323,6 +393,13 @@
 </footer>
 <!-- Include chatbox -->
 <div th:replace="chat/chatbox :: chatbox"></div>
-<script src="/js/chatbox.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<!--<script src="/js/notification/notification.js"></script>-->
+<script type="module" src="/js/notification/notification.js"></script>
+<!--<script src="/js/chatbox/chatbox.js"></script>-->
+<script type="module" src="/js/chatbox/chatbox.js"></script>
+
 </body>
 </html>

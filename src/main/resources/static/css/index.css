@@ -374,3 +374,374 @@ body {
         justify-content: center;
     }
 }
+/*css cho phan thong bao trong index*/
+/* =================================================================
+   NOTIFICATION COMPONENT STYLES
+   ================================================================= */
+
+/* --- Notification Wrapper --- */
+.notification-wrapper {
+    position: relative;
+    display: inline-block;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* --- Icon Bell --- */
+.notification-icon {
+    cursor: pointer;
+    position: relative;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-icon:hover {
+    background-color: #f3f4f6;
+}
+
+.notification-icon i {
+    font-size: 20px;
+    color: #4b5563;
+    transition: color 0.2s ease;
+}
+
+.notification-icon:hover i {
+    color: #00b14f;
+}
+
+/* --- Badge Count --- */
+.notification-count {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    background: #ff3b30;
+    color: white;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Dropdown Box --- */
+.notification-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: 360px;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e5e7eb;
+    z-index: 999;
+    overflow: hidden;
+}
+
+.notification-dropdown.show {
+    display: block;
+    animation: fadeInDropdown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInDropdown {
+    from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* --- Dropdown Header --- */
+.dropdown-title,
+.notification-header {
+    padding: 14px 18px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #111827;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fafafa;
+}
+
+.dropdown-title #readAllBtn {
+    background: none;
+    border: none;
+    color: #00b14f;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.dropdown-title #readAllBtn:hover {
+    background-color: rgba(0, 177, 79, 0.08);
+}
+.notification-actions{
+    display:flex;
+    gap:8px;
+}
+.action-btn{
+    padding:6px 12px;
+    border:none;
+    border-radius:6px;
+    font-size:13px;
+    cursor:pointer;
+    transition:.2s;
+    white-space:nowrap;
+}
+
+/* Nút đánh dấu đã đọc */
+.action-btn.primary{
+    background:#eef5ff;
+    color:#2563eb;
+}
+
+.action-btn.primary:hover{
+    background:#dbeafe;
+}
+
+/* Nút xóa */
+.action-btn.danger{
+    background:#fff1f2;
+    color:#dc2626;
+}
+
+.action-btn.danger:hover{
+    background:#ffe4e6;
+}
+
+
+/* --- Notification List & Item --- */
+#notificationList {
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background-color: #f9fafb;
+}
+
+/* --- Header & Title --- */
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.notification-item .title {
+    margin: 0;
+    font-size: 14px; /* Tăng từ 13px lên 14px */
+    color: #1f2937;
+    line-height: 1.45;
+    font-weight: 650; /* Làm đậm hơn một chút cho nổi bật */
+    word-break: break-word;
+}
+
+/* --- Body Content & Time (Đã chỉnh chữ to hơn) --- */
+.notification-item .content {
+    margin: 0;
+    font-size: 13.5px; /* Tăng từ 12px lên 13.5px */
+    color: #374151;    /* Đổi màu đậm hơn một chút (từ #4b5563) để dễ nhìn */
+    line-height: 1.45;
+}
+
+.notification-item .time {
+    font-size: 12px;    /* Tăng nhẹ thời gian từ 11px lên 12px */
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+/* --- Trạng thái Chưa Đọc (Unread) --- */
+.notification-item.unread {
+    background-color: #f0fdf4;
+    border-left: 3px solid #00b14f;
+}
+
+.notification-item.unread .title {
+    color: #111827;
+    font-weight: 700;
+}
+
+/* --- Trạng thái Đã Ghim (Pinned) --- */
+/* Ưu tiên hiển thị viền vàng cam khi được ghim (xử lý xung đột với unread) */
+.notification-item.pinned {
+    border-left: 4px solid #f59e0b;
+    background-color: #fffbeb;
+}
+
+.notification-item.unread.pinned {
+    background-color: #fef3c7; /* Màu nền kết hợp giữa unread và pinned cho hài hòa */
+}
+
+.pin-icon {
+    margin-right: 6px;
+    color: #f59e0b;
+    font-style: normal;
+}
+
+/* --- Menu Hành Động Riêng Cho Từng Item (3 Chấm) --- */
+.menu-wrapper {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.notification-more {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.notification-more:hover {
+    background-color: #e5e7eb;
+    color: #111827;
+}
+
+.notification-menu {
+    display: none;
+    position: absolute;
+    top: 32px;
+    right: 0;
+    min-width: 170px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.notification-menu.show {
+    display: block;
+    animation: fadeInMenu 0.15s ease-out;
+}
+
+@keyframes fadeInMenu {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.notification-menu button {
+    width: 100%;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    font-size: 13px;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.notification-menu button:hover {
+    background-color: #f3f4f6;
+    color: #00b14f;
+}
+
+/* --- Animation Cho Thông Báo Mới Tới --- */
+@keyframes slideDownNew {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+        background-color: #d1fae5;
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notification-item.new-arrival {
+    animation: slideDownNew 0.35s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* --- Khi Danh Sách Trống --- */
+#emptyNotification {
+    padding: 35px 20px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+#emptyNotification i {
+    font-size: 28px;
+    margin-bottom: 8px;
+    color: #d1d5db;
+    display: block;
+}
+
+/* --- Tùy chỉnh thanh cuộn --- */
+#notificationList::-webkit-scrollbar {
+    width: 5px;
+}
+
+#notificationList::-webkit-scrollbar-track {
+    background: #f9fafb;
+}
+
+#notificationList::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+}
+
+#notificationList::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* --- Nút Xem thêm (Load More) --- */
+#loadMoreBtn {
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    background-color: #ffffff;
+    border: none;
+    border-top: 1px solid #f3f4f6;
+    color: #00b14f;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#loadMoreBtn:hover {
+    background-color: #f9fafb;
+    color: #009643;
+}

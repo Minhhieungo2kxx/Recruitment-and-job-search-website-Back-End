@@ -16,6 +16,10 @@ public class UpdateApplicationStatusRequest {
     @NotNull(message = "Trạng thái không được để trống")
     private ResumeStatus status;
 
+    @NotNull(message = "Note HR không được để trống")
+    private String hrNote;
+
+
 
 
 }

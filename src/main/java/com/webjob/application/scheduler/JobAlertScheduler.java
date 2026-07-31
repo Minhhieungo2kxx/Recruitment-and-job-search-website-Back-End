@@ -23,9 +23,8 @@ public class JobAlertScheduler {
     private final EmailProducer emailProducer;
 
 
-//    @Scheduled(cron = "0 0 8 * * MON", zone = "Asia/Ho_Chi_Minh")  // Chạy vào 08:00:00 AM sáng Thứ Hai mỗi tuần
-
-    @Scheduled(cron = "0 */1 * * * *") // Chạy mỗi phút một lần (dùng để test)
+    @Scheduled(cron = "0 0 8 * * MON", zone = "Asia/Ho_Chi_Minh")  // Chạy vào 08:00:00 AM sáng Thứ Hai mỗi tuần
+//    @Scheduled(cron = "0 */1 * * * *") // Chạy mỗi phút một lần (dùng để test)
     public void processJobAlert() {
         log.info("Start publishing  jobAlerts...");
         Pageable pageable = PageRequest.of(0, 500);

@@ -4,6 +4,8 @@ import com.webjob.application.dto.Request.ApplyRequest;
 import com.webjob.application.dto.Request.UpdateApplicationStatusRequest;
 import com.webjob.application.dto.Response.*;
 import com.webjob.application.enums.ResumeStatus;
+import com.webjob.application.event.dto.ApplicationStatusChangedEvent;
+import com.webjob.application.event.dto.JobAppliedNotificationEvent;
 import com.webjob.application.exception.Customs.*;
 import com.webjob.application.mapper.ApplicationMapper;
 import com.webjob.application.models.Entity.*;
@@ -30,7 +32,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.file.AccessDeniedException;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 
@@ -45,6 +50,7 @@ public class ApplicationService {
 
 
     private final TemporaryUploadRepository temporaryUploadRepository;
+
     private final ApplicationEventPublisher eventPublisher;
     private final RedissonClient redissonClient;
     private final ApplicationRepository applicationRepository;
@@ -83,10 +89,8 @@ public class ApplicationService {
 
             UserResume resume = resolveResume(request, user);
             Application application = Application.builder()
-                    .email(user.getEmail())
-                    .status(ResumeStatus.PENDING)
-                    .user(user)
-                    .job(job)
+                    .email(user.getEmail()).status(ResumeStatus.PENDING)
+                    .user(user).job(job)
                     .resume(resume)
                     .build();
 
@@ -94,8 +98,9 @@ public class ApplicationService {
 
             jobRepository.increaseAppliedCount(job.getId());
 
-//            send email
-            eventPublisher.publishEvent(applicationMapper.buildJobAppliedEvent(saved, job, user, hr));
+//            ham gui su kien 2 cai notification + email
+            publishJobAppliedEvents(saved,job,user,hr);
+
             log.info("Apply success. resumeId={}, userId={}, jobId={}", saved.getId(), user.getId(), job.getId());
             return applicationMapper.toResponseApplication(saved);
 
@@ -112,9 +117,24 @@ public class ApplicationService {
             if (acquired && lock.isHeldByCurrentThread()) {
                 lock.unlock();
             }
-
         }
     }
+    public void publishJobAppliedEvents(Application saved, Job job, User user, User hr) {
+        eventPublisher.publishEvent(
+                JobAppliedNotificationEvent.builder()
+                        .applicationId(saved.getId())
+                        .nameJob(job.getName())
+                        .hrId(hr.getId())
+                        .candidateId(user.getId())
+                        .nameCompany(job.getCompany().getName())
+                        .build()
+        );
+
+        eventPublisher.publishEvent(
+                applicationMapper.buildJobAppliedEvent(saved, job, user, hr)
+        );
+    }
+
 
     private String buildApplyLock(Long userId, Long jobId) {
         return "lock:apply:" + userId + ":" + jobId;
@@ -146,7 +166,7 @@ public class ApplicationService {
         }
 
         UserResume resume = UserResume.builder()
-                .name("CV " + LocalDate.now())
+                .name("CV_"+user.getFullName()+"_"+LocalDate.now())
                 .url(upload.getUrl())
                 .publicId(upload.getPublicId())
                 .resourceType(upload.getResourceType())
@@ -243,35 +263,46 @@ public class ApplicationService {
         }
 
         ResumeStatus current = application.getStatus();
+        ResumeStatus oldStatus = application.getStatus();
+        ResumeStatus newStatus = request.getStatus();
 
         validateStatusTransition(current, request.getStatus());
+        boolean statusChanged = oldStatus != newStatus;
 
         application.setStatus(request.getStatus());
-        return applicationMapper.toResponseApplication(applicationRepository.save(application));
+        application.setReviewedBy(hr);
+        application.setHrNote(request.getHrNote());
+        application.setReviewedAt(Instant.now());
+
+        Application saved = applicationRepository.save(application);
+        if(statusChanged){
+            eventPublisher.publishEvent(
+                    ApplicationStatusChangedEvent.builder()
+                            .applicationId(saved.getId())
+                            .candidateId(saved.getUser().getId())
+                            .jobName(saved.getJob().getName())
+                            .companyName(saved.getJob().getCompany().getName())
+                            .oldStatus(oldStatus)
+                            .newStatus(saved.getStatus())
+                            .build()
+
+            );
+        }
+
+        return applicationMapper.toResponseApplication(saved);
     }
 
 
     private void validateStatusTransition(ResumeStatus current, ResumeStatus next) {
 
-        boolean valid = switch (current) {
+        if (current == next) {
+            return;
+        }
+        Set<ResumeStatus> allowed =
+                VALID_TRANSITIONS.getOrDefault(current, Collections.emptySet());
 
-            case PENDING -> next == ResumeStatus.REVIEWING
-                    || next == ResumeStatus.REJECTED;
-
-            case REVIEWING -> next == ResumeStatus.INTERVIEWING
-                    || next == ResumeStatus.REJECTED;
-
-            case INTERVIEWING -> next == ResumeStatus.OFFERED
-                    || next == ResumeStatus.REJECTED;
-
-            case OFFERED -> next == ResumeStatus.HIRED
-                    || next == ResumeStatus.REJECTED;
-
-            case HIRED, REJECTED -> false;
-        };
-
-        if (!valid) {
-            throw new IllegalStateException(
+        if (!allowed.contains(next)) {
+            throw new BadRequestException(
                     String.format(
                             "Không thể chuyển trạng thái từ %s sang %s",
                             current,
@@ -280,6 +311,38 @@ public class ApplicationService {
             );
         }
     }
+    private static final Map<ResumeStatus, Set<ResumeStatus>> VALID_TRANSITIONS =
+            Map.of(
+                    ResumeStatus.PENDING,
+                    Set.of(
+                            ResumeStatus.REVIEWING,
+                            ResumeStatus.REJECTED
+                    ),
+
+                    ResumeStatus.REVIEWING,
+                    Set.of(
+                            ResumeStatus.INTERVIEWING,
+                            ResumeStatus.REJECTED
+                    ),
+
+                    ResumeStatus.INTERVIEWING,
+                    Set.of(
+                            ResumeStatus.OFFERED,
+                            ResumeStatus.REJECTED
+                    ),
+
+                    ResumeStatus.OFFERED,
+                    Set.of(
+                            ResumeStatus.HIRED,
+                            ResumeStatus.REJECTED
+                    ),
+
+                    ResumeStatus.HIRED,
+                    Set.of(),
+
+                    ResumeStatus.REJECTED,
+                    Set.of()
+            );
 
     @Transactional(readOnly = true)
     public ApplicationUserDetailResponse getApplicationDetailForUser(Long id) {
@@ -308,8 +371,9 @@ public class ApplicationService {
 
             throw new ForbiddenException("Bạn không có quyền xem đơn ứng tuyển này.");
         }
+        String reviewedByHr=application.getReviewedBy() !=null ?application.getReviewedBy().getFullName() :null;
 
-        return applicationMapper.toApplicationHrDetailResponse(application);
+        return applicationMapper.toApplicationHrDetailResponse(application,reviewedByHr);
 
     }
 
@@ -339,6 +403,7 @@ public class ApplicationService {
         return new ResponseDTO<>(metaDTO, list);
 
     }
+
     @Transactional
     public void deleteByClient(Long applicationId) {
 
@@ -361,6 +426,7 @@ public class ApplicationService {
 
         applicationRepository.delete(application);
     }
+
     @Transactional
     public void deleteByAdmin(Long applicationId) {
 

@@ -1,3 +1,6 @@
+
+import * as chatboxApi from './chatboxApi.js';
+
 // Biến global
 let isWaitingForResponse = false;
 const chatBody = document.getElementById("chat-box-body");
@@ -81,7 +84,7 @@ async function sendMessage() {
     setLoadingState(true);
     showTypingIndicator();
     try {
-        const res = await AuthService.apiCall("/api/v1/chat/send", {
+        const res = await chatboxApi.AuthService.apiCall("/api/v1/chat/send", {
             method: "POST",
             body: JSON.stringify({ message })
         });
@@ -270,10 +273,9 @@ async function loadChatHistory() {
     }
 
     try {
-        const res = await AuthService.apiCall("/api/v1/chat/history", {
+        const res = await chatboxApi.AuthService.apiCall("/api/v1/chat/history", {
             method: "GET"
         });
-
 
         if (res.statusCode !== 200) {
             handleApiError(res);
@@ -301,7 +303,7 @@ async function clearChatHistory() {
     if (!confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử chat?")) return;
 
     try {
-        const res = await AuthService.apiCall("/api/v1/chat/history/clear", {
+        const res = await chatboxApi.AuthService.apiCall("/api/v1/chat/history/clear", {
             method: "DELETE"
         });
 
@@ -394,109 +396,7 @@ function renderDefaultSystemMessage() {
 
     chatBody.appendChild(systemMessage);
 }
-const AuthService = {
-    accessToken: localStorage.getItem("accessToken"),
-    currentUser: null,
 
-    async apiCall(url, options = {}) {
-        let accessToken = this.accessToken || localStorage.getItem("accessToken");
-        //  GLOBAL RATE LIMIT BLOCK
-        if (rateLimitUntil && Date.now() < rateLimitUntil) {
-            return {
-                httpStatus: 429,
-                statusCode: 429,
-                retryAfter: Math.ceil((rateLimitUntil - Date.now()) / 1000)
-            };
-        }
-        const finalOptions = {
-            ...options,
-            credentials: "include",
-            headers: {
-                ...(options.headers || {}),
-                Authorization: `Bearer ${accessToken}`
-            }
-        };
-
-        if (options.body && !(options.body instanceof FormData)) {
-            finalOptions.headers["Content-Type"] = "application/json";
-        }
-
-        let response = await fetch(url, finalOptions);
-
-        // Refresh token
-        if (response.status === 401 || response.status === 403) {
-            const refreshed = await this.refreshAccessToken();
-            if (!refreshed) throw new Error("Unauthorized");
-
-            finalOptions.headers.Authorization = `Bearer ${this.accessToken}`;
-            response = await fetch(url, finalOptions);
-        }
-
-        //  BẮT RATE LIMIT TẠI ĐÂY
-        if (response.status === 429) {
-            const retryAfter =
-                Number(response.headers.get("Retry-After")) || 300;
-
-            return {
-                httpStatus: 429,
-                statusCode: 429,
-                retryAfter
-            };
-        }
-
-        let body = null;
-        try {
-            body = await response.json();
-        } catch (e) {
-            body = {
-                statusCode: response.status,
-                message: response.statusText,
-                error: "Unknown Error"
-            };
-        }
-
-        return {
-            httpStatus: response.status,
-            statusCode: body.statusCode || response.status,
-            message: body.message,
-            error: body.error,
-            timestamp: body.timestamp,
-            data: body.data
-        };
-    },
-
-    async refreshAccessToken() {
-        try {
-            const response = await fetch("/api/v1/auth/refresh", {
-                method: "POST",
-                credentials: "include", //  BẮT BUỘC
-                headers: {"Content-Type": "application/json"}
-            });
-
-            if (!response.ok) return false;
-
-            const result = await response.json();
-            if (result.statusCode !== 200 || !result.data?.access_token) {
-                return false;
-            }
-
-            this.accessToken = result.data.access_token;
-            localStorage.setItem("accessToken", this.accessToken);
-
-            if (result.data.user) {
-                this.currentUser = result.data.user;
-                localStorage.setItem("userInfo", JSON.stringify(this.currentUser));
-            }
-
-            console.log("Refresh accessToken thành công");
-            return true;
-
-        } catch (err) {
-            console.error("Refresh token thất bại", err);
-            return false;
-        }
-    }
-};
 function handleRateLimit(errorResponse) {
     //  ĐÃ BỊ KHÓA RỒI → KHÔNG LÀM GÌ NỮA
     if (rateLimitUntil && Date.now() < rateLimitUntil) return;
@@ -605,10 +505,21 @@ function handleApiError(res) {
 }
 
 
-
 // DOM ready
 document.addEventListener('DOMContentLoaded', function () {
     const chatBox = document.getElementById("chat-box");
+    const chatIcon = document.getElementById("chat-icon");
+    const clearHistoryBtn = document.getElementById("clear-history-btn");
+    const chatInput = document.getElementById("chat-input");
+    const chatSend = document.getElementById("chat-send");
+
+    chatIcon.addEventListener("click", toggleChatBox);
+
+    clearHistoryBtn.addEventListener("click", clearChatHistory);
+
+    chatSend.addEventListener("click", sendMessage);
+
+    chatInput.addEventListener("keydown", handleKey);
     chatBox.style.display = 'flex';
 
     setTimeout(() => {

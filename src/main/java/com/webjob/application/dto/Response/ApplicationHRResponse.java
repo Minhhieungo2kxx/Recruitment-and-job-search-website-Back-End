@@ -39,4 +39,8 @@ public class ApplicationHRResponse {
             locale = "en_US"
     )
     private Instant appliedAt;
+
+
+
+
 }

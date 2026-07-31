@@ -72,6 +72,9 @@ public class Message {
     @Column(name = "is_edited")
     private Boolean isEdited = false;
 
+    @Column(unique = true)
+    private String publicId;
+
 
     public enum MessageStatus {
         SENT, DELIVERED, READ

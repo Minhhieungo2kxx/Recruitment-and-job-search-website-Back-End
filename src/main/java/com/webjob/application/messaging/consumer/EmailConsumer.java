@@ -114,7 +114,6 @@ public class EmailConsumer {
         );
         log.info("Email consumer forget password: {} ",event.getEmail());
 
-
     }
     @RabbitListener(queues = RabbitMQConfig.JOB_APPLY_QUEUE,
             containerFactory = "rabbitListenerContainerFactory")

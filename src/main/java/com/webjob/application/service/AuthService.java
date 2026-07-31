@@ -68,14 +68,14 @@ public class AuthService {
         userService.updateRefreshtoken(user.getId(), refreshCookie.getValue());
         loginResponse.setRefreshCookie(refreshCookie.toString());
         //send Email
-        eventPublisher.publishEvent(
-                new LoginSuccessEvent(
-                        user.getEmail(),
-                        getClientIp(request),
-                        request.getHeader("User-Agent"),
-                        LocalDateTime.now()
-                )
-        );
+//        eventPublisher.publishEvent(
+//                new LoginSuccessEvent(
+//                        user.getEmail(),
+//                        getClientIp(request),
+//                        request.getHeader("User-Agent"),
+//                        LocalDateTime.now()
+//                )
+//        );
        return loginResponse;
     }
 

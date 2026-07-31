@@ -1,3 +1,6 @@
+
+import * as chatApi from './chatApi.js';
+
 class ChatApp {
     constructor() {
         this.stompClient = null;
@@ -22,7 +25,7 @@ class ChatApp {
 
         this.currentUser = JSON.parse(localStorage.getItem('userInfo'));
         if (!this.currentUser || !this.accessToken) {
-            logout();
+            chatApi.logout();
             return;
         }
         const avatarContainer = document.getElementById('sidebarUserAvatar');
@@ -49,7 +52,7 @@ class ChatApp {
         await this.connectWebSocket();
 
         // Các API phía dưới sẽ tự refresh nếu cần
-        await this.loadConversations();
+        await chatApi.loadConversations(this);
 
         this.setupEventListeners();
         this.startPresenceUpdates();
@@ -59,9 +62,9 @@ class ChatApp {
         if (this.isAccessTokenExpired()) {
             console.warn("Access token expired → refresh BEFORE WS connect");
 
-            const ok = await this.refreshAccessToken();
+            const ok = await chatApi.refreshAccessToken(this);
             if (!ok) {
-                logout();
+                await chatApi.logout();
                 return;
             }
         }
@@ -89,12 +92,12 @@ class ChatApp {
                     console.warn(" WS connect error", error);
 
                     //  CONNECT FAIL → REFRESH NGAY
-                    const ok = await this.refreshAccessToken();
+                    const ok = await chatApi.refreshAccessToken(this);
                     if (ok) {
                         console.log("Retry WS after refresh");
                         this.connectWebSocket(0);
                     } else {
-                        logout();
+                       await chatApi.logout();
                         reject(error);
                     }
                 }
@@ -148,77 +151,9 @@ class ChatApp {
         });
 
 
-
-
     }
 
 
-    increaseUnread(userId) {
-        const convItem = document.querySelector(
-            `.conversation-item[data-user-id="${userId}"]`
-        );
-
-        if (!convItem) return;
-
-        let unreadEl = convItem.querySelector('.unread-count');
-
-        if (!unreadEl) {
-            unreadEl = document.createElement('div');
-            unreadEl.className = 'unread-count';
-            unreadEl.textContent = '1';
-            convItem.querySelector('.conversation-meta').prepend(unreadEl);
-        } else {
-            unreadEl.textContent = parseInt(unreadEl.textContent) + 1;
-        }
-    }
-    moveConversationToTop(userId) {
-        const convItem = document.querySelector(
-            `.conversation-item[data-user-id="${userId}"]`
-        );
-
-        if (!convItem) return;
-
-        const container = document.getElementById('conversationsList');
-        container.prepend(convItem);
-    }
-    // Thêm method xử lý upload file
-    async uploadFile(file) {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('folder', 'chat-files');
-
-        try {
-            const response = await fetch('/api/v1/file/cloudinary', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.accessToken}`
-                },
-                body: formData
-            });
-
-            if (response.status === 401 || response.status === 403) {
-                const refreshed = await this.refreshAccessToken();
-                if (!refreshed) {
-                    logout();
-                    return null;
-                }
-
-                return await this.uploadFile(file);
-            }
-
-            const result = await response.json();
-            if (result.statusCode === 200) {
-                return result.data;
-            }
-            return null;
-        } catch (error) {
-            console.error('Upload file error:', error);
-            return null;
-        }
-    }
-
-
-// XỬ LÝ CẬP NHẬT PRESENCE
     handlePresenceUpdate(presence)    {
         this.userPresences.set(presence.userId, presence);
         this.updateUserStatusUI(presence);
@@ -298,35 +233,6 @@ class ChatApp {
         }
     }
 
-    // Fetch presence từ API
-    async fetchUserPresence(userId) {
-        try {
-            const response = await this.apiCall(`/api/presence/user/${userId}`);
-            if (response) {
-                this.handlePresenceUpdate(response);
-                return response;
-            }
-        } catch (error) {
-            console.error('Error fetching user presence:', error);
-        }
-    }
-
-    // Fetch nhiều users presence
-    async fetchMultipleUsersPresence(userIds) {
-        try {
-            const params = new URLSearchParams();
-            userIds.forEach(id => params.append('userIds', id));
-
-            const response = await this.apiCall(`/api/presence/users?${params}`);
-            if (response) {
-                response.forEach(presence => {
-                    this.handlePresenceUpdate(presence);
-                });
-            }
-        } catch (error) {
-            console.error('Error fetching users presence:', error);
-        }
-    }
 
     // Cập nhật presence định kỳ
     startPresenceUpdates() {
@@ -336,7 +242,7 @@ class ChatApp {
             for (let [userId, presence] of this.userPresences) {
                 try {
                     // Lấy trạng thái thực từ server
-                    const updatedPresence = await this.fetchUserPresence(userId);
+                    const updatedPresence = await chatApi.fetchUserPresence(this,userId)
 
                     // Update UI nếu khác hiện tại
                     if (updatedPresence.statusType !== presence.statusType ||
@@ -352,57 +258,6 @@ class ChatApp {
         }, 50000); // mỗi 50s ~ 1 phút
     }
 
-
-
-    // Format thời gian tương đối tiếng Việt
-    formatRelativeTime(lastSeenAt) {
-        if (!lastSeenAt) return 'Chưa từng truy cập';
-
-        let lastSeen;
-
-        // Nếu là số (epoch giây), chuyển thành milliseconds
-        if (typeof lastSeenAt === 'number') {
-            lastSeen = new Date(lastSeenAt * 1000); // Nhân 1000 ở đây
-        } else if (typeof lastSeenAt === 'string') {
-            lastSeen = new Date(lastSeenAt);
-        } else {
-            return 'Không rõ thời gian truy cập';
-        }
-
-        if (isNaN(lastSeen.getTime())) {
-            return 'Không rõ thời gian truy cập';
-        }
-
-        const now = new Date();
-        const diffMs = now - lastSeen;
-        const diffSec = Math.floor(diffMs / 1000);
-        const diffMin = Math.floor(diffSec / 60);
-        const diffHour = Math.floor(diffMin / 60);
-        const diffDay = Math.floor(diffHour / 24);
-        const diffWeek = Math.floor(diffDay / 7);
-        const diffMonth = Math.floor(diffDay / 30);
-        const diffYear = Math.floor(diffDay / 365);
-
-        if (diffSec < 60) {
-            return 'Vừa truy cập';
-        } else if (diffMin < 5) {
-            return `Hoạt động ${diffMin} phút trước`;
-        } else if (diffMin < 60) {
-            return `Hoạt động ${diffMin} phút trước`;
-        } else if (diffHour < 24) {
-            return `Hoạt động ${diffHour} giờ trước`;
-        } else if (diffDay < 7) {
-            return `Hoạt động ${diffDay} ngày trước`;
-        } else if (diffWeek < 4) {
-            return `Hoạt động ${diffWeek} tuần trước`;
-        } else if (diffMonth < 12) {
-            return `Hoạt động ${diffMonth} tháng trước`;
-        } else {
-            return `Hoạt động ${diffYear} năm trước`;
-        }
-    }
-
-
     // CẬP NHẬT METHOD renderConversations
     renderConversations(conversations) {
         const container = document.getElementById('conversationsList');
@@ -410,7 +265,7 @@ class ChatApp {
 
         // Lấy presence cho tất cả users
         const userIds = conversations.map(c => c.otherUser.id);
-        this.fetchMultipleUsersPresence(userIds);
+        chatApi.fetchMultipleUsersPresence(this,userIds)
 
         conversations.forEach(conversation => {
             const user = conversation.otherUser;
@@ -533,7 +388,7 @@ class ChatApp {
         }
 
         try {
-            const presence = await this.fetchUserPresence(user.id);
+            const presence = await chatApi.fetchUserPresence(this,user.id)
             if (presence) {
                 this.updateChatHeaderStatus(presence.statusText, presence.statusType);
             }
@@ -556,7 +411,7 @@ class ChatApp {
         if (unreadEl) unreadEl.remove();
 
         // Load messages
-        await this.loadMessages(user.id);
+        await chatApi.loadMessages(this,user.id);
         //  GỬI SEEN CHO CÁC TIN CHƯA ĐỌC
         this.markMessagesAsSeen(user.id);
     }
@@ -601,124 +456,10 @@ class ChatApp {
         }
 
 
-    }
-    async apiCall(url, options = {}) {
-        let accessToken = this.accessToken || localStorage.getItem("accessToken");
 
-        const finalOptions = {
-            ...options,
-            credentials: "include", //  BẮT BUỘC
-            headers: {
-                ...(options.headers || {}),
-                "Authorization": `Bearer ${accessToken}`
-            }
-        };
-
-        //  CHỈ set Content-Type khi có body JSON
-        if (options.body && !(options.body instanceof FormData)) {
-            finalOptions.headers["Content-Type"] = "application/json";
-        }
-
-        let response = await fetch(url, finalOptions);
-
-        if (response.status === 401 || response.status === 403) {
-            console.warn("API 401/403 → refresh token");
-
-            const refreshed = await this.refreshAccessToken();
-            if (!refreshed) {
-                logout();
-                return null;
-            }
-
-            finalOptions.headers.Authorization = `Bearer ${this.accessToken}`;
-            response = await fetch(url, finalOptions);
-        }
-
-        try {
-            return await response.json();
-        } catch {
-            return null;
-        }
     }
 
 
-    // ===== REFRESH ACCESS TOKEN =====
-    async refreshAccessToken() {
-        if (this.isRefreshing && this.refreshPromise) {
-            return this.refreshPromise;
-        }
-
-        this.isRefreshing = true;
-
-        this.refreshPromise = (async () => {
-            try {
-                const response = await fetch("/api/v1/auth/refresh", {
-                    method: "POST",
-                    credentials: "include", // CỰC KỲ QUAN TRỌNG
-                    headers: { "Content-Type": "application/json" }
-                });
-
-                if (!response.ok) return false;
-
-                const result = await response.json();
-                if (result.statusCode !== 200 || !result.data?.access_token) {
-                    return false;
-                }
-
-                this.accessToken = result.data.access_token;
-                localStorage.setItem("accessToken", this.accessToken);
-
-                if (result.data.user) {
-                    this.currentUser = result.data.user;
-                    localStorage.setItem("userInfo", JSON.stringify(this.currentUser));
-                }
-
-                console.log("Refresh accessToken thành công");
-
-                //  RECONNECT WS SAU KHI REFRESH
-                if (this.stompClient?.connected) {
-                    this.stompClient.disconnect(() => {
-                        this.connectWebSocket();
-                    });
-                }
-
-                return true;
-            } catch (err) {
-                console.error(" Refresh token thất bại", err);
-                return false;
-            } finally {
-                this.isRefreshing = false;
-                this.refreshPromise = null;
-            }
-        })();
-
-        return this.refreshPromise;
-    }
-
-
-
-    async loadConversations() {
-        try {
-            const response = await this.apiCall('/api/v1/messages/conversations');
-            if (response.success) {
-                this.renderConversations(response.data);
-            }
-        } catch (error) {
-            console.error('Load conversations error:', error);
-        }
-    }
-
-
-    async loadMessages(userId) {
-        try {
-            const response = await this.apiCall(`/api/v1/messages/conversation/${userId}`);
-            if (response.success) {
-                this.renderMessages(response.data);
-            }
-        } catch (error) {
-            console.error('Load messages error:', error);
-        }
-    }
 
     renderMessages(messages) {
         const container = document.getElementById('chatMessages');
@@ -764,13 +505,12 @@ class ChatApp {
                           <div class="file-info">
                               <div class="file-name">${message.fileName || 'file'}</div>
                               <button class="btn btn-sm btn-primary mt-1"
-                                  onclick="chatApp.downloadFile(
-                                      'chat-files',
-                                      '${message.fileUrl}',
-                                      '${message.fileName || message.fileUrl}'
-                                  )">
-                                  <i class="fas fa-download"></i> Tải xuống
-                              </button>
+                                 onclick="chatApp.downloadCloudFile(
+                                 '${btoa(message.fileUrl)}',
+                                     '${message.fileName || message.fileUrl}'
+                                                  )">
+                                    <i class="fas fa-download"></i> Tải xuống
+                                    </button>
                           </div>
                       </div>
                   </div>
@@ -831,53 +571,6 @@ class ChatApp {
         `
         );
     }
-    async downloadFile(folder, fileUrl, originalName) {
-        try {
-            const response = await fetch(
-                `/api/v1/download/${folder}/${fileUrl}`,
-                {
-                    method: 'GET',
-                    headers: {
-                        Authorization: `Bearer ${this.accessToken}`
-                    }
-                }
-            );
-
-            //  NÂNG CẤP: refresh token khi 401 / 403
-            if (response.status === 401 || response.status === 403) {
-                const refreshed = await this.refreshAccessToken();
-                if (refreshed) {
-                    // retry 1 lần với token mới
-                    return this.downloadFile(folder, fileUrl, originalName);
-                } else {
-                    alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-                    logout();
-                    return;
-                }
-            }
-
-            if (!response.ok) {
-                alert('Không thể tải file');
-                return;
-            }
-
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-
-            const a = document.createElement('a');
-            a.href = downloadUrl;
-            a.download = originalName || fileUrl;
-            document.body.appendChild(a);
-            a.click();
-
-            a.remove();
-            window.URL.revokeObjectURL(downloadUrl);
-
-        } catch (error) {
-            console.error('Download file error:', error);
-            alert('Lỗi khi tải file');
-        }
-    }
 
     // Xem ảnh fullscreen
     viewImage(imageUrl) {
@@ -921,54 +614,6 @@ class ChatApp {
     }
 
 
-    async sendMessage(content) {
-        if (!this.currentConversation || !content.trim()) return;
-
-        try {
-            const response = await this.apiCall('/api/v1/messages/send', {
-                method: 'POST',
-                body: JSON.stringify({
-                    receiverId: this.currentConversation.id,
-                    content: content.trim(),
-                    type: 'CHAT'
-                })
-            });
-
-            if (response.success) {
-                // Message will be added via WebSocket
-                document.getElementById('messageInput').value = '';
-            }
-        } catch (error) {
-            console.error('Send message error:', error);
-        }
-    }
-//    Gửi tin nhắn có file
-    async sendMessageWithFile(content, fileData) {
-        if (!this.currentConversation) return;
-
-        try {
-            const response = await this.apiCall('/api/v1/messages/send', {
-                method: 'POST',
-                body: JSON.stringify({
-                    receiverId: this.currentConversation.id,
-                    content: content.trim() || 'Đã gửi file',
-                    type: 'CHAT',
-                    contentType: fileData.contentType,
-                    fileUrl: fileData.fileName,
-                    fileName: fileData.originalName,
-                    fileSize: fileData.fileSize
-                })
-            });
-
-            if (response.success) {
-                document.getElementById('messageInput').value = '';
-                this.uploadedFiles = [];
-                this.hideFilePreview();
-            }
-        } catch (error) {
-            console.error('Send message with file error:', error);
-        }
-    }
     // Hiển thị preview file đã chọn
     showFilePreview(file, fileData) {
         const previewContainer = document.getElementById('filePreviewContainer');
@@ -1018,59 +663,14 @@ class ChatApp {
         new bootstrap.Modal(document.getElementById('editMessageModal')).show();
     }
 
-    async saveEditedMessage() {
-        const newContent = document.getElementById('editMessageText').value.trim();
-        if (!newContent || !this.editingMessageId) return;
 
-        try {
-            const response = await this.apiCall('/api/v1/messages/update', {
-                method: 'PUT',
-                body: JSON.stringify({
-                    messageId: this.editingMessageId,
-                    content: newContent
-                })
-            });
-
-            if (response.success) {
-                bootstrap.Modal.getInstance(document.getElementById('editMessageModal')).hide();
-                this.editingMessageId = null;
-            }
-        } catch (error) {
-            console.error('Edit message error:', error);
-        }
+    deleteMessage(messageId){
+        chatApi.deleteMessage(this,messageId);
+    }
+    downloadCloudFile(encodedUrl, originalName){
+        chatApi.downloadCloudFile(this,encodedUrl,originalName);
     }
 
-    async deleteMessage(messageId) {
-        if (!confirm('Bạn có chắc muốn xóa tin nhắn này?')) return;
-
-        try {
-            const response = await this.apiCall(`/api/v1/messages/${messageId}`, {
-                method: 'DELETE'
-            });
-
-            if (response.success) {
-
-            }
-        } catch (error) {
-            console.error('Delete message error:', error);
-        }
-    }
-
-    async searchUsers(searchTerm) {
-        if (!searchTerm.trim()) {
-            document.getElementById('userSearchResults').style.display = 'none';
-            return;
-        }
-
-        try {
-            const response = await this.apiCall(`/api/v1/messages/search-users?searchTerm=${encodeURIComponent(searchTerm)}`);
-            if (response.success) {
-                this.renderUserSearchResults(response.data);
-            }
-        } catch (error) {
-            console.error('Search users error:', error);
-        }
-    }
 
     renderUserSearchResults(users) {
         const container = document.getElementById('userSearchResults');
@@ -1301,19 +901,43 @@ class ChatApp {
 
 
     setupEventListeners() {
+        const messageForm = document.getElementById('messageForm');
+        const messageInput = document.getElementById('messageInput');
 
-        // Message form
-        document.getElementById('messageForm').addEventListener('submit', (e) => {
+        // Auto resize
+        messageInput.addEventListener('input', () => {
+            messageInput.style.height = '40px';
+            messageInput.style.height = messageInput.scrollHeight + 'px';
+        });
+
+        // Submit
+        messageForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
-            const input = document.getElementById('messageInput');
+            if (!messageInput.value.trim()) return;
 
-            input.addEventListener('input', () => {
-                input.style.height = '40px';
-                input.style.height = input.scrollHeight + 'px';
-            });
-            this.sendMessage(input.value);
+            chatApi.sendMessage(this, messageInput.value);
         });
+
+    // Enter gửi, Shift+Enter xuống dòng
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                messageForm.requestSubmit();
+            }
+        });
+        // Message form
+        // document.getElementById('messageForm').addEventListener('submit', (e) => {
+        //     e.preventDefault();
+        //
+        //     const input = document.getElementById('messageInput');
+        //
+        //     input.addEventListener('input', () => {
+        //         input.style.height = '40px';
+        //         input.style.height = input.scrollHeight + 'px';
+        //     });
+        //     chatApi.sendMessage(this,input.value);
+        // });
 
         // User search
         const searchInput = document.getElementById('userSearch');
@@ -1322,7 +946,8 @@ class ChatApp {
         searchInput.addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
-                this.searchUsers(e.target.value);
+
+                chatApi.searchUsers(this,e.target.value)
             }, 300);
         });
 
@@ -1336,7 +961,7 @@ class ChatApp {
 
         // Xử lý sự kiện khi người dùng nhập tin nhắn
         let typingTimeout;
-        const messageInput = document.getElementById('messageInput');
+        // const messageInput = document.getElementById('messageInput');
         messageInput.addEventListener('input', () => {
             const typingIndicator = document.getElementById('typingIndicator');
             if (this.currentConversation) {
@@ -1435,13 +1060,14 @@ class ChatApp {
                 }
 
                 // Upload file
-                const uploadedData = await this.uploadFile(file);
+                const uploadedData = await chatApi.uploadFile(this,file);
                 if (uploadedData) {
                     this.uploadedFiles.push({
                         file: file,
                         fileName: uploadedData.fileName,
                         originalName: file.name,
                         fileSize: uploadedData.fileSize,
+                        publicId :uploadedData.public_id,
                         contentType: uploadedData.contentType.startsWith('image/')
                                 ? 'IMAGE'
                                 : 'FILE'
@@ -1457,7 +1083,7 @@ class ChatApp {
             document.getElementById('sendFileBtn').addEventListener('click', () => {
                 if (this.uploadedFiles.length > 0) {
                     const content = document.getElementById('messageInput').value;
-                    this.sendMessageWithFile(content, this.uploadedFiles[0]);
+                    chatApi.sendMessageWithFile(this,content,this.uploadedFiles[0])
                 }
             });
 
@@ -1558,47 +1184,47 @@ class ChatApp {
         }, 60000); // mỗi 1 phút
     }
 
+    saveEditedMessage(){
+        chatApi.saveEditedMessage(this);
+    }
+
 }
 // Thêm vào window object
 window.chatApp = null;
-window.addEventListener('DOMContentLoaded', function () {
-    window.chatApp = new ChatApp(); // Gán vào window để dùng ngoài
+
+document.addEventListener("DOMContentLoaded", () => {
+    window.chatApp = new ChatApp();
+
+    initEvents();
 });
 
 
+function initEvents() {
 
-function saveEditedMessage() {
-    chatApp.saveEditedMessage();
+    document
+        .getElementById("logoutBtn")
+        ?.addEventListener("click", () => chatApi.logout());
+
+    document
+        .getElementById("closeImageBtn")
+        ?.addEventListener("click", () => window.chatApp.closeImageView());
+
+    document
+        .getElementById("saveEditBtn")
+        ?.addEventListener("click", () => window.chatApp.saveEditedMessage());
+
 }
-window.addEventListener('beforeunload', () => {
-    try {
-         if (window.chatApp?.stompClient?.connected) {
-                window.chatApp.stompClient.disconnect();
-            }
-    } catch (e) {}
-});
-// Hàm logout chính
-async function logout() {
-    try {
-        const accessToken = localStorage.getItem('accessToken');
 
-        await fetch('/api/v1/auth/logout', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`
-            }
-        });
-    } catch (error) {
-        console.error("Logout error:", error);
-    } finally {
-        // xóa SAU khi gọi API
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('userInfo');
 
-        window.location.href = '/';
+window.addEventListener("beforeunload", () => {
+
+    if (chatApp?.stompClient?.connected) {
+        chatApp.stompClient.disconnect();
     }
-}
+
+});
+
+
 
 
 

@@ -52,7 +52,7 @@ public class ApplicationController {
 
     //    cap nhat trang thai application ung vien (update for hr)
     @RateLimit(maxRequests = 8, timeWindowSeconds = 60, keyType = "TOKEN")
-    @PutMapping("/applications/{id}/status")
+    @PutMapping("/{id}/status")
     public ResponseEntity<ApiResponse<ApplicationResponse>> updateApplicationStatus(@PathVariable Long id
             , @Valid @RequestBody UpdateApplicationStatusRequest request) {
 

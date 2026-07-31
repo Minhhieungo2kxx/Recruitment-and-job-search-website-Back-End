@@ -1,4 +1,4 @@
-package com.webjob.application.config.Socket;
+package com.webjob.application.dto.Response.Messensage;
 
 import com.webjob.application.models.Entity.Conversation;
 import com.webjob.application.models.Entity.Message;

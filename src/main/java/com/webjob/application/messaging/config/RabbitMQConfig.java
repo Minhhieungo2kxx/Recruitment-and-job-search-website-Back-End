@@ -40,6 +40,15 @@ public class RabbitMQConfig {
     public static final String JOB_ALERT_DLQ = "job.alert.dead.queue";
     public static final String JOB_ALERT_DLQ_ROUTING = "job.alert.dead";
 
+    // --- Cấu hình cho Follow Company Job Notification ---
+    public static final String FOLLOW_COMPANY_EXCHANGE = "follow.company.exchange";
+    public static final String FOLLOW_COMPANY_JOB_QUEUE = "follow.company.job.queue";
+    public static final String FOLLOW_COMPANY_JOB_ROUTING_KEY = "follow.company.job.#";
+
+    public static final String FOLLOW_COMPANY_JOB_DLX = "follow.company.job.dlx";
+    public static final String FOLLOW_COMPANY_JOB_DLQ = "follow.company.job.dead.queue";
+    public static final String FOLLOW_COMPANY_JOB_DLQ_ROUTING = "follow.company.job.dead";
+
 
     //chung
     @Bean
@@ -221,6 +230,57 @@ public class RabbitMQConfig {
                 .bind(jobAlertDlq())
                 .to(jobAlertDlx())
                 .with(JOB_ALERT_DLQ_ROUTING);
+    }
+    // --- Config Follow Company Job Notification ---
+    @Bean
+    public TopicExchange followCompanyExchange() {
+        return ExchangeBuilder
+                .topicExchange(FOLLOW_COMPANY_EXCHANGE)
+                .durable(true)
+                .build();
+    }
+
+    @Bean
+    public TopicExchange followCompanyJobDlx() {
+        return ExchangeBuilder
+                .topicExchange(FOLLOW_COMPANY_JOB_DLX)
+                .durable(true)
+                .build();
+    }
+    @Bean
+    public Queue followCompanyJobQueue() {
+        return QueueBuilder
+                .durable(FOLLOW_COMPANY_JOB_QUEUE)
+                .withArgument(
+                        "x-dead-letter-exchange",
+                        FOLLOW_COMPANY_JOB_DLX
+                )
+                .withArgument(
+                        "x-dead-letter-routing-key",
+                        FOLLOW_COMPANY_JOB_DLQ_ROUTING
+                )
+                .build();
+    }
+    @Bean
+    public Queue followCompanyJobDlq() {
+        return QueueBuilder
+                .durable(FOLLOW_COMPANY_JOB_DLQ)
+                .build();
+    }
+    @Bean
+    public Binding bindingFollowCompanyJobQueue() {
+        return BindingBuilder
+                .bind(followCompanyJobQueue())
+                .to(followCompanyExchange())
+                .with(FOLLOW_COMPANY_JOB_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding bindingFollowCompanyJobDlq() {
+        return BindingBuilder
+                .bind(followCompanyJobDlq())
+                .to(followCompanyJobDlx())
+                .with(FOLLOW_COMPANY_JOB_DLQ_ROUTING);
     }
 
 

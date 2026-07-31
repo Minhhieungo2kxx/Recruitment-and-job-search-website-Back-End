@@ -1,9 +1,12 @@
 package com.webjob.application.dto.Response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.webjob.application.enums.ResumeStatus;
 import com.webjob.application.enums.WorkMode;
 import com.webjob.application.enums.WorkingType;
+import jakarta.persistence.Column;
 import lombok.*;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.Instant;
 
@@ -17,7 +20,12 @@ public class ApplicationUserDetailResponse {
 
     private ResumeStatus status;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", timezone = "Asia/Ho_Chi_Minh")
     private Instant appliedAt;
+
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", timezone = "Asia/Ho_Chi_Minh")
+    private Instant updatedAt;
 
 
     // Thông tin Job

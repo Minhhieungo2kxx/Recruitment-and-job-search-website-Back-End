@@ -88,10 +88,10 @@ public void sendEmail(String to, String subject, String content) {
     }
 
 
-    public void sendLoginNotification(String subject, String templateName, Map<String, Object> variables) {
-        String content = generate(templateName, variables);
-        sendEmail((String) variables.get("email"), subject, content);
-    }
+//    public void sendLoginNotification(String subject, String templateName, Map<String, Object> variables) {
+//        String content = generate(templateName, variables);
+//        sendEmail((String) variables.get("email"), subject, content);
+//    }
     public void sendPaymentNotification(String subject, String templateName, Map<String, Object> variables) {
         String content = generate(templateName, variables);
         sendEmail((String) variables.get("email"), subject, content);

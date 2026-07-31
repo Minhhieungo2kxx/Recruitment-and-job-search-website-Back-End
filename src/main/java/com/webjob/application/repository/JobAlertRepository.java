@@ -3,6 +3,7 @@ package com.webjob.application.repository;
 import com.webjob.application.enums.JobLevel;
 import com.webjob.application.enums.WorkMode;
 import com.webjob.application.models.Entity.JobAlert;
+import com.webjob.application.models.Entity.Notification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -39,7 +40,7 @@ public interface JobAlertRepository extends JpaRepository<JobAlert, Long>, JpaSp
     );
 
     @EntityGraph(attributePaths = {"jobCategory"})
-    Page<JobAlert> findAll(Pageable pageable);
+    Page<JobAlert> findByUserId(Long userId, Pageable pageable);
 
     @Query("""
                 select ja.id

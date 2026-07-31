@@ -52,7 +52,7 @@ public class CompanyResponse {
 
     // Thống kê
     private Integer jobCount;
-
+    private boolean followed;
 
     private Integer followerCount;
 }

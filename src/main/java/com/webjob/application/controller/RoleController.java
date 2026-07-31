@@ -23,6 +23,8 @@ public class RoleController {
 
     private final RoleService roleService;
 
+//    RBAC động (Dynamic RBAC)
+
 
     @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping

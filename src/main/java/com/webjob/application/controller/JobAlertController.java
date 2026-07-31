@@ -42,7 +42,7 @@ public class JobAlertController {
         ApiResponse<ResponseDTO<List<JobAlertResponse>>> apiResponse = new ApiResponse<>(
                 HttpStatus.OK.value(),
                 null,
-                "Get  Job Alert By Id thành công",
+                "Get Job Alert thành công",
                 jobAlertService.getMyAlerts(page,size)
         );
         return ResponseEntity.ok(apiResponse);

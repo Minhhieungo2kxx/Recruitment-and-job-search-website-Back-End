@@ -25,6 +25,8 @@ public class MessageRequestDTO {
 
     private String fileName;
 
+    private String publicId;
+
     private Long fileSize;
 
 

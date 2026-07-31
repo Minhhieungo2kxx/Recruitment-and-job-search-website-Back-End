@@ -1,11 +1,14 @@
 package com.webjob.application.service;
 
+import com.webjob.application.dto.Request.NotificationRequest;
 import com.webjob.application.dto.Request.Payments.MomoPaymentCallback;
 import com.webjob.application.dto.Response.ApiResponse;
 import com.webjob.application.dto.record.PaymentSuccessEvent;
+import com.webjob.application.enums.NotificationType;
 import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.exception.Customs.BusinessException;
 import com.webjob.application.exception.Customs.PaymentExpiredException;
+import com.webjob.application.exception.Customs.ResourceNotFoundException;
 import com.webjob.application.models.Entity.Job;
 import com.webjob.application.models.Entity.Payment;
 import com.webjob.application.models.Entity.User;
@@ -35,12 +38,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -63,6 +64,8 @@ public class PaymentService {
 
     private static final Long COMPETITION_VIEW_PRICE = 30000L;
     private final ApplicationEventPublisher eventPublisher;
+
+    private final NotificationService notificationService;
 
 
     public PaymentResponse createPaymentVnpay(Long userId, PaymentCreateRequest request, HttpServletRequest httpRequest) {
@@ -151,12 +154,12 @@ public class PaymentService {
         // 1. Validate chữ ký từ VNPay
         int verifyResult = vnPayService.orderReturn(request);
         if (verifyResult != 1) {
-            throw new RuntimeException("Chữ ký không hợp lệ từ VNPay");
+            throw new BadRequestException("Chữ ký không hợp lệ từ VNPay");
         }
 
         // 3. Tìm payment record liên quan
         Payment payment = paymentRepository.findByOrderCode(callbackRequest.getVnp_TxnRef())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy payment cho Ordercode: " + callbackRequest.getVnp_TxnRef()));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy payment cho Ordercode: " + callbackRequest.getVnp_TxnRef()));
         // 3. Nếu đã success → KHÔNG xử lý lại
         if (payment.getStatus().equals(PaymentStatus.SUCCESS.name())) {
             log.info("Callback duplicated - ignoring");
@@ -168,16 +171,18 @@ public class PaymentService {
             throw new RuntimeException("Amount mismatch");
         }
         if (payment.getExpiredAt().isBefore(LocalDateTime.now())) {
+            payment.setStatus(PaymentStatus.EXPIRED.name());
+            paymentRepository.save(payment);
             throw new PaymentExpiredException("Payment expired");
         }
 
 
-        // 4. Cập nhật trạng thái thanh toán
-        String status = (verifyResult == 1)
-                ? PaymentStatus.SUCCESS.name()
-                : PaymentStatus.FAILED.name();
+        if ("00".equals(callbackRequest.getVnp_ResponseCode())) {
+            payment.setStatus(PaymentStatus.SUCCESS.name());
+        } else {
+            payment.setStatus(PaymentStatus.FAILED.name());
+        }
 
-        payment.setStatus(status);
         payment.setTransactionId(callbackRequest.getVnp_TransactionNo()); // Mã giao dịch thật từ VNPay
         payment.setBankCode(callbackRequest.getVnp_BankCode());
         payment.setSecureHash(callbackRequest.getVnp_SecureHash());
@@ -192,12 +197,36 @@ public class PaymentService {
 
         payment = paymentRepository.save(payment);
 
-        log.info("Payment {} for transactionRef: {}", status.toLowerCase(), callbackRequest.getVnp_TransactionNo());
+        log.info("Payment {} for transactionRef: {}", payment.getStatus(), callbackRequest.getVnp_TransactionNo());
         if (payment.getStatus().equals(PaymentStatus.SUCCESS.name())) {
             applicationEmailService.sendPaymentEmail(payment);
+            sendPaymentNotification(payment);
         }
         // 5. Tạo và trả về response
         return buildPaymentResponse(payment);
+    }
+
+
+    private void sendPaymentNotification(Payment payment) {
+
+        var currencyFormatter = NumberFormat.getCurrencyInstance(Locale.of("vi", "VN"));
+        String formattedAmount = currencyFormatter.format(payment.getAmount());
+        String notificationTitle = "Thanh toán thành công #%s".formatted(payment.getOrderCode());
+
+        String notificationContent = """
+                Bạn đã thanh toán thành công %s để xem danh sách ứng viên của tin tuyển dụng "%s". \
+                Mã giao dịch: %s. Cảm ơn bạn đã sử dụng dịch vụ!\
+                """.formatted(formattedAmount, payment.getJob().getName(), payment.getTransactionId());
+        // . Gọi notification service
+        NotificationRequest request=NotificationRequest.builder()
+                .user(payment.getUser()).title(notificationTitle)
+                .content(notificationContent).type(NotificationType.PAYMENT)
+                .referenceId(payment.getId())
+                .redirectUrl("www.webJob.vn/api/v1/jobs/"+payment.getJob().getId())
+                .build();
+        notificationService.createNotification(
+                request
+        );
     }
 
 
@@ -383,15 +412,18 @@ public class PaymentService {
             throw new RuntimeException("Amount mismatch");
         }
         if (payment.getExpiredAt().isBefore(LocalDateTime.now())) {
+            payment.setStatus(PaymentStatus.EXPIRED.name());
+            paymentRepository.save(payment);
             throw new PaymentExpiredException("Payment expired");
         }
 
-        // 4. Cập nhật trạng thái thanh toán
-        String status = (validationResult == true)
-                ? PaymentStatus.SUCCESS.name()
-                : PaymentStatus.FAILED.name();
 
-        payment.setStatus(status);
+        // 4. Cập nhật trạng thái thanh toán
+        if ("0".equals(callbackRequest.getResultCode())) {
+            payment.setStatus(PaymentStatus.SUCCESS.name());
+        } else {
+            payment.setStatus(PaymentStatus.FAILED.name());
+        }
         payment.setTransactionId(callbackRequest.getTransId()); // Mã giao dịch thật từ
         payment.setSecureHash(callbackRequest.getSignature());
 
@@ -405,12 +437,13 @@ public class PaymentService {
         payment.setOrderType(callbackRequest.getOrderType());
         payment.setPayType(callbackRequest.getPayType());
         payment = paymentRepository.save(payment);
-        log.info("Payment {} for transactionRef: {}", status.toLowerCase(), callbackRequest.getResultCode());
+        log.info("Payment {} for transactionRef: {}", payment.getStatus(), callbackRequest.getResultCode());
         if (payment.getStatus().equals(PaymentStatus.SUCCESS.name())) {
-//            applicationEmailService.sendPaymentEmail(payment);
             eventPublisher.publishEvent(
                     new PaymentSuccessEvent(payment.getId())
+
             );
+            sendPaymentNotification(payment);
         }
         // 5. Tạo và trả về response
         return buildPaymentResponse(payment);

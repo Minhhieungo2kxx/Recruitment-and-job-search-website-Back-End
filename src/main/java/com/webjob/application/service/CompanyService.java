@@ -27,6 +27,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -196,8 +198,15 @@ public class CompanyService {
         CompanyResponse response = modelMapper.map(company, CompanyResponse.class);
         Integer jobCount = jobRepository.countByCompanyIdAndDeletedFalse(company.getId());
         Integer followerCount = followCompanyRepository.countByCompanyId(company.getId());
+        boolean followed = false;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if(securityUtils.isAuthenticated()){
+            Long userId = securityUtils.getCurrentUserId();
+            followed = followCompanyRepository.existsByUserIdAndCompanyId(userId, company.getId());
+        }
         response.setJobCount(jobCount == null ? 0 : jobCount);
         response.setFollowerCount(followerCount == null ? 0 : followerCount);
+        response.setFollowed(followed);
         return response;
 
     }

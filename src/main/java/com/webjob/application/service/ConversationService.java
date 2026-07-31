@@ -1,7 +1,6 @@
 package com.webjob.application.service;
 
-import com.webjob.application.config.Socket.MessageMapper;
-import com.webjob.application.dto.Response.ApiResponse;
+import com.webjob.application.dto.Response.Messensage.MessageMapper;
 import com.webjob.application.models.Entity.Conversation;
 import com.webjob.application.dto.Request.Search.ConversationFilter;
 import com.webjob.application.dto.Response.ConversationDTO;
@@ -14,8 +13,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 
