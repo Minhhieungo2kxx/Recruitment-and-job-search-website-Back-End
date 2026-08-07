@@ -47,6 +47,15 @@ public interface SubscriberRepository extends JpaRepository<Subscriber, Long>, J
 
     long countByUserId(Long userId);
 
+    @Query("""
+        SELECT DISTINCT s
+        FROM Subscriber s
+        LEFT JOIN FETCH s.subscriberSkills ss
+        LEFT JOIN FETCH ss.skill
+        WHERE s.user.id = :userId
+    """)
+    List<Subscriber> findByUserIdWithSkills(@Param("userId") Long userId);
+
 //    JOIN: chỉ dùng để nối bảng hoặc lọc dữ liệu, không đảm bảo entity liên quan được nạp vào đối tượng.
 //    JOIN FETCH: vừa nối bảng, vừa yêu cầu Hibernate nạp luôn entity/collection liên quan vào bộ nhớ.
 //    FetchType.LAZY: chỉ tải dữ liệu liên quan khi bạn thực sự truy cập nó.

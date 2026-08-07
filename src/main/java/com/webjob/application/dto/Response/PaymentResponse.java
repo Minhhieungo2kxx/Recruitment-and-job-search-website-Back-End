@@ -27,21 +27,21 @@ public class PaymentResponse {
     private String bankCode;   // Mã ngân hàng
     private String ResponseCode;
     private String OrderInfo;
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
+//    @JsonFormat(
+//            shape = JsonFormat.Shape.STRING,
+//            pattern = "yyyy-MM-dd HH:mm:ss a z",
+//            timezone = "Asia/Ho_Chi_Minh",
+//            locale = "en_US"
+//    )
     private Instant payDate;   // Thời gian thanh toán thành công
     @Size(max = 255)
     private String paymentGatewayResponse; // Raw response / info từ gateway
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
+//    @JsonFormat(
+//            shape = JsonFormat.Shape.STRING,
+//            pattern = "yyyy-MM-dd HH:mm:ss a z",
+//            timezone = "Asia/Ho_Chi_Minh",
+//            locale = "en_US"
+//    )
     private Instant createdAt;
     @Column(length = 255)
     private String payType;

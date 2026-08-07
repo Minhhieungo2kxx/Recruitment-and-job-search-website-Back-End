@@ -597,6 +597,7 @@ body {
 
 .notification-item.unread.pinned {
     background-color: #fef3c7; /* Màu nền kết hợp giữa unread và pinned cho hài hòa */
+
 }
 
 .pin-icon {

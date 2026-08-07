@@ -10,6 +10,6 @@ import java.util.List;
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage,Long> {
     // Lấy lịch sử theo user (cho user đã đăng nhập)
-    List<ChatMessage> findByUserOrderByCreatedAtAsc(User user);
+    List<ChatMessage> findByUserIdOrderByCreatedAtAsc(Long userId);
     void deleteByUser(User user);
 }

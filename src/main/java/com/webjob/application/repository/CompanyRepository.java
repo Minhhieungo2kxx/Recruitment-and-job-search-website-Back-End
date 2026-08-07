@@ -3,6 +3,8 @@ package com.webjob.application.repository;
 
 import com.webjob.application.enums.CompanyStatus;
 import com.webjob.application.models.Entity.Company;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -26,6 +28,13 @@ public interface CompanyRepository extends JpaRepository<Company, Long>, JpaSpec
     Optional<Company> findByIdAndDeletedFalse(Long id);
 
     Optional<Company> findByIdAndDeletedTrue(Long id);
+
+    @Query("SELECT c FROM Company c LEFT JOIN FETCH c.industry WHERE c.id = :id")
+    Optional<Company> findDetailById(@Param("id") Long id);
+
+    @Override
+    @EntityGraph(attributePaths = {"industry"})
+    List<Company> findAll(Specification<Company> spec);
 
 
 

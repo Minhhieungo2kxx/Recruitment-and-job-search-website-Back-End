@@ -73,7 +73,7 @@ public class PaymentService {
         String lockKey = "payment:create:" + userId + ":" + request.getJobId();
         String lockValue = UtilFormat.generate8CharToken();
 
-        boolean locked = redisLockService.tryLock(lockKey, lockValue, 60, TimeUnit.SECONDS);
+        boolean locked = redisLockService.tryLock(lockKey, lockValue, 2, TimeUnit.MINUTES);
         if (!locked) {
             throw new BusinessException("Bạn đang có giao dịch đang xử lý. Vui lòng chờ.");
         }
@@ -327,7 +327,7 @@ public class PaymentService {
         String lockKey = "payment:create:" + userId + ":" + request.getJobId();
         String lockValue = UtilFormat.generate8CharToken();
 
-        boolean locked = redisLockService.tryLock(lockKey, lockValue, 60, TimeUnit.SECONDS);
+        boolean locked = redisLockService.tryLock(lockKey, lockValue, 2, TimeUnit.MINUTES);
         if (!locked) {
             throw new BusinessException("Bạn đang có giao dịch đang xử lý. Vui lòng chờ.");
         }

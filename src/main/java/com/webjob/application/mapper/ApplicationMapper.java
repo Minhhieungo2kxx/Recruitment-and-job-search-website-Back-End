@@ -261,4 +261,20 @@ public class ApplicationMapper {
 
                 .build();
     }
+
+    public AppliedJobResponseAIDTO toAppliedJobResponseAI(Application app) {
+        if (app == null) {
+            return null;
+        }
+
+        return AppliedJobResponseAIDTO.builder()
+                .jobId(app.getJob() != null ? app.getJob().getId() : null)
+                .jobName(app.getJob() != null ? app.getJob().getName() : null)
+                .company(app.getJob() != null && app.getJob().getCompany() != null
+                        ? app.getJob().getCompany().getName()
+                        : "")
+                .status(app.getStatus() != null ? app.getStatus() : null)
+                .appliedAt(app.getCreatedAt() != null ? app.getCreatedAt() : null)
+                .build();
+    }
 }

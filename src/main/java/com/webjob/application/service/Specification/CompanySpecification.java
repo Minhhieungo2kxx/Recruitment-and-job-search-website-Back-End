@@ -3,6 +3,9 @@ package com.webjob.application.service.Specification;
 import com.webjob.application.enums.CompanyStatus;
 import com.webjob.application.models.Entity.Company;
 
+import com.webjob.application.models.Entity.Industry;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.Instant;
@@ -18,8 +21,8 @@ public class CompanySpecification {
             String value = "%" + keyword.trim().toLowerCase() + "%";
 
             return cb.or(
-                    cb.like(cb.lower(root.get("name")), value),
-                    cb.like(cb.lower(root.get("description")), value)
+                    cb.like(cb.lower(root.get("name")), value)
+//                    cb.like(cb.lower(root.get("description")), value)
             );
         };
     }
@@ -84,10 +87,31 @@ public class CompanySpecification {
     public static Specification<Company> hasTaxCode(String taxCode) {
         return (root, query, cb) -> {
             if (taxCode == null || taxCode.isBlank()) {
-                return null;
+                return cb.conjunction();
             }
-            return cb.equal(root.get("taxCode"), taxCode);
+
+            return cb.equal(
+                    root.get("taxCode"),
+                    normalizeTaxCode(taxCode)
+            );
         };
+    }
+    public static Specification<Company> hasWebsite(String website) {
+        return (root, query, cb) -> {
+            if (website == null || website.isBlank()) {
+                return cb.conjunction();
+            }
+
+            return cb.like(
+                    cb.lower(root.get("website")),
+                    "%" + website.trim().toLowerCase() + "%"
+            );
+        };
+    }
+    public static String normalizeTaxCode(String taxCode) {
+        return taxCode == null
+                ? null
+                : taxCode.replaceAll("[\\s-]", "");
     }
 
     public static Specification<Company> hasEmail(String email) {
@@ -164,6 +188,36 @@ public class CompanySpecification {
     public static Specification<Company> active() {
         return (root, query, cb) ->
                 cb.equal(root.get("status"), CompanyStatus.ACTIVE);
+    }
+    public static Specification<Company> hasAddress(String address) {
+        return (root, query, cb) -> {
+            if (address == null || address.isBlank()) {
+                return null;
+            }
+
+            String value = "%" + address.trim().toLowerCase() + "%";
+
+            return cb.like(
+                    cb.lower(root.get("address")),
+                    value
+            );
+        };
+    }
+    public static Specification<Company> hasindustryName(String industryName) {
+        return (root, query, cb) -> {
+            if (industryName == null || industryName.isBlank()) {
+                return null;
+            }
+
+            String value = "%" + industryName.trim().toLowerCase() + "%";
+
+            Join<Company, Industry> industryJoin = root.join("industry", JoinType.LEFT);
+
+            return cb.like(
+                    cb.lower(industryJoin.get("name")),
+                    value
+            );
+        };
     }
 
 }

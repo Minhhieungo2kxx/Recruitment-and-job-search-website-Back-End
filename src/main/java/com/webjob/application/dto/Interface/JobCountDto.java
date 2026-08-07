@@ -1,4 +1,4 @@
-package com.webjob.application.utils.common;
+package com.webjob.application.dto.Interface;
 
 public interface JobCountDto {
     Long getCategoryId();
