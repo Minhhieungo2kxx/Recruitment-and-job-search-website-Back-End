@@ -1,4 +1,4 @@
-package com.webjob.application.dto.record;
+package com.webjob.application.event;
 
 import lombok.*;
 

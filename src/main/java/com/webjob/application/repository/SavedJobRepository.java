@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface SavedJobRepository extends JpaRepository<SavedJob,Long> {
     boolean existsByUserIdAndJobId(Long userId, Long jobId);
 
+
+    @EntityGraph(attributePaths = "job")
     Optional<SavedJob> findByUserIdAndJobId(Long userId, Long jobId);
 
     @EntityGraph(attributePaths = "job")

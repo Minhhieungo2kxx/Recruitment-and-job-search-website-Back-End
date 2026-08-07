@@ -10,7 +10,7 @@ const state = {
     socket: null,
     stompClient: null,
 
-    notificationSubscription : null,
+    notificationSubscription: null,
     // reconnect
     reconnectTimer: null,
 
@@ -40,21 +40,23 @@ function loadAuth() {
     state.accessToken = localStorage.getItem("accessToken");
     state.currentUser = JSON.parse(localStorage.getItem("userInfo"));
 }
-function getAccessToken(){
+
+function getAccessToken() {
     return state.accessToken;
 
 }
-function getCurrentUser(){
+
+function getCurrentUser() {
     return state.currentUser;
 
 }
 
 
-async function init(){
+async function init() {
 
     loadAuth();
 
-    if(!state.accessToken || !state.currentUser){
+    if (!state.accessToken || !state.currentUser) {
 
         console.log("No auth data");
 
@@ -71,30 +73,31 @@ function isAccessTokenExpired() {
 
     const token = state.accessToken;
 
-    if(!token){
+    if (!token) {
         return true;
     }
 
     try {
         const payload = JSON.parse(atob(token.split(".")[1]));
 
-        const now = Math.floor(Date.now()/1000);
+        const now = Math.floor(Date.now() / 1000);
 
         return payload.exp <= now + 5;
 
-    } catch(e){
+    } catch (e) {
         console.error("Invalid JWT", e);
         return true;
     }
 
 }
-function subscribeWS(){
-    if(!state.stompClient || !state.stompClient.connected){
+
+function subscribeWS() {
+    if (!state.stompClient || !state.stompClient.connected) {
         console.error("STOMP not connected");
         return;
     }
     state.notificationSubscription =
-        state.stompClient.subscribe("/user/queue/notification", (message)=>{
+        state.stompClient.subscribe("/user/queue/notification", (message) => {
             const data = JSON.parse(message.body);
             handleNotification(data.notification);
             updateNotificationBadge(data.unreadCount);
@@ -103,6 +106,7 @@ function subscribeWS(){
     console.log("Subscribed notification channel");
 
 }
+
 function handleNotification(notification) {
 
     if (!notification) return;
@@ -133,10 +137,13 @@ function handleNotification(notification) {
     list.prepend(createNotificationElement(notification));
 
 }
+
 function createNotificationElement(notification) {
     const item = document.createElement("div");
-    item.className =
-        `notification-item ${notification.read ? "" : "unread"}`;
+    item.className = `
+    notification-item
+    ${notification.read ? "" : "unread"}
+    ${notification.pinned ? "pinned" : ""}`.trim();
 
     item.dataset.id = notification.id;
 
@@ -174,15 +181,14 @@ function createNotificationElement(notification) {
     const deleteItem = document.createElement("button");
 
 
-    function updateMenuText(){
+    function updateMenuText() {
 
-        if(notification.pinned){
+        if (notification.pinned) {
 
             pinItem.innerHTML =
                 '<i class="fa-solid fa-thumbtack"></i> Bỏ ghim thông báo';
 
-        }
-        else{
+        } else {
 
             pinItem.innerHTML =
                 '<i class="fa-solid fa-thumbtack"></i> Ghim thông báo';
@@ -190,13 +196,12 @@ function createNotificationElement(notification) {
         }
 
 
-        if(notification.read){
+        if (notification.read) {
 
             unreadItem.innerHTML =
                 '<i class="fa-solid fa-envelope"></i> Đánh dấu chưa đọc';
 
-        }
-        else{
+        } else {
 
             unreadItem.innerHTML =
                 '<i class="fa-solid fa-envelope-open"></i> Đánh dấu đã đọc';
@@ -264,7 +269,7 @@ function createNotificationElement(notification) {
     });
     pinItem.addEventListener(
         "click",
-        async e=>{
+        async e => {
 
             e.stopPropagation();
             try {
@@ -289,7 +294,7 @@ function createNotificationElement(notification) {
         });
     unreadItem.addEventListener(
         "click",
-        async e=>{
+        async e => {
 
             e.stopPropagation();
 
@@ -319,60 +324,62 @@ function createNotificationElement(notification) {
 }
 
 
-async function refreshAccessToken(){
-    if(state.isRefreshing && state.refreshPromise){
+async function refreshAccessToken() {
+    if (state.isRefreshing && state.refreshPromise) {
         return state.refreshPromise;
     }
     state.isRefreshing = true;
-    state.refreshPromise = (async()=>{
-            try{
+    state.refreshPromise = (async () => {
+        try {
 
-                const result = await notificationApi.refreshTokenApi();
+            const result = await notificationApi.refreshTokenApi();
 
-                if(result.statusCode !== 200 || !result.data?.access_token){
-                    return false;
-                }
-                // update token
-                state.accessToken = result.data.access_token;
-                localStorage.setItem("accessToken", state.accessToken);
-                // update user
-                if(result.data.user){
-                    state.currentUser = result.data.user;
-                    localStorage.setItem("userInfo", JSON.stringify(state.currentUser));
-                }
-                console.log("Refresh token thành công");
-
-                return true;
-            }catch(err){console.error("Refresh token lỗi:", err);
+            if (result.statusCode !== 200 || !result.data?.access_token) {
                 return false;
-            }finally{
-                state.isRefreshing = false;
-                state.refreshPromise = null;
             }
-        })();
+            // update token
+            state.accessToken = result.data.access_token;
+            localStorage.setItem("accessToken", state.accessToken);
+            // update user
+            if (result.data.user) {
+                state.currentUser = result.data.user;
+                localStorage.setItem("userInfo", JSON.stringify(state.currentUser));
+            }
+            console.log("Refresh token thành công");
+
+            return true;
+        } catch (err) {
+            console.error("Refresh token lỗi:", err);
+            return false;
+        } finally {
+            state.isRefreshing = false;
+            state.refreshPromise = null;
+        }
+    })();
     return state.refreshPromise;
 
 }
-async function connectWebSocket(){
-    if(state.isConnecting){
+
+async function connectWebSocket() {
+    if (state.isConnecting) {
         console.log(
             "WebSocket connecting..."
         );
         return;
     }
 
-    if(state.stompClient && state.stompClient.connected
-    ){
+    if (state.stompClient && state.stompClient.connected
+    ) {
         console.log("WebSocket already connected");
         return;
     }
     state.isConnecting = true;
 
-    try{
-        if(isAccessTokenExpired()){
+    try {
+        if (isAccessTokenExpired()) {
             console.log("Access token expired, refreshing...");
             const ok = await refreshAccessToken();
-            if(!ok){
+            if (!ok) {
                 console.log("Refresh failed");
                 return;
             }
@@ -387,35 +394,35 @@ async function connectWebSocket(){
             {
                 Authorization: `Bearer ${state.accessToken}`
             },
-            ()=>{
+            () => {
 
                 console.log("===== WS CONNECTED =====");
-                state.isConnecting=false;
+                state.isConnecting = false;
                 state.reconnectAttempts = 0;
 
                 subscribeWS();
                 state.socket.onclose =
-                    ()=>{
+                    () => {
                         console.log("Socket closed");
                         reconnect();
 
                     };
             },
-            (error)=>{
+            (error) => {
                 console.error("STOMP ERROR", error
                 );
 
-                state.isConnecting=false;
+                state.isConnecting = false;
             }
-
         );
-    }catch(error){
+    } catch (error) {
         console.error("WebSocket exception", error);
-        state.isConnecting=false;
+        state.isConnecting = false;
     }
 }
-function reconnect(){
-    if(state.reconnectAttempts >= state.maxReconnectAttempts){
+
+function reconnect() {
+    if (state.reconnectAttempts >= state.maxReconnectAttempts) {
         console.error("Reconnect failed");
         return;
 
@@ -426,9 +433,9 @@ function reconnect(){
     clearTimeout(state.reconnectTimer);
 
     state.reconnectTimer =
-        setTimeout(()=>{
+        setTimeout(() => {
             connectWebSocket();
-        },2000);
+        }, 2000);
 
 }
 
@@ -448,7 +455,8 @@ function disconnectWebSocket() {
     if (state.stompClient) {
         try {
             state.stompClient.disconnect();
-        } catch (e) {}
+        } catch (e) {
+        }
     }
 
     state.stompClient = null;
@@ -457,14 +465,13 @@ function disconnectWebSocket() {
 }
 
 
-
-
 window.addEventListener(
     "beforeunload",
-    ()=>{
+    () => {
         disconnectWebSocket();
     }
 );
+
 function renderNotifications(notifications) {
 
     const list = document.getElementById("notificationList");
@@ -486,6 +493,7 @@ function renderNotifications(notifications) {
     });
 
 }
+
 async function loadMoreNotifications() {
 
     if (!notificationState.hasMore) return;
@@ -493,6 +501,7 @@ async function loadMoreNotifications() {
     await getNotifications(notificationState.currentPage + 1);
 
 }
+
 function toggleLoadMoreButton() {
     const btn = document.getElementById("loadMoreBtn");
     if (!btn) return;
@@ -504,6 +513,7 @@ function toggleLoadMoreButton() {
 
 async function initNotifications() {
 
+
     notificationState.currentPage = 1;
     notificationState.notifications = [];
     notificationState.hasMore = true;
@@ -513,6 +523,7 @@ async function initNotifications() {
     await getNotifications(1);
 
 }
+
 async function getNotifications(page = 1) {
 
     if (notificationState.loading) return;
@@ -536,71 +547,74 @@ async function getNotifications(page = 1) {
     }
 
 }
+
 async function loadUnreadCount() {
     try {
         const json = await notificationApi.fetchUnreadCountApi(state.accessToken);
 
-        updateNotificationBadge(json.data);
         checkEmptyNotification();
+        updateNotificationBadge(json.data);
+
 
     } catch (error) {
         // Xử lý lỗi nếu cần thiết
     }
 
 }
-function updateNotificationBadge(count){
+
+function updateNotificationBadge(count) {
 
     const badge = document.getElementById("notificationCount");
 
-    if(!badge) return;
-    if(count <= 0){
+    if (!badge) return;
+    if (count <= 0) {
 
-        badge.style.display="none";
+        badge.style.display = "none";
 
-        badge.textContent="";
-    }
-    else{
+        badge.textContent = "";
+    } else {
 
-        badge.style.display="flex";
+        badge.style.display = "flex";
 
         badge.textContent = count > 99 ? "99+" : count;
 
     }
 }
-async function markAllNotificationRead(){
-    try{
+
+async function markAllNotificationRead() {
+    try {
         await notificationApi.markAllAsReadApi(state.accessToken);
 
         updateNotificationBadge(0);
         document.querySelectorAll(".notification-item.unread")
-            .forEach(item=>item.classList.remove("unread"));
-        notificationState.notifications.forEach(n=>{
+            .forEach(item => item.classList.remove("unread"));
+        notificationState.notifications.forEach(n => {
             n.read = true;
         });
-    }
-    catch(err){
+    } catch (err) {
         console.error(err);
 
     }
 }
-async function deleteAllNotification(){
 
-    try{
+async function deleteAllNotification() {
+
+    try {
 
         await notificationApi.clearAllNotificationsApi(state.accessToken);
 
         notificationState.notifications =
-            notificationState.notifications.filter(n=>!n.read);
+            notificationState.notifications.filter(n => !n.read);
         document
             .querySelectorAll(".notification-item")
-            .forEach(item=>{
+            .forEach(item => {
 
-                const id=Number(item.dataset.id);
+                const id = Number(item.dataset.id);
 
-                const notification=
-                    notificationState.notifications.find(n=>n.id===id);
+                const notification =
+                    notificationState.notifications.find(n => n.id === id);
 
-                if(!notification){
+                if (!notification) {
 
                     item.remove();
 
@@ -609,8 +623,7 @@ async function deleteAllNotification(){
 
         checkEmptyNotification();
 
-    }
-    catch(err){
+    } catch (err) {
 
         console.error(err);
 
@@ -627,15 +640,17 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!bell || !dropdown || !wrapper) return;
 
     // 1. Click vào icon chuông để mở/đóng dropdown
-    bell.addEventListener("click", async function(e){
+    bell.addEventListener("click", async function (e) {
         e.stopPropagation(); // Ngăn sự kiện nổi bọt lên document
         const opening = !dropdown.classList.contains("show");
         dropdown.classList.toggle("show");
+        checkEmptyNotification();
+
 
     });
 
     // 2. Chặn sự kiện click bên trong wrapper để không bị đóng nhầm
-    wrapper.addEventListener("click", function(e) {
+    wrapper.addEventListener("click", function (e) {
         e.stopPropagation();
     });
 
@@ -667,57 +682,68 @@ document.addEventListener("DOMContentLoaded", function () {
 
         markAllReadBtn.disabled = true;
 
-        try{
+        try {
             await markAllNotificationRead();
-        }finally{
+        } finally {
             markAllReadBtn.disabled = false;
         }
 
     });
 });
-async function deleteNotification(id, element){
 
-    try{
+async function deleteNotification(id, element) {
+
+    try {
         await notificationApi.deleteNotificationByIdApi(id, state.accessToken);
         element.remove();
         notificationState.notifications = notificationState.notifications.filter(n => n.id !== id);
 
         checkEmptyNotification();
 
-    }
-    catch(err){
+    } catch (err) {
 
         console.error(err);
 
     }
 }
-function checkEmptyNotification(){
+
+function checkEmptyNotification() {
 
     const list = document.getElementById("notificationList");
-
     const empty = document.getElementById("emptyNotification");
 
-    if(notificationState.notifications.length===0){
+    const markAllReadBtn = document.getElementById("markAllReadBtn");
+    const deleteAllBtn = document.getElementById("deleteAllBtn");
+    const loadMoreBtn = document.getElementById("loadMoreBtn");
 
-        empty.style.display="block";
+    if (notificationState.notifications.length === 0) {
 
-        list.style.display="none";
+        // Hiện thông báo rỗng
+        empty.style.display = "block";
+        list.style.display = "none";
 
+        // Ẩn các nút thao tác
+        markAllReadBtn.style.display = "none";
+        deleteAllBtn.style.display = "none";
+        loadMoreBtn.style.display = "none";
+
+    } else {
+
+        // Có thông báo
+        empty.style.display = "none";
+        list.style.display = "block";
+
+        // Hiện các nút thao tác
+        markAllReadBtn.style.display = "inline-flex";
+        deleteAllBtn.style.display = "inline-flex";
+        loadMoreBtn.style.display = "block";
     }
-    else{
-
-        empty.style.display="none";
-
-        list.style.display="block";
-
-    }
-
 }
 
-async function autoStartWebSocket(){
+async function autoStartWebSocket() {
     loadAuth();
 
-    if(state.accessToken && state.currentUser){
+    if (state.accessToken && state.currentUser) {
         console.log("Authenticated user -> connect websocket");
 
         await connectWebSocket();
@@ -725,9 +751,9 @@ async function autoStartWebSocket(){
         // Load thông báo đầu tiên
         await initNotifications();
 
-    }
-    else{
+    } else {
         console.log("No authentication -> skip websocket");
     }
 }
+
 autoStartWebSocket();

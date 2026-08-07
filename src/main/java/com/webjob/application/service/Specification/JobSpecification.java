@@ -105,7 +105,6 @@ public class JobSpecification {
 
             String value = "%" + key + "%";
 
-            Join<Job, Company> company = root.join("company", JoinType.LEFT);
             Join<Job, JobSkill> skills = root.join("jobSkills", JoinType.LEFT);
             Join<JobSkill, Skill> skill = skills.join("skill", JoinType.LEFT);
 
@@ -113,9 +112,6 @@ public class JobSpecification {
                     cb.like(cb.lower(root.get("name")), value),
                     cb.like(cb.lower(cb.coalesce(root.get("description"), "")), value),
                     cb.like(cb.lower(cb.coalesce(root.get("requirement"), "")), value),
-                    cb.like(cb.lower(cb.coalesce(root.get("responsibility"), "")), value),
-                    cb.like(cb.lower(cb.coalesce(root.get("benefits"), "")), value),
-                    cb.like(cb.lower(cb.coalesce(company.get("name"), "")), value),
                     cb.like(cb.lower(cb.coalesce(skill.get("name"), "")), value)
             );
         };
@@ -142,6 +138,18 @@ public class JobSpecification {
             }
 
             return cb.equal(root.get("jobCategory").get("id"), jobCategoryId
+            );
+        };
+    }
+    public static Specification<Job> hasCategory(String category) {
+        return (root, query, cb) -> {
+            if (category == null || category.trim().isEmpty()) {
+                return cb.conjunction();
+            }
+
+            return cb.like(
+                    cb.lower(root.join("jobCategory").get("name")),
+                    "%" + category.trim().toLowerCase() + "%"
             );
         };
     }
@@ -226,6 +234,15 @@ public class JobSpecification {
             return root.get("level").in(levels);
         };
     }
+    public static Specification<Job> hasLevel(JobLevel level) {
+        return (root, query, cb) -> {
+            if (level == null) {
+                return cb.conjunction();
+            }
+
+            return cb.equal(root.get("level"), level);
+        };
+    }
 
     public static Specification<Job> hasWorkingTypes(List<WorkingType> workingTypes) {
 
@@ -238,6 +255,15 @@ public class JobSpecification {
             return root
                     .get("workingType")
                     .in(workingTypes);
+        };
+    }
+    public static Specification<Job> hasWorkingType(WorkingType workingType) {
+        return (root, query, cb) -> {
+            if (workingType == null) {
+                return cb.conjunction();
+            }
+
+            return cb.equal(root.get("workingType"), workingType);
         };
     }
 
@@ -256,6 +282,15 @@ public class JobSpecification {
                     .in(workModes);
         };
     }
+    public static Specification<Job> hasWorkMode(WorkMode workMode) {
+        return (root, query, cb) -> {
+            if (workMode == null) {
+                return cb.conjunction();
+            }
+
+            return cb.equal(root.get("workMode"), workMode);
+        };
+    }
 
     public static Specification<Job> hasCompanies(List<Long> companyIds) {
 
@@ -267,6 +302,18 @@ public class JobSpecification {
 
             return root.get("company").get("id")
                     .in(companyIds);
+        };
+    }
+    public static Specification<Job> hasCompanyName(String companyName) {
+        return (root, query, cb) -> {
+            if (companyName == null || companyName.trim().isEmpty()) {
+                return cb.conjunction();
+            }
+
+            return cb.like(
+                    cb.lower(root.join("company").get("name")),
+                    "%" + companyName.trim().toLowerCase() + "%"
+            );
         };
     }
 

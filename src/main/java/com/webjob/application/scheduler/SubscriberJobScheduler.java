@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class EmailJobScheduler {
+public class SubscriberJobScheduler {
     private final SubscriberRepository subscriberRepository;
 
     private final EmailProducer emailProducer;

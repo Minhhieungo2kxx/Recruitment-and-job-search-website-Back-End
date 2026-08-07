@@ -51,5 +51,55 @@ public class UtilFormat {
 
 
 
+    public static String extractOkContentForHistory(String aiResponse) {
+        if (aiResponse == null) {
+            return "";
+        }
+        return aiResponse
+                .replaceFirst("^\\[OK\\]\\s*", "")
+                .trim();
+    }
+
+    public static String extractOkContentForUser(String aiResponse) {
+        return hideInternalIds(extractOkContentForHistory(aiResponse));
+    }
+    public static String hideInternalIds(String content) {
+        if (content == null) {
+            return "";
+        }
+        return content
+                .replaceAll("\\[JOB_ID:\\d+\\]\\s*", "")
+                .replaceAll("\\[COMPANY_ID:\\d+\\]\\s*", "")
+                .trim();
+    }
+    public static String formatForUser(String content) {
+        if (content == null) {
+            return "";
+        }
+
+        return content
+                .replaceFirst("^\\[OK\\]\\s*", "")
+                .replaceAll("\\[JOB_ID:\\d+\\]\\s*", "")
+                .replaceAll("\\[COMPANY_ID:\\d+\\]\\s*", "")
+                .trim();
+    }
+
+    public static String asString(Object o) {
+        return o == null ? null : o.toString();
+    }
+
+    public static Long asLong(Object o) {
+        return o == null ? null : (long) Double.parseDouble(o.toString());
+    }
+
+    public static Integer asInteger(Object o) {
+        return o == null ? null : (int) Double.parseDouble(o.toString());
+    }
+
+    public static Double asDouble(Object o) {
+        return o == null ? null : Double.parseDouble(o.toString());
+    }
+
+
 
 }

@@ -19,7 +19,15 @@ import java.util.Optional;
 public interface JobAlertRepository extends JpaRepository<JobAlert, Long>, JpaSpecificationExecutor<JobAlert> {
     boolean existsByJobCategoryId(Long jobCategoryId);
 
-    List<JobAlert> findByUserId(Long userId);
+//    List<JobAlert> findByUserId(Long userId);
+
+    @Query("""
+        SELECT ja
+        FROM JobAlert ja
+        LEFT JOIN FETCH ja.jobCategory
+        WHERE ja.user.id = :userId
+    """)
+    List<JobAlert> findByUserIdWithJobCategory(@Param("userId") Long userId);
 
     List<JobAlert> findByUserIdAndActiveTrue(Long userId);
 

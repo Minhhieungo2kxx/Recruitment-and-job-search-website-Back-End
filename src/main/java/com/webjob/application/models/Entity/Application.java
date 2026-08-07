@@ -56,7 +56,6 @@ public class Application {
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
-
     private Instant createdAt;
 
     @LastModifiedDate

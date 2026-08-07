@@ -75,7 +75,7 @@ public class ApplicationService {
         );
         boolean acquired = false;
         try {
-            acquired = lock.tryLock(5, TimeUnit.SECONDS);
+            acquired = lock.tryLock(5, 30, TimeUnit.SECONDS);
             if (!acquired) {
                 log.warn("Cannot acquire apply lock. userId={}, jobId={}", user.getId(), job.getId());
                 throw new ResourceLockedException("Bạn đang thực hiện thao tác ứng tuyển. Vui lòng thử lại.");

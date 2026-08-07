@@ -1,6 +1,5 @@
 package com.webjob.application.event;
 
-import com.webjob.application.dto.record.ResumeFileDeletedEvent;
 import com.webjob.application.service.UploadFileServer.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
