@@ -20,7 +20,7 @@ import java.util.List;
 @Slf4j
 public class PresenceScheduler {
     private final PresenceService presenceService;
-    private final PresenceNotifier notifier;
+
     private final UserRepository userRepository;
 
     private final ApplicationEventPublisher eventPublisher;

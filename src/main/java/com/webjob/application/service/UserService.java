@@ -185,7 +185,7 @@ public class UserService {
     }
 
 
-    public User getUserByRefreshToken(String refreshToken) {
+    public User  getUserByRefreshTokenHash(String refreshToken) {
         User user = userRepository.findByRefreshTokenAndDeletedFalse(refreshToken);
 
         if (user == null) {
@@ -219,11 +219,11 @@ public class UserService {
 
     }
 
-    @Transactional
-    public void updateRefreshtoken(Long id, String refreshtoken) {
+
+    public void updateRefreshtoken(Long id, String refreshTokenHash) {
         User user = userRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
-        user.setRefreshToken(refreshtoken);
+        user.setRefreshToken(refreshTokenHash);
         userRepository.save(user);
     }
 

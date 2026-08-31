@@ -1,5 +1,6 @@
 package com.webjob.application.mapper;
 
+import com.webjob.application.document.CompanyDocument;
 import com.webjob.application.dto.Response.CompanyAiDetailDTO;
 import com.webjob.application.models.Entity.Company;
 import org.springframework.stereotype.Component;
@@ -9,30 +10,7 @@ import java.util.Map;
 @Component
 public class CompanyMapper {
 
-//    public Map<String, Object> toMapDetail(Company company) {
-//        if (company == null) {
-//            return Map.of();
-//        }
-//        return Map.ofEntries(
-//                Map.entry("id", company.getId()),
-//                Map.entry("name", company.getName()),
-//                Map.entry("description", nullToEmpty(company.getDescription())),
-//                Map.entry("address", nullToEmpty(company.getAddress())),
-//                Map.entry("website", nullToEmpty(company.getWebsite())),
-//                Map.entry("email", nullToEmpty(company.getEmail())),
-//                Map.entry("phone", nullToEmpty(company.getPhone())),
-//                Map.entry("foundedYear",company.getFoundedYear()),
-//                Map.entry("taxCode",nullToEmpty(company.getTaxCode())),
-//                Map.entry("employeeSize", company.getEmployeeSize() != null ? company.getEmployeeSize() : 0),
-//                Map.entry("industry", company.getIndustry() != null && company.getIndustry().getName() != null
-//                        ? company.getIndustry().getName() : "")
-//        );
-//    }
 
-
-    //    private String nullToEmpty(String input) {
-//        return input == null ? "" : input;
-//    }
     public CompanyAiDetailDTO toCompanyAiDetailDTO(Company company) {
         if (company == null) {
             return null; // Hoặc trả về một DTO rỗng tùy vào business của bạn
@@ -51,6 +29,30 @@ public class CompanyMapper {
                 .employeeSize(company.getEmployeeSize() != null ? company.getEmployeeSize() : 0)
                 .industry(company.getIndustry() != null && company.getIndustry().getName() != null
                         ? company.getIndustry().getName() : "")
+                .build();
+    }
+
+    public CompanyDocument toDocument(Company company) {
+        if (company == null) {
+            return null;
+        }
+        return CompanyDocument.builder()
+                .id(company.getId())
+                .name(nullToEmpty(company.getName()))
+                .description(nullToEmpty(company.getDescription()))
+                .address(nullToEmpty(company.getAddress()))
+                .logo(nullToEmpty(company.getLogo()))
+                .website(nullToEmpty(company.getWebsite()))
+                .email(nullToEmpty(company.getEmail()))
+                .phone(nullToEmpty(company.getPhone()))
+                .employeeSize(company.getEmployeeSize())
+                .foundedYear(company.getFoundedYear())
+                .status(nullToEmpty(company.getStatus().name()))
+                .deleted(company.getDeleted())
+                .taxCode(nullToEmpty(company.getTaxCode()))
+                .industryId(company.getIndustry() == null ? null : company.getIndustry().getId())
+                .industryName(company.getIndustry() == null ? nullToEmpty(null) : nullToEmpty(company.getIndustry().getName()))
+                .createdAt(company.getCreatedAt())
                 .build();
     }
 

@@ -153,8 +153,3 @@ public class ApplicationController {
 
 }
 
-// user:create,get all,detail,delete
-//hr:update status application,get all,detail
-//admin: get all, delete
-
-//git commit -m "feat(application): implement application lifecycle management"

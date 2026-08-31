@@ -9,6 +9,7 @@ import com.webjob.application.dto.Interface.JobCountDto;
 import com.webjob.application.models.Entity.Job;
 import com.webjob.application.models.Entity.Skill;
 import jakarta.annotation.Nullable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.*;
@@ -106,14 +107,17 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
 
     Optional<Job> findByIdAndDeletedTrue(Long id);
 
+
     @Modifying
     @Query("""
-                UPDATE Job j
-                SET j.viewCount = j.viewCount + 1
-                WHERE j.id = :id
-                  AND j.deleted = false
-            """)
+    UPDATE Job j
+    SET j.viewCount = COALESCE(j.viewCount, 0) + 1
+    WHERE j.id = :id
+      AND j.deleted = false
+""")
     int increaseViewCount(@Param("id") Long id);
+
+
 
     int countByCompanyIdAndDeletedFalse(Long companyId);
 
@@ -457,5 +461,11 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
             "jobSkills.skill"
     })
     List<Job> findByIdIn(List<Long> ids);
+
+    @Query("SELECT j.id FROM Job j")
+    Page<Long> findAllIds(Pageable pageable);
+
+
+
 
 }

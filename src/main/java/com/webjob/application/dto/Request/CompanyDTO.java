@@ -46,8 +46,8 @@ public class CompanyDTO {
     @Max(value = 2027, message = "Năm thành lập không được vượt quá năm hiện tại")
     private Integer foundedYear;
 
-    @Enumerated(EnumType.STRING)
-    private CompanyStatus status;
+//    @Enumerated(EnumType.STRING)
+//    private CompanyStatus status;
 
     @Column(unique = true, length = 20)
     private String taxCode;

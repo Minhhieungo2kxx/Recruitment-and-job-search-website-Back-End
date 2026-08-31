@@ -12,7 +12,7 @@ services:
     hostname: rabbitmq
 
     ports:
-      - "30081:5672"
+      - "30080:5672"
       - "15672:15672"
 
     environment:
@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
 
     ports:
-      - "30080:6379"
+      - "30081:6379"
 
     environment:
       REDIS_PASSWORD: ${SPRING_REDIS_PASSWORD}
@@ -54,8 +54,30 @@ services:
       timeout: 5s
       retries: 5
 
+  elasticsearch:
+    image: elasticsearch:8.15.0
+    container_name: elasticsearch
+    restart: unless-stopped
 
+    environment:
+      discovery.type: single-node
+
+      xpack.security.enabled: true
+
+      ELASTIC_PASSWORD: ${SPRING_ELASTICSEARCH_PASSWORD}
+
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+
+      bootstrap.memory_lock: false
+
+    ports:
+      - "30082:9200"
+
+
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
 
 volumes:
   redis_data:
   rabbitmq-data:
+  elastic_data:

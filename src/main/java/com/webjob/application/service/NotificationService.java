@@ -93,7 +93,7 @@ public class NotificationService {
         List<NotificationResponse> list = pagelist.getContent().stream()
                 .map(notificationMapper::toResponse)
                 .toList();
-        // 4. Trả về kết quả
+
         return new ResponseDTO<>(metaDTO, list);
 
     }
@@ -164,6 +164,13 @@ public class NotificationService {
 
         notification.setRead(!notification.isRead());
 
+    }
+    @Transactional
+    public void readById(Long id) {
+        Notification notification = notificationRepository
+                .findByIdAndUserId(id, securityUtils.getCurrentUserId())
+                .orElseThrow(() -> new BadRequestException("Notification not found"));
+        notification.setRead(true);
     }
 
 }

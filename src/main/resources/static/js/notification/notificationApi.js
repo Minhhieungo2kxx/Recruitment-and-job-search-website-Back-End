@@ -18,6 +18,8 @@ export async function togglePinNotification(notificationId, accessToken) {
     return response;
 }
 
+
+
 export async function toggleReadNotification(notificationId, accessToken) {
     const response = await fetch(
         `/api/v1/notifications/${notificationId}/read-toggle`,
@@ -32,6 +34,27 @@ export async function toggleReadNotification(notificationId, accessToken) {
 
     if (!response.ok) {
         throw new Error("Không thể thay đổi trạng thái đọc thông báo");
+    }
+
+    return response;
+}
+
+export async function markNotificationAsRead(notificationId, accessToken) {
+    const response = await fetch(
+        `/api/v1/notifications/${notificationId}/read`,
+        {
+            method: "PATCH",
+            headers: {
+                "Authorization": `Bearer ${accessToken}`,
+                "Content-Type": "application/json"
+            }
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error(
+            "Không thể đánh dấu thông báo đã đọc"
+        );
     }
 
     return response;

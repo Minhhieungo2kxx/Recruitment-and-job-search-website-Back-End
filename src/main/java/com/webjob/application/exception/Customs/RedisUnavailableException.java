@@ -4,4 +4,9 @@ public class RedisUnavailableException extends RuntimeException{
     public RedisUnavailableException(String message) {
         super(message);
     }
+
+    public RedisUnavailableException(String message,Throwable throwable) {
+
+        super(message,throwable);
+    }
 }

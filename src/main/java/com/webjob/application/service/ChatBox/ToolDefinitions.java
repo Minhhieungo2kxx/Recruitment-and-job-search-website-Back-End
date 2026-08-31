@@ -84,7 +84,9 @@ public class ToolDefinitions {
                                         "phone", param("string", "Số điện thoại"),
                                         "website", param("string", "Website"),
                                         "address", param("string", "Địa chỉ hoặc khu vực của công ty (ví dụ: Hà Nội, TP.HCM, Đà Nẵng)"),
-                                        "industry", param("string", "Lĩnh vực hoặc ngành nghề kinh doanh của công ty (ví dụ: Công nghệ thông tin, Tài chính, Giáo dục)")
+                                        "industry", param("string", "Ngành hoặc lĩnh vực kinh doanh của công ty nếu người dùng có đề cập.")
+
+//                                        "industry", param("string", "Lĩnh vực hoặc ngành nghề kinh doanh của công ty (ví dụ: Công nghệ thông tin, Tài chính, Giáo dục)")
                                 ),
                                 List.of()
                         ),
@@ -129,16 +131,16 @@ public class ToolDefinitions {
                         function(
                                 "getFavoriteJobs",
                                 """
-                                Lấy danh sách các công việc mà người dùng đã lưu hoặc đánh dấu yêu thích.
-                            
-                                Khi trả lời người dùng, với mỗi công việc hãy hiển thị:
-                                - Tiêu đề công việc
-                                - Công ty
-                                - Mức lương
-                                - Địa điểm
-                                - Loại hình làm việc
-                                - Hạn nộp hồ sơ
-                                """,
+                                        Lấy danh sách các công việc mà người dùng đã lưu hoặc đánh dấu yêu thích.
+                                                                    
+                                        Khi trả lời người dùng, với mỗi công việc hãy hiển thị:
+                                        - Tiêu đề công việc
+                                        - Công ty
+                                        - Mức lương
+                                        - Địa điểm
+                                        - Loại hình làm việc
+                                        - Hạn nộp hồ sơ
+                                        """,
                                 Map.of(
                                         "limit", param("integer", "Số lượng kết quả tối đa cần trả về. Mặc định là 10 nếu không truyền.")
                                 ),
@@ -157,9 +159,6 @@ public class ToolDefinitions {
                         )
 
 
-
-
-
                 )
         );
     }
@@ -176,7 +175,7 @@ public class ToolDefinitions {
         );
     }
 
-    private  Map<String, Object> param(String type, String description) {
+    private Map<String, Object> param(String type, String description) {
         return Map.of("type", type, "description", description);
     }
 }

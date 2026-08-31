@@ -1,5 +1,6 @@
 package com.webjob.application.utils.common;
 
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import lombok.*;
 
 import java.security.SecureRandom;
@@ -99,6 +100,22 @@ public class UtilFormat {
     public static Double asDouble(Object o) {
         return o == null ? null : Double.parseDouble(o.toString());
     }
+
+    public static  <T extends Enum<T>> T parseEnumSafe(Class<T> enumClass, String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return Enum.valueOf(enumClass, value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    public static String normalizeTaxCode(String taxCode) {
+        return taxCode == null
+                ? null
+                : taxCode.replaceAll("[\\s-]", "");
+    }
+
 
 
 

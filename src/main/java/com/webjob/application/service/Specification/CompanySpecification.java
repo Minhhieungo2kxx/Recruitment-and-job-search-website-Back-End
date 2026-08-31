@@ -20,9 +20,13 @@ public class CompanySpecification {
 
             String value = "%" + keyword.trim().toLowerCase() + "%";
 
+            Join<Company, Industry> industryJoin =
+                    root.join("industry", JoinType.LEFT);
+
             return cb.or(
-                    cb.like(cb.lower(root.get("name")), value)
-//                    cb.like(cb.lower(root.get("description")), value)
+                    cb.like(cb.lower(root.get("name")), value),
+                    cb.like(cb.lower(root.get("description")), value),
+                    cb.like(cb.lower(industryJoin.get("name")), value)
             );
         };
     }

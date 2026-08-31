@@ -5,9 +5,9 @@ import com.webjob.application.exception.Customs.UnauthorizedException;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.dto.Request.LoginDTO;
 import com.webjob.application.dto.Request.Userrequest;
-import com.webjob.application.dto.Response.ApiResponse;
 import com.webjob.application.dto.Response.LoginResponse;
 import com.webjob.application.dto.Response.UserDTO;
+import com.webjob.application.service.Redis.LoginNotificationService;
 import com.webjob.application.service.Redis.TokenBlacklistService;
 import com.webjob.application.service.SendEmail.ApplicationEmailService;
 import com.webjob.application.utils.common.SecurityUtils;
@@ -18,9 +18,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,16 +32,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class AuthService {
     private final AuthenticationManager authenticationManager;
-    private final SecurityUtil securityUtil;
     private final UserService userService;
     private final ModelMapper modelMapper;
 
@@ -58,6 +52,8 @@ public class AuthService {
     private final ApplicationEmailService applicationEmailService;
     private final ApplicationEventPublisher eventPublisher;
 
+    private final LoginNotificationService loginNotificationService;
+
 
     @Transactional
     public LoginResponse handleLogin(LoginDTO loginDTO, HttpServletRequest request) {
@@ -65,18 +61,35 @@ public class AuthService {
         User user = getUserFromAuthentication(authentication);
         LoginResponse loginResponse = buildLoginResponse(user);
         ResponseCookie refreshCookie = createRefreshCookie(user);
-        userService.updateRefreshtoken(user.getId(), refreshCookie.getValue());
+
+        String refreshTokenHash = securityUtils.sha256(refreshCookie.getValue());
+        userService.updateRefreshtoken(user.getId(), refreshTokenHash);
         loginResponse.setRefreshCookie(refreshCookie.toString());
-        //send Email
-//        eventPublisher.publishEvent(
-//                new LoginSuccessEvent(
-//                        user.getEmail(),
-//                        getClientIp(request),
-//                        request.getHeader("User-Agent"),
-//                        LocalDateTime.now()
-//                )
-//        );
-       return loginResponse;
+//        send email
+        handleLoginNotification(user.getEmail(), user.getId(), request);
+        return loginResponse;
+    }
+
+    private void handleLoginNotification(String email, Long userId, HttpServletRequest request) {
+        if (email == null || email.isBlank()) {
+            return;
+        }
+        if (!loginNotificationService.shouldSendLoginNotification(userId)) {
+            return;
+        }
+        try {
+            eventPublisher.publishEvent(
+                    new LoginSuccessEvent(
+                            email,
+                            getClientIp(request),
+                            request.getHeader("User-Agent"),
+                            LocalDateTime.now()
+                    )
+            );
+        } catch (Exception e) {
+            log.error("Cannot send login notification. userId={}", userId, e);
+            loginNotificationService.removeNotificationFlag(userId);
+        }
     }
 
     public LoginResponse.User getCurrentUserInfo() {
@@ -90,20 +103,20 @@ public class AuthService {
     @Transactional
     public LoginResponse refreshToken(String refreshToken) {
 
-        // 1. Nếu không có token → reject
-        if ("default".equals(refreshToken) || refreshToken == null) {
+        if (refreshToken == null || refreshToken.isBlank() || "default".equals(refreshToken)) {
             throw new UnauthorizedException("No refresh token found");
         }
 
-        // 2. Lấy user theo refresh token từ DB
-        User user = null;
+        String refreshTokenHash = securityUtils.sha256(refreshToken);
+
+
+        User user;
         try {
-            user = userService.getUserByRefreshToken(refreshToken);
+            user = userService.getUserByRefreshTokenHash(refreshTokenHash);
         } catch (UsernameNotFoundException ex) {
             throw new UnauthorizedException("Refresh token expired or revoked");
         }
 
-        // 3. Decode JWT chỉ để lấy email (không dùng để kiểm tra validity!)
         Jwt decodedJwt;
         try {
             decodedJwt = jwtDecoder.decode(refreshToken);
@@ -111,39 +124,44 @@ public class AuthService {
             throw new UnauthorizedException("Invalid refresh token.");
         }
 
-        // 4. Kiểm tra email từ JWT có khớp user DB
-        if (!decodedJwt.getClaim("email").equals(user.getEmail())) {
+        String email = decodedJwt.getClaim("email");
+        if (!email.equals(user.getEmail())) {
             throw new UnauthorizedException("Refresh token does not match user");
         }
-        // 5. Build login response (tạo access token mới)
+
         LoginResponse loginResponse = buildLoginResponse(user);
 
-        // 6. Tạo refresh token mới
         ResponseCookie newRefreshCookie = createRefreshCookie(user);
 
-        // 7. Cập nhật refresh token mới vào DB (revoke token cũ)
-        userService.updateRefreshtoken(user.getId(), newRefreshCookie.getValue());
+        String newRefreshTokenHash = securityUtils.sha256(newRefreshCookie.getValue());
 
+
+        userService.updateRefreshtoken(
+                user.getId(),
+                newRefreshTokenHash
+        );
+
+        // 10. Gửi refresh token thật qua HttpOnly Cookie
         loginResponse.setRefreshCookie(newRefreshCookie.toString());
+
         return loginResponse;
-
     }
 
 
-@Transactional
-public void logout(HttpServletRequest request) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (!isAuthenticated(authentication)) {
-        throw new UnauthorizedException("Unauthorized");
-    }
-    String token = extractBearerToken(request);
-    if (token != null) {
-        blacklistToken(token);
-    }
-    User user = getUserFromAuthentication(authentication);
-    clearRefreshToken(user);
+    @Transactional
+    public void logout(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!isAuthenticated(authentication)) {
+            throw new UnauthorizedException("Unauthorized");
+        }
+        String token = extractBearerToken(request);
+        if (token != null) {
+            blacklistToken(token);
+        }
+        User user = getUserFromAuthentication(authentication);
+        clearRefreshToken(user);
 
-}
+    }
 
 
     @Transactional
@@ -168,7 +186,7 @@ public void logout(HttpServletRequest request) {
     }
 
     private void blacklistToken(String token) {
-        long remaining = securityUtil.getRemainingValidity(token);
+        long remaining = securityUtils.getRemainingValidity(token);
         tokenBlacklistService.blacklistToken(token, remaining);
     }
 
@@ -189,8 +207,6 @@ public void logout(HttpServletRequest request) {
         headers.add(HttpHeaders.SET_COOKIE, deleteCookie.toString());
         return headers;
     }
-
-
 
 
     private Authentication authenticateUser(LoginDTO loginDTO) {
@@ -227,7 +243,7 @@ public void logout(HttpServletRequest request) {
 
     private LoginResponse buildLoginResponse(User user) {
         LoginResponse.User userDTO = modelMapper.map(user, LoginResponse.User.class);
-        String accessToken = securityUtil.createacessToken(user);
+        String accessToken = securityUtils.createacessToken(user);
         return LoginResponse.builder()
                 .accessToken(accessToken)
                 .user(userDTO)
@@ -235,8 +251,7 @@ public void logout(HttpServletRequest request) {
     }
 
     private ResponseCookie createRefreshCookie(User user) {
-        LoginResponse.User userDTO = modelMapper.map(user, LoginResponse.User.class);
-        String refreshToken = securityUtil.createrefreshToken(user);
+        String refreshToken = securityUtils.createrefreshToken(user);
 
         return ResponseCookie.from("refresh", refreshToken)
                 .httpOnly(true)

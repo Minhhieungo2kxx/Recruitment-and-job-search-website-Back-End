@@ -15,6 +15,17 @@ public class CompanySearchRequest {
 
     private String industry;
 
+    private String taxCode;
+
+    private String email;
+
+    private String phone;
+
+    private String website;
+
+    private String address;
+
+
     private Integer minEmployeeSize;
 
     private Integer maxEmployeeSize;

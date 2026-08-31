@@ -1,18 +1,25 @@
 package com.webjob.application.service;
 
+import com.webjob.application.document.JobDocument;
 import com.webjob.application.dto.Request.ApplyRequest;
+import com.webjob.application.dto.Request.OutboxDTO;
 import com.webjob.application.dto.Request.UpdateApplicationStatusRequest;
 import com.webjob.application.dto.Response.*;
+import com.webjob.application.enums.OutboxCategory;
+import com.webjob.application.enums.OutboxEventType;
 import com.webjob.application.enums.ResumeStatus;
 import com.webjob.application.event.dto.ApplicationStatusChangedEvent;
 import com.webjob.application.event.dto.JobAppliedNotificationEvent;
 import com.webjob.application.exception.Customs.*;
 import com.webjob.application.mapper.ApplicationMapper;
+import com.webjob.application.messaging.config.RabbitMQConfig;
+import com.webjob.application.messaging.dto.JobAppliedEvent;
 import com.webjob.application.models.Entity.*;
 import com.webjob.application.repository.ApplicationRepository;
 import com.webjob.application.repository.JobRepository;
 import com.webjob.application.repository.TemporaryUploadRepository;
 import com.webjob.application.repository.UserResumeRepository;
+import com.webjob.application.service.OutBox.OutboxService;
 import com.webjob.application.service.Specification.ApplicationSpecification;
 import com.webjob.application.utils.common.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +36,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.file.AccessDeniedException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collections;
@@ -62,6 +68,8 @@ public class ApplicationService {
     private final ApplicationMapper applicationMapper;
 
     private final SecurityUtils securityUtils;
+    private final OutboxService outboxService;
+
 
     @Transactional
     public ApplicationResponse apply(ApplyRequest request) {
@@ -98,19 +106,21 @@ public class ApplicationService {
 
             jobRepository.increaseAppliedCount(job.getId());
 
+
 //            ham gui su kien 2 cai notification + email
             publishJobAppliedEvents(saved,job,user,hr);
+            JobAppliedCountIncrementedOutbox(job.getId());
 
             log.info("Apply success. resumeId={}, userId={}, jobId={}", saved.getId(), user.getId(), job.getId());
             return applicationMapper.toResponseApplication(saved);
 
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new AppException("Không thể lấy lock. " + ex.getMessage());
+            throw new AppException("Không thể lấy lock. ",ex);
         } catch (DataIntegrityViolationException ex) {
             log.info("Duplicate apply. userId={}, jobId={}", user.getId(), job.getId()
             );
-            throw new AlreadyAppliedException("Bạn đã ứng tuyển công việc này.");
+            throw new AlreadyAppliedException("Bạn đã ứng tuyển công việc này.",ex);
 
         } finally {
 
@@ -120,6 +130,7 @@ public class ApplicationService {
         }
     }
     public void publishJobAppliedEvents(Application saved, Job job, User user, User hr) {
+//        notification real time
         eventPublisher.publishEvent(
                 JobAppliedNotificationEvent.builder()
                         .applicationId(saved.getId())
@@ -130,9 +141,19 @@ public class ApplicationService {
                         .build()
         );
 
-        eventPublisher.publishEvent(
-                applicationMapper.buildJobAppliedEvent(saved, job, user, hr)
-        );
+//        outbox email
+        JobAppliedEvent event=applicationMapper.buildJobAppliedEvent(saved,job,user,hr);
+        OutboxDTO dto = OutboxDTO.builder()
+                .aggregateType("APPLICATION")
+                .aggregateId(saved.getId().toString())
+                .category(OutboxCategory.EMAIL)
+                .eventType(OutboxEventType.JOB_APPLY)
+                .payload(event)
+                .exchangeName(RabbitMQConfig.EMAIL_EXCHANGE)
+                .routingKey(RabbitMQConfig.JOB_APPLY_ROUTING_KEY)
+                .build();
+        outboxService.save(dto);
+
     }
 
 
@@ -419,11 +440,12 @@ public class ApplicationService {
         }
 
         Job job = application.getJob();
+        Long jobId=job.getId();
 
-        if (job != null && job.getAppliedCount() > 0) {
-            jobRepository.decreaseAppliedCount(job.getId());
+        if (job.getAppliedCount() > 0) {
+            jobRepository.decreaseAppliedCount(jobId);
+            JobApplicationWithdrawnOutbox(jobId);
         }
-
         applicationRepository.delete(application);
     }
 
@@ -440,4 +462,36 @@ public class ApplicationService {
         }
         applicationRepository.delete(application);
     }
+
+    public void JobAppliedCountIncrementedOutbox(Long jobId) {
+        JobDocument document = JobDocument.builder()
+                .id(jobId)
+                .build();
+        OutboxDTO dto = OutboxDTO.builder()
+                .aggregateType("JOB")
+                .aggregateId(jobId.toString())
+                .category(OutboxCategory.JOB_INDEX)
+                .eventType(OutboxEventType.JOB_INDEX_APPLIED_COUNT_INCREMENTED)
+                .payload(document)
+                .exchangeName(RabbitMQConfig.JOB_INDEX_EXCHANGE)
+                .routingKey(RabbitMQConfig.JOB_INDEX_APPLIED_COUNT_INCREMENTED_ROUTING_KEY)
+                .build();
+        outboxService.save(dto);
+    }
+    public void JobApplicationWithdrawnOutbox(Long jobId) {
+        JobDocument document = JobDocument.builder()
+                .id(jobId)
+                .build();
+        OutboxDTO dto = OutboxDTO.builder()
+                .aggregateType("JOB")
+                .aggregateId(jobId.toString())
+                .category(OutboxCategory.JOB_INDEX)
+                .eventType(OutboxEventType.JOB_INDEX_APPLICATION_WITHDRAWN)
+                .payload(document)
+                .exchangeName(RabbitMQConfig.JOB_INDEX_EXCHANGE)
+                .routingKey(RabbitMQConfig.JOB_INDEX_APPLICATION_WITHDRAWN_ROUTING_KEY)
+                .build();
+        outboxService.save(dto);
+    }
+
 }

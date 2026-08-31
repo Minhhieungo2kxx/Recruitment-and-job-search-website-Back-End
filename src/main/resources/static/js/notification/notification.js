@@ -319,6 +319,33 @@ function createNotificationElement(notification) {
 
         });
 
+    item.addEventListener("click", async function () {
+        if (notification.read) {
+            return;
+        }
+
+        try {
+            await notificationApi.markNotificationAsRead(
+                notification.id,
+                state.accessToken
+            );
+
+            notification.read = true;
+
+            item.classList.remove("unread");
+
+            updateMenuText();
+
+            loadUnreadCount();
+
+        } catch (error) {
+            console.error(
+                "Lỗi khi đánh dấu notification đã đọc:",
+                error
+            );
+        }
+    });
+
 
     return item;
 }

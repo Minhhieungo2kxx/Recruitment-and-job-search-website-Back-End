@@ -16,6 +16,7 @@ public class JobFilterAdminRequest {
 
     private JobStatus status;
 
+
     private Boolean deleted;
 
     /**

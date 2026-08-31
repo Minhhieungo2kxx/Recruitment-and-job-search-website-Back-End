@@ -114,6 +114,18 @@ public class NotificationController {
                 )
         );
     }
+    @PatchMapping("/{id}/read")
+    public ResponseEntity<Object> read(@PathVariable Long id) {
+        notificationService.readById(id);
+        return ResponseEntity.ok(
+                new ApiResponse<>(
+                        200,
+                        null,
+                        "Notification Read successful",
+                        null
+                )
+        );
+    }
 
 
 }

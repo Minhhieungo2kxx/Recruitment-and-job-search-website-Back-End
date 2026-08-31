@@ -115,9 +115,3 @@ public class JobCategoryController {
 
 
 }
-//git commit -m "feat(job-category): implement complete job category management"
-
-
-//Để xác định chính xác kiểu dữ liệu cần đặt bên trong dấu <> của ResponseEntity
-//, cần dựa vào một quy tắc cốt lõi:"Controller trả về cái gì cho Client thì kiểu dữ liệu trong <> phải là cái đó".
-//Nói cách khác, kiểu dữ liệu trong <> chính là kiểu của phần Body (thân hàm) mà bạn sẽ truyền vào ResponseEntity.ok(body).

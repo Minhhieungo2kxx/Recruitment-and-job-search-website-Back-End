@@ -1,42 +1,43 @@
 package com.webjob.application.service;
 
+import com.webjob.application.document.JobDocument;
+import com.webjob.application.dto.Request.*;
 import com.webjob.application.dto.Response.*;
-import com.webjob.application.dto.Request.JobFilterAdminRequest;
-import com.webjob.application.dto.Request.JobFilterClient;
-import com.webjob.application.dto.Request.JobFilterHrRequest;
+import com.webjob.application.elasticsearch.job.JobElasticsearchSearchService;
 import com.webjob.application.enums.CompanyStatus;
 import com.webjob.application.enums.JobStatus;
+import com.webjob.application.enums.OutboxCategory;
+import com.webjob.application.enums.OutboxEventType;
 import com.webjob.application.event.dto.JobCreatedEvent;
 import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.exception.Customs.ForbiddenException;
-import com.webjob.application.exception.Customs.UnauthorizedException;
 import com.webjob.application.mapper.JobMapper;
+import com.webjob.application.messaging.config.RabbitMQConfig;
 import com.webjob.application.models.Entity.*;
-import com.webjob.application.dto.Request.JobRequest;
 import com.webjob.application.repository.CompanyRepository;
 import com.webjob.application.repository.JobRepository;
 import com.webjob.application.repository.SkillRepository;
+import com.webjob.application.service.OutBox.OutboxService;
 import com.webjob.application.service.Specification.JobSpecification;
 import com.webjob.application.utils.common.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.redisson.api.RBucket;
+import org.redisson.api.RedissonClient;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -60,14 +61,21 @@ public class JobService {
     private final JobMapper jobMapper;
     private final ApplicationEventPublisher publisher;
 
+    private final JobElasticsearchSearchService elasticsearchSearchService;
+
+    private final RedissonClient redissonClient;
+    private final OutboxService outboxService;
+
+
+    private static final long VIEW_TTL_HOURS = 24;
+
 
     @Transactional
-    @CacheEvict(value = "jobsCache", allEntries = true)
     public JobResponse createJob(JobRequest request) {
         checkNameJob(request.getName());
         User user = securityUtils.getCurrentUser();
         validateCompany(user);
-        validateSalary(request.getSalaryMin(),request.getSalaryMax());
+        validateSalary(request.getSalaryMin(), request.getSalaryMax());
 
         JobCategory category = jobCategoryService.findById(request.getJobCategoryId());
         Job job = modelMapper.map(request, Job.class);
@@ -81,19 +89,14 @@ public class JobService {
 
         job.setJobSkills(jobSkills);
 
-        Job saved=jobRepository.save(job);
-        JobCreatedEvent event = JobCreatedEvent.builder()
-                .companyId(saved.getCompany().getId())
-                .companyName(saved.getCompany().getName())
-                .local(saved.getLocation()).SalaryMin(saved.getSalaryMin())
-                .SalaryMax(saved.getSalaryMax()).jobName(saved.getName())
-                .jobId(saved.getId())
-                .build();
-        publisher.publishEvent(event);
-        log.info("Publishing JobCreatedEvent for jobId: {}, jobName: {}, companyId: {}",
-                event.getJobId(), event.getJobName(), event.getCompanyId());
+        Job saved = jobRepository.save(job);
+        publishJobEvent(saved);
+        outBoxJobEventIndex(saved);
+
+
         return jobMapper.toResponse(saved);
     }
+
     public List<JobSkill> buildJobSkills(Job job, JobRequest request) {
         List<JobSkill> jobSkills = new ArrayList<>();
 
@@ -142,7 +145,7 @@ public class JobService {
         Job job = getById(id);
         User user = securityUtils.getCurrentUser();
         validateCompany(user);
-        validateSalary(request.getSalaryMin(),request.getSalaryMax());
+        validateSalary(request.getSalaryMin(), request.getSalaryMax());
 
         if (!job.getCompany().getId().equals(user.getCompany().getId())) {
             throw new ForbiddenException("You are not allowed to access this job.");
@@ -158,12 +161,15 @@ public class JobService {
         if (request.getSkills() != null) {
             job.getJobSkills().clear();
             jobRepository.flush();   // Thực hiện DELETE ngay
-            jobSkills=buildJobSkills(job, request);
+            jobSkills = buildJobSkills(job, request);
         }
         job.setJobSkills(jobSkills);
         Job edit = jobRepository.save(job);
+
+        updateJobIndexOutbox(edit);
         return jobMapper.toResponse(edit);
     }
+
     public boolean checkNameJob(String name) {
         boolean exist = jobRepository.existsByNameAndDeletedFalse(name);
         if (exist) {
@@ -175,21 +181,17 @@ public class JobService {
     public Job getById(Long id) {
         Job job = jobRepository.findByIdAndDeletedFalse(id).
                 orElseThrow(() -> new IllegalArgumentException("Job not found with ID: " + id));
-        User user = securityUtils.getCurrentUser();
-        validateCompany(user);
         return job;
     }
 
 
     public Page<Job> getAllPage(int page, int size, JobFilterAdminRequest request) {
-        Specification<Job> specification =
-                Specification.where(JobSpecification.keyword(request.getKeyword()));
-        if (Boolean.TRUE.equals(request.getActiveOnly())) {
-            specification = specification.and(
-                    JobSpecification.activeOnly()
-            );
-        }
+        Pageable fallbackPageable = PageRequest.of(page, size, jobMapper.toSort(request.getSort()));
+        Specification<Job> specification = Specification.where(JobSpecification.keyword(request.getKeyword()));
 
+        if (Boolean.TRUE.equals(request.getActiveOnly())) {
+            specification = specification.and(JobSpecification.activeOnly());
+        }
         specification = specification
                 .and(JobSpecification.hasStatus(request.getStatus()))
                 .and(JobSpecification.hasDeleted(request.getDeleted()))
@@ -197,19 +199,28 @@ public class JobService {
                 .and(JobSpecification.hasJobCategory(request.getJobCategoryId()))
                 .and(JobSpecification.hasWorkingTypes(request.getWorkingTypes()))
                 .and(JobSpecification.hasWorkModes(request.getWorkModes()))
-                .and(JobSpecification.hasSalary(
-                        request.getMinSalary(),
-                        request.getMaxSalary()))
-                .and(JobSpecification.hasExperience(
-                        request.getExperience()))
-                .and(JobSpecification.hasLevels(
-                        request.getLevels()))
+                .and(JobSpecification.hasSalary(request.getMinSalary(), request.getMaxSalary()))
+                .and(JobSpecification.hasExperience(request.getExperience()))
+                .and(JobSpecification.hasLevels(request.getLevels()))
                 .and(JobSpecification.createdBetween(request.getFrom(), request.getTo()))
-                .and(JobSpecification.hasNegotiable(
-                        request.getNegotiable()));
-        Pageable pageable = PageRequest.of(page, size, jobMapper.toSort(request.getSort()));
-        return jobRepository.findAll(specification, pageable);
+                .and(JobSpecification.hasNegotiable(request.getNegotiable()));
+        return jobRepository.findAll(specification, fallbackPageable);
+//        }
 
+    }
+
+    private List<Job> reorderJobs(List<Long> ids, List<Job> jobs) {
+
+        Map<Long, Job> jobMap = jobs.stream()
+                .collect(Collectors.toMap(
+                        Job::getId,
+                        Function.identity()
+                ));
+
+        return ids.stream()
+                .map(jobMap::get)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
 
@@ -222,40 +233,63 @@ public class JobService {
         if (size <= 0) {
             size = 10;
         }
-        Pageable pageable = PageRequest.of(page - 1, size, jobMapper.toSort(request.getSort()));
-        Specification<Job> specification =
-                Specification.where(JobSpecification.notDeleted())
-                        .and(JobSpecification.activeOnly())
-                        .and(JobSpecification.keyword(request.getKeyword()))
-                        .and(JobSpecification.hasLocation(request.getLocation()))
-                        .and(JobSpecification.hasJobCategory(request.getJobCategoryId()))
-                        .and(JobSpecification.hasCompanies(request.getCompanyIds()))
-                        .and(JobSpecification.companyActive())
-                        .and(JobSpecification.hasSkills(request.getSkillIds()))
-                        .and(JobSpecification.hasSalary(
-                                request.getMinSalary(),
-                                request.getMaxSalary()
-                        ))
-                        .and(JobSpecification.hasExperience(
-                                request.getExperience()
-                        ))
-                        .and(JobSpecification.hasLevels(
-                                request.getLevels()
-                        ))
-                        .and(JobSpecification.hasWorkingTypes(
-                                request.getWorkingTypes()
-                        ))
-                        .and(JobSpecification.hasWorkModes(
-                                request.getWorkModes()
-                        ))
-                        .and(JobSpecification.createdWithin(
-                                request.getPostedDate()
-                        ))
-                        .and(JobSpecification.hasNegotiable(
-                                request.getNegotiable()
-                        ));
-        Page<Job> result = jobRepository.findAll(specification, pageable);
+        Page<Job> result = searchJobClient(page - 1, size, request);
         return convertToJobResponseDTO(result);
+    }
+
+    public Page<Job> searchJobClient(int page, int size, JobFilterClient request) {
+        Pageable pageable = PageRequest.of(page, size);
+        ElasticsearchSearchResult result;
+        try {
+            result = elasticsearchSearchService.searchClient(page, size, request);
+            long total = (result != null) ? result.getTotal() : 0;
+            if (result == null || result.getIds() == null || result.getIds().isEmpty()) {
+                return new PageImpl<>(Collections.emptyList(), pageable, total);
+            }
+            List<Job> jobs = jobRepository.findByIdIn(result.getIds());
+
+            List<Job> orderedJobs = reorderJobs(result.getIds(), jobs);
+            log.info("Search used Elasticsearch successful");
+            return new PageImpl<>(orderedJobs, pageable, total);
+        } catch (Exception e) {
+            log.error(
+                    "Elasticsearch search failed. Fallback to database. " + "page={}, size={}, keyword={}",
+                    page, size, request.getKeyword(), e
+            );
+            Pageable fallbackPageable = PageRequest.of(page, size, jobMapper.toSort(request.getSort()));
+            Specification<Job> specification =
+                    Specification.where(JobSpecification.notDeleted())
+                            .and(JobSpecification.activeOnly())
+                            .and(JobSpecification.keyword(request.getKeyword()))
+                            .and(JobSpecification.hasLocation(request.getLocation()))
+                            .and(JobSpecification.hasJobCategory(request.getJobCategoryId()))
+                            .and(JobSpecification.hasCompanies(request.getCompanyIds()))
+                            .and(JobSpecification.companyActive())
+                            .and(JobSpecification.hasSkills(request.getSkillIds()))
+                            .and(JobSpecification.hasSalary(
+                                    request.getMinSalary(),
+                                    request.getMaxSalary()
+                            ))
+                            .and(JobSpecification.hasExperience(
+                                    request.getExperience()
+                            ))
+                            .and(JobSpecification.hasLevels(
+                                    request.getLevels()
+                            ))
+                            .and(JobSpecification.hasWorkingTypes(
+                                    request.getWorkingTypes()
+                            ))
+                            .and(JobSpecification.hasWorkModes(
+                                    request.getWorkModes()
+                            ))
+                            .and(JobSpecification.createdWithin(
+                                    request.getPostedDate()
+                            ))
+                            .and(JobSpecification.hasNegotiable(
+                                    request.getNegotiable()
+                            ));
+            return jobRepository.findAll(specification, fallbackPageable);
+        }
 
     }
 
@@ -271,31 +305,29 @@ public class JobService {
                     JobSpecification.activeOnly()
             );
         }
-
-        specification=specification
-                        .and(JobSpecification.keyword(request.getKeyword()))
-                        .and(JobSpecification.hasStatus(request.getStatus()))
-                        .and(JobSpecification.hasDeleted(request.getDeleted()))
-                        .and(JobSpecification.hasJobCategory(request.getJobCategoryId()))
-                        .and(JobSpecification.hasWorkingTypes(request.getWorkingTypes()))
-                        .and(JobSpecification.hasWorkModes(request.getWorkModes()))
-                        .and(JobSpecification.hasSalary(
-                                request.getMinSalary(),
-                                request.getMaxSalary()))
-                        .and(JobSpecification.hasExperience(
-                                request.getExperience()))
-                        .and(JobSpecification.hasLevels(
-                                request.getLevels()))
-                        .and(JobSpecification.createdBetween(request.getFrom(), request.getTo()))
-                        .and(JobSpecification.hasNegotiable(
-                                request.getNegotiable()));
+        specification = specification
+                .and(JobSpecification.keyword(request.getKeyword()))
+                .and(JobSpecification.hasStatus(request.getStatus()))
+                .and(JobSpecification.hasDeleted(request.getDeleted()))
+                .and(JobSpecification.hasJobCategory(request.getJobCategoryId()))
+                .and(JobSpecification.hasWorkingTypes(request.getWorkingTypes()))
+                .and(JobSpecification.hasWorkModes(request.getWorkModes()))
+                .and(JobSpecification.hasSalary(
+                        request.getMinSalary(),
+                        request.getMaxSalary()))
+                .and(JobSpecification.hasExperience(
+                        request.getExperience()))
+                .and(JobSpecification.hasLevels(
+                        request.getLevels()))
+                .and(JobSpecification.createdBetween(request.getFrom(), request.getTo()))
+                .and(JobSpecification.hasNegotiable(
+                        request.getNegotiable()));
 
         return jobRepository.findAll(specification, pageable);
     }
 
 
     @Transactional
-    @CacheEvict(value = "jobsCache", allEntries = true)
     public void deleteJob(Long id) {
         Job job = getById(id);
 
@@ -309,10 +341,12 @@ public class JobService {
         job.setStatus(JobStatus.CLOSED);
         job.setDeletedBy(user.getEmail());
         jobRepository.save(job);
+        JobIndexOutboxDeleted(job);
+
+
     }
 
     @Transactional
-    @CacheEvict(value = "jobsCache", allEntries = true)
     public void restoreJob(Long id) {
         User user = securityUtils.getCurrentUser();
         validateCompany(user);
@@ -338,8 +372,10 @@ public class JobService {
         } else {
             job.setStatus(JobStatus.OPEN);
         }
+        Job restored = jobRepository.save(job);
 
-        jobRepository.save(job);
+        restoreJobIndexOutbox(restored);
+
     }
 
 
@@ -348,9 +384,6 @@ public class JobService {
             request = new JobFilterAdminRequest();
 
         }
-
-
-        // Bỏ hoàn toàn try-catch, chỉ giữ lại logic kiểm tra số âm/bằng 0
         if (page <= 0) {
             page = 1;
         }
@@ -397,21 +430,39 @@ public class JobService {
     }
 
 
-
-
     @Transactional
     public JobResponse detailJobId(Long id) {
         User user = securityUtils.getCurrentUser();
-        validateCompany(user);
 
-        int updated = jobRepository.increaseViewCount(id);
-        if (updated == 0) {
-            throw new BadRequestException("Job không tồn tại hoặc đã bị xóa");
-        }
         Job job = getById(id);
 
+        if (user != null) {
+            boolean increased = increaseViewIfNeeded(
+                    job.getId(),
+                    user.getId()
+            );
+        }
         return jobMapper.toResponse(job);
+    }
 
+
+    private boolean increaseViewIfNeeded(Long jobId, Long userId) {
+        String key = String.format("job:view:%d:user:%d", jobId, userId);
+        RBucket<String> bucket = redissonClient.getBucket(key);
+
+        boolean firstView = bucket.trySet(
+                "1",
+                VIEW_TTL_HOURS,
+                TimeUnit.HOURS
+        );
+        if (!firstView) {
+            return false;
+        }
+
+        jobRepository.increaseViewCount(jobId);
+        JobViewCountIncrementedOutbox(jobId);
+
+        return true;
     }
 
 
@@ -438,7 +489,11 @@ public class JobService {
                 .collect(Collectors.toMap(Skill::getId, Function.identity()));
         return skillMap;
     }
+
     private void validateCompany(User user) {
+        if (user == null) {
+            return;
+        }
 
         String code = user.getRole().getCode();
 
@@ -460,6 +515,108 @@ public class JobService {
             throw new ForbiddenException("Your company is inactive.");
         }
     }
+
+    public void publishJobEvent(Job saved) {
+
+        JobCreatedEvent event = JobCreatedEvent.builder()
+                .companyId(saved.getCompany().getId())
+                .companyName(saved.getCompany().getName())
+                .local(saved.getLocation())
+                .SalaryMin(saved.getSalaryMin())
+                .SalaryMax(saved.getSalaryMax())
+                .jobName(saved.getName())
+                .jobId(saved.getId())
+                .build();
+        publisher.publishEvent(event);
+        log.info("Publishing JobCreatedEvent for jobId: {}, jobName: {}, companyId: {}",
+                event.getJobId(), event.getJobName(), event.getCompanyId());
+
+    }
+
+    public void outBoxJobEventIndex(Job saved) {
+        JobDocument document = jobMapper.toDocument(saved);
+        OutboxDTO dto = OutboxDTO.builder()
+                .aggregateType("JOB")
+                .aggregateId(saved.getId().toString())
+                .category(OutboxCategory.JOB_INDEX)
+                .eventType(OutboxEventType.JOB_INDEX_CREATED)
+                .payload(document)
+                .exchangeName(RabbitMQConfig.JOB_INDEX_EXCHANGE)
+                .routingKey(RabbitMQConfig.JOB_INDEX_CREATED_ROUTING_KEY)
+                .build();
+        outboxService.save(dto);
+
+    }
+
+    public void updateJobIndexOutbox(Job saved) {
+        JobDocument document = jobMapper.toDocument(saved);
+
+        OutboxDTO dto = OutboxDTO.builder()
+                .aggregateType("JOB")
+                .aggregateId(saved.getId().toString())
+                .category(OutboxCategory.JOB_INDEX)
+                .eventType(OutboxEventType.JOB_INDEX_UPDATED)
+                .payload(document)
+                .exchangeName(RabbitMQConfig.JOB_INDEX_EXCHANGE)
+                .routingKey(RabbitMQConfig.JOB_INDEX_UPDATED_ROUTING_KEY)
+                .build();
+
+        outboxService.save(dto);
+    }
+
+    public void JobIndexOutboxDeleted(Job job) {
+        JobDocument document = JobDocument.builder()
+                .id(job.getId())
+                .deleted(job.isDeleted())
+                .status(job.getStatus().name())
+                .build();
+        OutboxDTO dto = OutboxDTO.builder()
+                .aggregateType("JOB")
+                .aggregateId(job.getId().toString())
+                .category(OutboxCategory.JOB_INDEX)
+                .eventType(OutboxEventType.JOB_INDEX_DELETED)
+                .payload(document)
+                .exchangeName(RabbitMQConfig.JOB_INDEX_EXCHANGE)
+                .routingKey(RabbitMQConfig.JOB_INDEX_DELETED_ROUTING_KEY)
+                .build();
+        outboxService.save(dto);
+    }
+
+    public void restoreJobIndexOutbox(Job job) {
+        JobDocument document = JobDocument.builder()
+                .id(job.getId())
+                .status(job.getStatus().name())
+                .deleted(job.isDeleted())
+                .build();
+
+        OutboxDTO dto = OutboxDTO.builder()
+                .aggregateType("JOB")
+                .aggregateId(job.getId().toString())
+                .category(OutboxCategory.JOB_INDEX)
+                .eventType(OutboxEventType.JOB_INDEX_RESTORED)
+                .payload(document)
+                .exchangeName(RabbitMQConfig.JOB_INDEX_EXCHANGE)
+                .routingKey(RabbitMQConfig.JOB_INDEX_RESTORED_ROUTING_KEY)
+                .build();
+        outboxService.save(dto);
+    }
+    public void JobViewCountIncrementedOutbox(Long jobId) {
+        JobDocument document = JobDocument.builder()
+                .id(jobId)
+                .build();
+
+        OutboxDTO dto = OutboxDTO.builder()
+                .aggregateType("JOB")
+                .aggregateId(jobId.toString())
+                .category(OutboxCategory.JOB_INDEX)
+                .eventType(OutboxEventType.JOB_INDEX_VIEW_COUNT_INCREMENTED)
+                .payload(document)
+                .exchangeName(RabbitMQConfig.JOB_INDEX_EXCHANGE)
+                .routingKey(RabbitMQConfig.JOB_INDEX_VIEW_COUNT_INCREMENTED_ROUTING_KEY)
+                .build();
+        outboxService.save(dto);
+    }
+
 
 
 }
