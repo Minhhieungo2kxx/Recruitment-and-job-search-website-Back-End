@@ -45,30 +45,6 @@ public class EmailProducer {
         );
         log.info("Published JobAlert {}",jobAlertId);
     }
-    @TransactionalEventListener(
-            phase = TransactionPhase.AFTER_COMMIT
-    )
-    public void publishForgotPassword(ForgotPasswordEmailEvent event){
 
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.EMAIL_EXCHANGE,
-                RabbitMQConfig.FORGOT_ROUTING_KEY,
-                event
-        );
-        log.info("Published email forgets {}", event.getEmail());
-
-    }
-    @TransactionalEventListener(
-            phase = TransactionPhase.AFTER_COMMIT
-    )
-    public void handle(JobAppliedEvent event){
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.EMAIL_EXCHANGE,
-                RabbitMQConfig.JOB_APPLY_ROUTING_KEY,
-                event
-        );
-        log.info("Published email Job Applied Event {}", event.getEmail());
-
-    }
 
 }

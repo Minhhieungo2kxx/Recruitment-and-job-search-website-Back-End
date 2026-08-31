@@ -28,6 +28,8 @@ public class CompanyAdminSearchRequest {
 
     private String phone;
 
+    private String address;
+
     private Integer foundedFrom;
 
     private Integer foundedTo;

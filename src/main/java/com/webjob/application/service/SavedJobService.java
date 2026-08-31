@@ -59,8 +59,7 @@ public class SavedJobService {
 
             if (!acquired) {
                 throw new ResourceLockedException(
-                        "Bạn đang thực hiện thao tác lưu công việc yêu thích. Vui lòng thử lại."
-                );
+                        "Bạn đang thực hiện thao tác lưu công việc yêu thích. Vui lòng thử lại.");
             }
 
             Job job = jobRepository.findByIdAndDeletedFalse(jobId)
@@ -74,7 +73,7 @@ public class SavedJobService {
 
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new AppException("Không thể lấy lock."+ex);
+            throw new AppException("Không thể lấy lock.",ex);
 
         } catch (DataIntegrityViolationException ex) {
             log.info("Duplicate saveJob. userId={}, jobId={}", user.getId(), jobId, ex);

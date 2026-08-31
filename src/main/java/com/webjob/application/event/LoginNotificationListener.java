@@ -20,16 +20,16 @@ public class LoginNotificationListener {
     private final ApplicationEmailService applicationEmailService;
 
 
-//    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-//    public void handleLoginSuccess(
-//            LoginSuccessEvent event
-//    ) {
-//        Map<String, Object> emailVars = new HashMap<>();
-//
-//        emailVars.put("email", event.email());
-//        emailVars.put("ip", event.ip());
-//        emailVars.put("userAgent", event.userAgent());
-//        emailVars.put("time", event.loginTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
-//        applicationEmailService.LoginNotification(emailVars);
-//    }
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleLoginSuccess(
+            LoginSuccessEvent event
+    ) {
+        Map<String, Object> emailVars = new HashMap<>();
+
+        emailVars.put("email", event.email());
+        emailVars.put("ip", event.ip());
+        emailVars.put("userAgent", event.userAgent());
+        emailVars.put("time", event.loginTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
+        applicationEmailService.LoginNotification(emailVars);
+    }
 }

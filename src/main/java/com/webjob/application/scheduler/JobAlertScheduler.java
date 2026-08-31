@@ -10,11 +10,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 
-@Service
+@Component
 @RequiredArgsConstructor
 @Slf4j
 public class JobAlertScheduler {
@@ -24,7 +25,7 @@ public class JobAlertScheduler {
 
 
     @Scheduled(cron = "0 0 8 * * MON", zone = "Asia/Ho_Chi_Minh")  // Chạy vào 08:00:00 AM sáng Thứ Hai mỗi tuần
-//    @Scheduled(cron = "0 */1 * * * *") // Chạy mỗi phút một lần (dùng để test)
+//    @Scheduled(cron = "0 */1 * * * *") // Chạy mỗi phút một lần
     public void processJobAlert() {
         log.info("Start publishing  jobAlerts...");
         Pageable pageable = PageRequest.of(0, 500);

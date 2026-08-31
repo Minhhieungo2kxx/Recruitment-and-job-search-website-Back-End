@@ -1,5 +1,7 @@
 package com.webjob.application.mapper;
 
+import com.webjob.application.document.JobDocument;
+import com.webjob.application.document.JobSkillDocument;
 import com.webjob.application.dto.Response.JobAIDetailResponseDTO;
 import com.webjob.application.dto.Response.JobAIResponseDTO;
 import com.webjob.application.dto.Response.JobResponse;
@@ -11,6 +13,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -87,54 +90,13 @@ public class JobMapper {
             );
         };
     }
-//    public Map<String, Object> detailJobForAI(Job job, Object skills) {
-//        if (job == null) {
-//            return null;
-//        }
-//
-//        return Map.ofEntries(
-//                Map.entry("id", job.getId()),
-//                Map.entry("name", job.getName()),
-//                Map.entry("company", job.getCompany() != null ? job.getCompany().getName() : ""),
-//                Map.entry("location", job.getLocation()),
-//                Map.entry("salaryMin", job.getSalaryMin()),
-//                Map.entry("salaryMax", job.getSalaryMax()),
-//                Map.entry("negotiable", job.isNegotiable()),
-//                Map.entry("level", job.getLevel() != null ? job.getLevel().name() : ""),
-//                Map.entry("workMode", job.getWorkMode() != null ? job.getWorkMode().name() : ""),
-//                Map.entry("workingType", job.getWorkingType() != null ? job.getWorkingType().name() : ""),
-//                Map.entry("experienceRequired", job.getExperienceRequired()),
-//                Map.entry("requirement", nullToEmpty(job.getRequirement())),
-//                Map.entry("responsibility", nullToEmpty(job.getResponsibility())),
-//                Map.entry("benefits", nullToEmpty(job.getBenefits())),
-//                Map.entry("description", nullToEmpty(job.getDescription())),
-//                Map.entry("skills", skills),
-//                Map.entry("status", job.getStatus() != null ? job.getStatus().name() : "")
-//        );
-//    }
+
 
     private String nullToEmpty(String value) {
         return value != null ? value : "";
     }
 
-    //    public Map<String, Object> searchJobAI(Job job) {
-//        if (job == null) {
-//            return null;
-//        }
-//        return Map.ofEntries(
-//                Map.entry("id", job.getId()),
-//                Map.entry("name", job.getName()),
-//                Map.entry("company", job.getCompany() != null ? job.getCompany().getName() : ""),
-//                Map.entry("location", job.getLocation()),
-//                Map.entry("salaryMin", job.getSalaryMin()),
-//                Map.entry("salaryMax", job.getSalaryMax()),
-//                Map.entry("experienceRequired", job.getExperienceRequired()),
-//                Map.entry("workMode", job.getWorkMode() != null ? job.getWorkMode().name() : ""),
-//                Map.entry("workingType", job.getWorkingType() != null ? job.getWorkingType().name() : ""),
-//                Map.entry("level", job.getLevel() != null ? job.getLevel().name() : ""),
-//                Map.entry("category", job.getJobCategory() != null ? job.getJobCategory().getName() : "")
-//        );
-//    }
+
     public JobAIResponseDTO searchJobAI(Job job) {
         if (job == null) {
             return null;
@@ -177,6 +139,67 @@ public class JobMapper {
                 .skills(skills)
                 .status(job.getStatus() != null ? job.getStatus().name() : "")
                 .build();
+    }
+    public JobDocument toDocument(Job job) {
+
+        if (job == null) {
+            return null;
+        }
+
+        return JobDocument.builder()
+                .id(job.getId())
+                .name(job.getName())
+                .location(job.getLocation())
+                .salaryMin(job.getSalaryMin())
+                .salaryMax(job.getSalaryMax())
+                .negotiable(job.isNegotiable())
+                .quantity(job.getQuantity())
+                .level(toString(job.getLevel()))
+                .experienceRequired(job.getExperienceRequired())
+                .workingType(toString(job.getWorkingType()))
+                .workMode(toString(job.getWorkMode()))
+                .benefits(job.getBenefits())
+                .requirement(job.getRequirement())
+                .responsibility(job.getResponsibility())
+                .viewCount(job.getViewCount())
+                .appliedCount(job.getAppliedCount())
+                .competitionLevel(toString(job.getCompetitionLevel()))
+                .description(job.getDescription())
+                .startDate(job.getStartDate())
+                .endDate(job.getEndDate())
+                .status(toString(job.getStatus()))
+                .createdAt(job.getCreatedAt())
+                .deleted(false)
+                .companyId(job.getCompany() != null ? job.getCompany().getId() : null)
+                .companyName(job.getCompany() != null ? job.getCompany().getName() : null)
+                .companyStatus(job.getCompany() != null ? toString(job.getCompany().getStatus()) : null)
+                .companyDeleted(job.getCompany() != null ? job.getCompany().getDeleted() : null)
+                .jobCategoryId(job.getJobCategory() != null ? job.getJobCategory().getId() : null)
+                .jobCategoryName(job.getJobCategory() != null ? job.getJobCategory().getName() : null
+                )
+
+                .skills(job.getJobSkills() == null ? List.of() : job.getJobSkills()
+                                .stream()
+                                .map(this::toSkillDocument)
+                                .toList()
+                )
+                .build();
+    }
+    private JobSkillDocument toSkillDocument(JobSkill jobSkill) {
+
+        if (jobSkill == null) {
+            return null;
+        }
+
+        return JobSkillDocument.builder()
+                .id(jobSkill.getId())
+                .skillId(jobSkill.getSkill() != null ? jobSkill.getSkill().getId() : null)
+                .skillName(jobSkill.getSkill() != null ? jobSkill.getSkill().getName() : null)
+                .build();
+    }
+
+    private String toString(Enum<?> value) {
+        return value != null ? value.name() : null;
     }
 
 

@@ -1,10 +1,14 @@
 package com.webjob.application.messaging.config;
 
+import com.webjob.application.dto.record.RabbitQueueConfig;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Configuration
 public class RabbitMQConfig {
@@ -44,243 +48,204 @@ public class RabbitMQConfig {
     public static final String FOLLOW_COMPANY_EXCHANGE = "follow.company.exchange";
     public static final String FOLLOW_COMPANY_JOB_QUEUE = "follow.company.job.queue";
     public static final String FOLLOW_COMPANY_JOB_ROUTING_KEY = "follow.company.job.#";
-
     public static final String FOLLOW_COMPANY_JOB_DLX = "follow.company.job.dlx";
     public static final String FOLLOW_COMPANY_JOB_DLQ = "follow.company.job.dead.queue";
     public static final String FOLLOW_COMPANY_JOB_DLQ_ROUTING = "follow.company.job.dead";
 
+// JOB INDEX
+    public static final String JOB_INDEX_EXCHANGE = "job.index.exchange";
+    public static final String JOB_INDEX_QUEUE = "job.index.queue";
+    public static final String JOB_INDEX_CREATED_ROUTING_KEY = "job.index.created";
+    public static final String JOB_INDEX_UPDATED_ROUTING_KEY = "job.index.updated";
+    public static final String JOB_INDEX_DELETED_ROUTING_KEY = "job.index.deleted";
+    public static final String JOB_INDEX_RESTORED_ROUTING_KEY = "job.index.restored";
+    public static final String JOB_INDEX_APPLIED_COUNT_INCREMENTED_ROUTING_KEY =
+            "job.index.applied-count.incremented";
+    public static final String JOB_INDEX_APPLICATION_WITHDRAWN_ROUTING_KEY =
+            "job.index.application.withdrawn";
+    public static final String JOB_INDEX_VIEW_COUNT_INCREMENTED_ROUTING_KEY =
+            "job.index.view-count.incremented";
 
-    //chung
+    public static final String JOB_INDEX_DLX = "job.index.dlx";
+
+    public static final String JOB_INDEX_DLQ = "job.index.dead.queue";
+
+    public static final String JOB_INDEX_DLQ_ROUTING_KEY = "job.index.dead";
+
+    // COMPANY INDEX
+    public static final String COMPANY_INDEX_EXCHANGE = "company.index.exchange";
+
+    public static final String COMPANY_INDEX_QUEUE = "company.index.queue";
+
+    public static final String COMPANY_INDEX_CREATED_ROUTING_KEY = "company.index.created";
+
+    public static final String COMPANY_INDEX_UPDATED_ROUTING_KEY = "company.index.updated";
+
+    public static final String COMPANY_INDEX_DELETED_ROUTING_KEY = "company.index.deleted";
+
+    public static final String COMPANY_INDEX_RESTORED_ROUTING_KEY = "company.index.restored";
+
+
+    public static final String COMPANY_INDEX_DLX = "company.index.dlx";
+
+    public static final String COMPANY_INDEX_DLQ = "company.index.dead.queue";
+
+    public static final String COMPANY_INDEX_DLQ_ROUTING_KEY = "company.index.dead";
+
+
     @Bean
-    public TopicExchange emailExchange() {
-        return ExchangeBuilder
-                .topicExchange(EMAIL_EXCHANGE)
-                .durable(true)
-                .build();
+    public Declarables rabbitDeclarables() {
+
+        List<RabbitQueueConfig> configs = List.of(
+
+                // Email
+                new RabbitQueueConfig(
+                        EMAIL_EXCHANGE,
+                        EMAIL_QUEUE,
+                        List.of(EMAIL_ROUTING_KEY),
+                        DLX_EXCHANGE,
+                        DLQ_QUEUE,
+                        DLQ_ROUTING_KEY
+                ),
+
+                // Forgot password
+                new RabbitQueueConfig(
+                        EMAIL_EXCHANGE,
+                        FORGOT_QUEUE,
+                        List.of(FORGOT_ROUTING_KEY),
+                        FORGOT_DLX,
+                        FORGOT_DLQ,
+                        FORGOT_DLQ_ROUTING
+                ),
+
+                // Job Apply
+                new RabbitQueueConfig(
+                        EMAIL_EXCHANGE,
+                        JOB_APPLY_QUEUE,
+                        List.of(JOB_APPLY_ROUTING_KEY),
+                        JOB_APPLY_DLX,
+                        JOB_APPLY_DLQ,
+                        JOB_APPLY_DLQ_ROUTING
+                ),
+
+                // Job Alert
+                new RabbitQueueConfig(
+                        EMAIL_EXCHANGE,
+                        JOB_ALERT_QUEUE,
+                        List.of(JOB_ALERT_ROUTING_KEY),
+                        JOB_ALERT_DLX,
+                        JOB_ALERT_DLQ,
+                        JOB_ALERT_DLQ_ROUTING
+                ),
+
+                // Follow Company
+                new RabbitQueueConfig(
+                        FOLLOW_COMPANY_EXCHANGE,
+                        FOLLOW_COMPANY_JOB_QUEUE,
+                        List.of(FOLLOW_COMPANY_JOB_ROUTING_KEY),
+                        FOLLOW_COMPANY_JOB_DLX,
+                        FOLLOW_COMPANY_JOB_DLQ,
+                        FOLLOW_COMPANY_JOB_DLQ_ROUTING
+                ),
+                // Job Index
+                new RabbitQueueConfig(
+                        JOB_INDEX_EXCHANGE,
+                        JOB_INDEX_QUEUE,
+                        List.of(
+                                JOB_INDEX_CREATED_ROUTING_KEY,
+                                JOB_INDEX_UPDATED_ROUTING_KEY,
+                                JOB_INDEX_DELETED_ROUTING_KEY,
+                                JOB_INDEX_RESTORED_ROUTING_KEY,
+                                JOB_INDEX_APPLIED_COUNT_INCREMENTED_ROUTING_KEY,
+                                JOB_INDEX_APPLICATION_WITHDRAWN_ROUTING_KEY,
+                                JOB_INDEX_VIEW_COUNT_INCREMENTED_ROUTING_KEY
+                        ),
+                        JOB_INDEX_DLX,
+                        JOB_INDEX_DLQ,
+                        JOB_INDEX_DLQ_ROUTING_KEY
+                ),
+
+                // Company Index
+                new RabbitQueueConfig(
+                        COMPANY_INDEX_EXCHANGE,
+                        COMPANY_INDEX_QUEUE,
+                        List.of(
+                                COMPANY_INDEX_CREATED_ROUTING_KEY,
+                                COMPANY_INDEX_UPDATED_ROUTING_KEY,
+                                COMPANY_INDEX_DELETED_ROUTING_KEY,
+                                COMPANY_INDEX_RESTORED_ROUTING_KEY
+                        ),
+                        COMPANY_INDEX_DLX,
+                        COMPANY_INDEX_DLQ,
+                        COMPANY_INDEX_DLQ_ROUTING_KEY
+                )
+
+        );
+
+        List<Declarable> declarables = new ArrayList<>();
+
+        for (RabbitQueueConfig config : configs) {
+
+            // Main exchange
+            TopicExchange exchange = ExchangeBuilder
+                    .topicExchange(config.exchange())
+                    .durable(true)
+                    .build();
+
+            // DLX
+            TopicExchange dlx = ExchangeBuilder
+                    .topicExchange(config.dlx())
+                    .durable(true)
+                    .build();
+
+            // Queue
+            Queue queue = QueueBuilder
+                    .durable(config.queue())
+                    .withArgument(
+                            "x-dead-letter-exchange",
+                            config.dlx()
+                    )
+                    .withArgument(
+                            "x-dead-letter-routing-key",
+                            config.dlqRoutingKey()
+                    )
+                    .build();
+
+            // DLQ
+            Queue dlq = QueueBuilder
+                    .durable(config.dlq())
+                    .build();
+
+            // Bind all routing keys to the same queue
+            for (String routingKey : config.routingKeys()) {
+                Binding queueBinding = BindingBuilder
+                        .bind(queue)
+                        .to(exchange)
+                        .with(routingKey);
+
+                declarables.add(queueBinding);
+            }
+
+            // DLQ Binding
+            Binding dlqBinding = BindingBuilder
+                    .bind(dlq)
+                    .to(dlx)
+                    .with(config.dlqRoutingKey());
+
+            declarables.add(exchange);
+            declarables.add(dlx);
+            declarables.add(queue);
+            declarables.add(dlq);
+            declarables.add(dlqBinding);
+        }
+
+        return new Declarables(declarables);
     }
 
-    //    cron subscriberId job with skill
-    @Bean
-    public TopicExchange deadLetterExchange() {
-        return new TopicExchange(DLX_EXCHANGE);
-    }
-
-    @Bean
-    public Queue emailQueue() {
-        return QueueBuilder
-                .durable(EMAIL_QUEUE)
-                .withArgument("x-dead-letter-exchange", DLX_EXCHANGE)
-                .withArgument("x-dead-letter-routing-key", DLQ_ROUTING_KEY)
-                .build();
-    }
-
-    @Bean
-    public Queue deadLetterQueue() {
-        return QueueBuilder
-                .durable(DLQ_QUEUE)
-                .build();
-    }
-
-    @Bean
-    public Binding emailBinding() {
-        return BindingBuilder.bind(emailQueue())
-                .to(emailExchange())
-                .with(EMAIL_ROUTING_KEY);
-    }
-
-    @Bean
-    public Binding deadBinding() {
-        return BindingBuilder.bind(deadLetterQueue())
-                .to(deadLetterExchange())
-                .with(DLQ_ROUTING_KEY);
-    }
 
     @Bean
     public MessageConverter messageConverter() {
         return new Jackson2JsonMessageConverter();
-    }
-
-//    config cho // Forgot password
-
-    @Bean
-    TopicExchange forgotDeadExchange() {
-        return new TopicExchange(FORGOT_DLX);
-    }
-
-    @Bean
-    Queue forgotQueue() {
-        return QueueBuilder.durable(FORGOT_QUEUE)
-                .withArgument("x-dead-letter-exchange", FORGOT_DLX)
-                .withArgument("x-dead-letter-routing-key", FORGOT_DLQ_ROUTING)
-                .build();
-    }
-
-    @Bean
-    Queue forgotDeadQueue() {
-        return QueueBuilder.durable(FORGOT_DLQ).build();
-    }
-
-    @Bean
-    Binding forgotBinding() {
-        return BindingBuilder.bind(forgotQueue())
-                .to(emailExchange())
-                .with(FORGOT_ROUTING_KEY);
-    }
-
-    @Bean
-    Binding forgotDeadBinding() {
-        return BindingBuilder.bind(forgotDeadQueue())
-                .to(forgotDeadExchange())
-                .with(FORGOT_DLQ_ROUTING);
-    }
-
-    //Config JOB_APPLY
-    @Bean
-    public TopicExchange jobApplyDlx() {
-        return ExchangeBuilder
-                .topicExchange(JOB_APPLY_DLX)
-                .durable(true)
-                .build();
-    }
-
-
-    @Bean
-    public Queue jobApplyQueue() {
-        return QueueBuilder
-                .durable(JOB_APPLY_QUEUE)
-                .withArgument(
-                        "x-dead-letter-exchange",
-                        JOB_APPLY_DLX
-                )
-                .withArgument(
-                        "x-dead-letter-routing-key",
-                        JOB_APPLY_DLQ_ROUTING
-                )
-                .build();
-    }
-
-
-    @Bean
-    public Queue jobApplyDlq() {
-        return QueueBuilder
-                .durable(JOB_APPLY_DLQ)
-                .build();
-    }
-
-
-    @Bean
-    public Binding bindingJobApplyQueue() {
-        return BindingBuilder
-                .bind(jobApplyQueue())
-                .to(emailExchange())
-                .with(JOB_APPLY_ROUTING_KEY);
-    }
-
-
-    @Bean
-    public Binding bindingJobApplyDlq() {
-        return BindingBuilder
-                .bind(jobApplyDlq())
-                .to(jobApplyDlx())
-                .with(JOB_APPLY_DLQ_ROUTING);
-    }
-
-    //    Config Job Alert
-    @Bean
-    public TopicExchange jobAlertDlx() {
-        return ExchangeBuilder
-                .topicExchange(JOB_ALERT_DLX)
-                .durable(true)
-                .build();
-    }
-
-    @Bean
-    public Queue jobAlertQueue() {
-        return QueueBuilder
-                .durable(JOB_ALERT_QUEUE)
-                .withArgument(
-                        "x-dead-letter-exchange",
-                        JOB_ALERT_DLX
-                )
-                .withArgument(
-                        "x-dead-letter-routing-key",
-                        JOB_ALERT_DLQ_ROUTING
-                )
-                .build();
-    }
-
-    @Bean
-    public Queue jobAlertDlq() {
-        return QueueBuilder
-                .durable(JOB_ALERT_DLQ)
-                .build();
-    }
-
-    @Bean
-    public Binding bindingJobAlertQueue() {
-        return BindingBuilder
-                .bind(jobAlertQueue())
-                .to(emailExchange())
-                .with(JOB_ALERT_ROUTING_KEY);
-    }
-
-    @Bean
-    public Binding bindingJobAlertDlq() {
-        return BindingBuilder
-                .bind(jobAlertDlq())
-                .to(jobAlertDlx())
-                .with(JOB_ALERT_DLQ_ROUTING);
-    }
-    // --- Config Follow Company Job Notification ---
-    @Bean
-    public TopicExchange followCompanyExchange() {
-        return ExchangeBuilder
-                .topicExchange(FOLLOW_COMPANY_EXCHANGE)
-                .durable(true)
-                .build();
-    }
-
-    @Bean
-    public TopicExchange followCompanyJobDlx() {
-        return ExchangeBuilder
-                .topicExchange(FOLLOW_COMPANY_JOB_DLX)
-                .durable(true)
-                .build();
-    }
-    @Bean
-    public Queue followCompanyJobQueue() {
-        return QueueBuilder
-                .durable(FOLLOW_COMPANY_JOB_QUEUE)
-                .withArgument(
-                        "x-dead-letter-exchange",
-                        FOLLOW_COMPANY_JOB_DLX
-                )
-                .withArgument(
-                        "x-dead-letter-routing-key",
-                        FOLLOW_COMPANY_JOB_DLQ_ROUTING
-                )
-                .build();
-    }
-    @Bean
-    public Queue followCompanyJobDlq() {
-        return QueueBuilder
-                .durable(FOLLOW_COMPANY_JOB_DLQ)
-                .build();
-    }
-    @Bean
-    public Binding bindingFollowCompanyJobQueue() {
-        return BindingBuilder
-                .bind(followCompanyJobQueue())
-                .to(followCompanyExchange())
-                .with(FOLLOW_COMPANY_JOB_ROUTING_KEY);
-    }
-
-    @Bean
-    public Binding bindingFollowCompanyJobDlq() {
-        return BindingBuilder
-                .bind(followCompanyJobDlq())
-                .to(followCompanyJobDlx())
-                .with(FOLLOW_COMPANY_JOB_DLQ_ROUTING);
     }
 
 

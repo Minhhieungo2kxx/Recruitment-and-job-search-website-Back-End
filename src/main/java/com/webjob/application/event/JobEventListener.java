@@ -1,14 +1,15 @@
 package com.webjob.application.event;
 
+import com.webjob.application.dto.Request.JobRestoredEvent;
 import com.webjob.application.dto.Request.NotificationRequest;
+import com.webjob.application.dto.record.*;
+import com.webjob.application.elasticsearch.job.JobIndexService;
 import com.webjob.application.enums.NotificationType;
 import com.webjob.application.event.dto.JobAppliedNotificationEvent;
 import com.webjob.application.event.dto.JobCreatedEvent;
 import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.messaging.producer.JobProducer;
-import com.webjob.application.models.Entity.FollowCompany;
 import com.webjob.application.models.Entity.User;
-import com.webjob.application.repository.FollowCompanyRepository;
 import com.webjob.application.service.NotificationService;
 import com.webjob.application.utils.common.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +19,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import java.util.List;
-
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -27,6 +26,7 @@ public class JobEventListener {
     private final JobProducer jobProducer;
     private final NotificationService notificationService;
     private final SecurityUtils securityUtils;
+    private final JobIndexService jobIndexService;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onJobCreated(JobCreatedEvent event) {
@@ -43,7 +43,6 @@ public class JobEventListener {
             throw new BadRequestException(e.getMessage());
         }
     }
-
 
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

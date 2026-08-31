@@ -72,7 +72,6 @@ public class JobRequest {
     private String description;
 
     @NotNull
-
     private Instant startDate;
 
     @NotNull

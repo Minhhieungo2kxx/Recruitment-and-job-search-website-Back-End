@@ -230,7 +230,7 @@ public class ChatService {
 
         } catch (Exception e) {
             log.error("Error processing chat message", e);
-            throw new ChatProcessingException("Đã có lỗi xảy ra khi xử lý tin nhắn: " + e.getMessage());
+            throw new ChatProcessingException("Đã có lỗi xảy ra khi xử lý tin nhắn: " ,e);
         }
     }
 

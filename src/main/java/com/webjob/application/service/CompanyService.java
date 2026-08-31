@@ -1,29 +1,36 @@
 package com.webjob.application.service;
 
 
-import com.webjob.application.dto.Request.CompanyAdminSearchRequest;
-import com.webjob.application.dto.Request.CompanyDTO;
-import com.webjob.application.dto.Request.CompanySearchRequest;
+import com.webjob.application.document.CompanyDocument;
+import com.webjob.application.document.JobDocument;
+import com.webjob.application.dto.Request.*;
 import com.webjob.application.dto.Response.*;
+import com.webjob.application.dto.record.*;
+import com.webjob.application.elasticsearch.company.CompanyElasticsearchSearchService;
 import com.webjob.application.enums.CompanyStatus;
+import com.webjob.application.enums.OutboxCategory;
+import com.webjob.application.enums.OutboxEventType;
 import com.webjob.application.exception.Customs.CompanyAlreadyExistsException;
 import com.webjob.application.exception.Customs.ResourceNotFoundException;
+import com.webjob.application.mapper.CompanyMapper;
+import com.webjob.application.messaging.config.RabbitMQConfig;
 import com.webjob.application.models.Entity.Company;
 import com.webjob.application.dto.Request.Search.SearchCompanyDTO;
 import com.webjob.application.models.Entity.Industry;
 import com.webjob.application.models.Entity.Job;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.repository.*;
+import com.webjob.application.service.OutBox.OutboxService;
 import com.webjob.application.service.Specification.CompanySpecification;
 import com.webjob.application.service.Specification.JobSpecification;
 import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.utils.common.UtilFormat;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,11 +39,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CompanyService {
     private final CompanyRepository companyRepository;
     private final ModelMapper modelMapper;
@@ -48,6 +57,11 @@ public class CompanyService {
     private final JobRepository jobRepository;
     private final FollowCompanyRepository followCompanyRepository;
     private final IndustryRepository industryRepository;
+    private final CompanyElasticsearchSearchService elasticsearchSearchService;
+    private final CompanyMapper companyMapper;
+    private final ApplicationEventPublisher publisher;
+
+    private final OutboxService outboxService;
 
 
     public Optional<Company> getbyID(Long id) {
@@ -71,25 +85,68 @@ public class CompanyService {
         if (request == null) {
             request = new CompanySearchRequest();
         }
-        if (page <= 0) {
-            page = 1;
-        }
-        if (size <= 0) {
-            size = 10;
-        }
-        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(
-                Sort.Direction.ASC, "name"));
-        Specification<Company> specification = Specification.where(CompanySpecification.visible())
-                .and(CompanySpecification.active())
-                .and(CompanySpecification.hasKeyword(request.getKeyword()))
-                .and(CompanySpecification.hasIndustry(request.getIndustry()))
-                .and(CompanySpecification.employeeSizeGreaterThan(request.getMinEmployeeSize()))
-                .and(CompanySpecification.employeeSizeLessThan(request.getMaxEmployeeSize()))
-                .and(CompanySpecification.foundedYearFrom(request.getFoundedFrom()))
-                .and(CompanySpecification.foundedYearTo(request.getFoundedTo()));
-        Page<Company> result = companyRepository.findAll(specification, pageable);
+        size = Math.min(Math.max(size, 1), 50);
+        page = Math.max(page, 1);
+        Page<Company> result=searchCompaniesClient(page-1,size,request);
         return convertToCompanyResponse(result);
 
+    }
+    public Page<Company> searchCompaniesClient(int page, int size, CompanySearchRequest request) {
+        Pageable pageable = PageRequest.of(page, size);
+        ElasticsearchSearchResult result;
+
+        try {
+            result = elasticsearchSearchService.searchCompanyClient(page, size, request);
+            long total = (result != null) ? result.getTotal() : 0;
+            if (result == null || result.getIds() == null || result.getIds().isEmpty()) {
+                log.info("Elasticsearch search returned no companies. page={}, size={}, keyword={}",
+                        page, size, request.getKeyword());
+                return new PageImpl<>(Collections.emptyList(), pageable, total);
+            }
+
+            List<Company> companies = companyRepository.findByIdIn(result.getIds());
+
+            List<Company> orderedCompanies = reorderCompanies(result.getIds(), companies);
+
+            log.info("Elasticsearch company search successful. page={}, size={}, totalElements={}",
+                    page, size, total);
+
+            return new PageImpl<>(orderedCompanies, pageable, total);
+
+        } catch (Exception e) {
+            log.error("Elasticsearch company search failed, falling back to database. page={}, size={}, keyword={}, error={}",
+                    page, size, (request != null ? request.getKeyword() : null), e.getMessage(), e);
+            Pageable fallbackPageable = PageRequest.of(page, size, Sort.by(
+                    Sort.Direction.ASC, "name"));
+            Specification<Company> specification = Specification.where(CompanySpecification.visible())
+                    .and(CompanySpecification.active())
+                    .and(CompanySpecification.hasKeyword(request.getKeyword()))
+                    .and(CompanySpecification.hasIndustry(request.getIndustry()))
+                    .and(CompanySpecification.hasTaxCode(request.getTaxCode()))
+                    .and(CompanySpecification.hasEmail(request.getEmail()))
+                    .and(CompanySpecification.hasPhone(request.getPhone()))
+                    .and(CompanySpecification.hasWebsite(request.getWebsite()))
+                    .and(CompanySpecification.hasAddress(request.getAddress()))
+                    .and(CompanySpecification.employeeSizeGreaterThan(request.getMinEmployeeSize()))
+                    .and(CompanySpecification.employeeSizeLessThan(request.getMaxEmployeeSize()))
+                    .and(CompanySpecification.foundedYearFrom(request.getFoundedFrom()))
+                    .and(CompanySpecification.foundedYearTo(request.getFoundedTo()));
+           return companyRepository.findAll(specification,fallbackPageable);
+
+        }
+    }
+    private List<Company> reorderCompanies(List<Long> ids, List<Company> companies) {
+
+        Map<Long, Company> companyMap = companies.stream()
+                .collect(Collectors.toMap(
+                        Company::getId,
+                        Function.identity()
+                ));
+
+        return ids.stream()
+                .map(companyMap::get)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     public ResponseDTO<List<CompanyResponse>> getCompanyAdmin(int page, int size, CompanyAdminSearchRequest request) {
@@ -112,6 +169,7 @@ public class CompanyService {
                 .and(CompanySpecification.hasTaxCode(request.getTaxCode()))
                 .and(CompanySpecification.hasEmail(request.getEmail()))
                 .and(CompanySpecification.hasPhone(request.getPhone()))
+                .and(CompanySpecification.hasAddress(request.getAddress()))
                 .and(CompanySpecification.employeeSizeGreaterThan(request.getMinEmployeeSize()))
                 .and(CompanySpecification.employeeSizeLessThan(request.getMaxEmployeeSize()))
                 .and(CompanySpecification.foundedYearFrom(request.getFoundedFrom()))
@@ -121,6 +179,7 @@ public class CompanyService {
         Page<Company> result = companyRepository.findAll(specification, pageable);
         return convertToCompanyResponse(result);
     }
+
 
     public ResponseDTO<List<CompanyResponse>> convertToCompanyResponse(Page<Company> pagelist) {
         int currentpage = pagelist.getNumber() + 1;
@@ -156,15 +215,16 @@ public class CompanyService {
         Industry industry=industryRepository.findByIdAndDeletedFalse(companyDTO.getIndustryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Industry not found " +companyDTO.getIndustryId()));
         company.setIndustry(industry);
+        company.setTaxCode(UtilFormat.normalizeTaxCode(companyDTO.getTaxCode()));
         CompanyResponse response = new CompanyResponse();
-        Company save = companyRepository.save(company);
-        modelMapper.map(save, response);
-
-
+        Company saved = companyRepository.save(company);
+        modelMapper.map(saved, response);
         response.setJobCount(0);
         response.setFollowerCount(0);
+        publishCompanyEventIndex(saved);
         return response;
     }
+
 
 
     @Transactional
@@ -186,6 +246,8 @@ public class CompanyService {
         Integer followerCount = followCompanyRepository.countByCompanyId(savedCompany.getId());
         response.setJobCount(jobCount == null ? 0 : jobCount);
         response.setFollowerCount(followerCount == null ? 0 : followerCount);
+
+        publishCompanyUpdatedIndex(savedCompany);
         return response;
 
 
@@ -221,6 +283,8 @@ public class CompanyService {
         company.setDeletedBy(user != null ? user.getEmail() : "SYSTEM");
         company.setStatus(CompanyStatus.INACTIVE);
         companyRepository.save(company);
+        publishCompanyDeletedIndex(id);
+
     }
 
 
@@ -234,6 +298,69 @@ public class CompanyService {
         company.setDeletedBy(null);
         company.setStatus(CompanyStatus.ACTIVE);
         companyRepository.save(company);
+        publishCompanyRestoreIndex(id);
+    }
+    public void publishCompanyEventIndex(Company saved) {
+        CompanyDocument document = companyMapper.toDocument(saved);
+        OutboxDTO dto = OutboxDTO.builder()
+                .aggregateType("COMPANY")
+                .aggregateId(saved.getId().toString())
+                .category(OutboxCategory.COMPANY_INDEX)
+                .eventType(OutboxEventType.COMPANY_INDEX_CREATED)
+                .payload(document)
+                .exchangeName(RabbitMQConfig.COMPANY_INDEX_EXCHANGE)
+                .routingKey(RabbitMQConfig.COMPANY_INDEX_CREATED_ROUTING_KEY)
+                .build();
+        outboxService.save(dto);
+
+    }
+
+    public void publishCompanyUpdatedIndex(Company edit) {
+        CompanyDocument document = companyMapper.toDocument(edit);
+        OutboxDTO dto = OutboxDTO.builder()
+                .aggregateType("COMPANY")
+                .aggregateId(edit.getId().toString())
+                .category(OutboxCategory.COMPANY_INDEX)
+                .eventType(OutboxEventType.COMPANY_INDEX_UPDATED)
+                .payload(document)
+                .exchangeName(RabbitMQConfig.COMPANY_INDEX_EXCHANGE)
+                .routingKey(RabbitMQConfig.COMPANY_INDEX_UPDATED_ROUTING_KEY)
+                .build();
+        outboxService.save(dto);
+
+
+    }
+    public void publishCompanyDeletedIndex(Long companyID) {
+        CompanyDocument document =CompanyDocument.builder()
+                .id(companyID)
+                .build();
+        OutboxDTO dto = OutboxDTO.builder()
+                .aggregateType("COMPANY")
+                .aggregateId(companyID.toString())
+                .category(OutboxCategory.COMPANY_INDEX)
+                .eventType(OutboxEventType.COMPANY_INDEX_DELETED)
+                .payload(document)
+                .exchangeName(RabbitMQConfig.COMPANY_INDEX_EXCHANGE)
+                .routingKey(RabbitMQConfig.COMPANY_INDEX_DELETED_ROUTING_KEY)
+                .build();
+        outboxService.save(dto);
+    }
+    public void publishCompanyRestoreIndex(Long companyID) {
+
+        CompanyDocument document =CompanyDocument.builder()
+                .id(companyID)
+                .build();
+        OutboxDTO dto = OutboxDTO.builder()
+                .aggregateType("COMPANY")
+                .aggregateId(companyID.toString())
+                .category(OutboxCategory.COMPANY_INDEX)
+                .eventType(OutboxEventType.COMPANY_INDEX_RESTORED)
+                .payload(document)
+                .exchangeName(RabbitMQConfig.COMPANY_INDEX_EXCHANGE)
+                .routingKey(RabbitMQConfig.COMPANY_INDEX_RESTORED_ROUTING_KEY)
+                .build();
+        outboxService.save(dto);
+
     }
 
 

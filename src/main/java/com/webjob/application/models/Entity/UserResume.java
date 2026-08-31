@@ -27,10 +27,7 @@ public class UserResume {
 
     /**
      * Tên CV
-     * Ví dụ:
-     * Java CV
-     * Backend CV
-     * English CV
+
      */
     @NotBlank
     private String name;
@@ -68,4 +65,6 @@ public class UserResume {
     @OneToMany(mappedBy = "resume")
     @JsonIgnore
     private List<Application> applications = new ArrayList<>();
+
+
 }

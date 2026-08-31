@@ -37,7 +37,7 @@ public class RabbitListenerConfig {
         factory.setAdviceChain(
                 RetryInterceptorBuilder
                         .stateless()
-                        .maxAttempts(3)
+                        .maxAttempts(4)
                         .backOffOptions(
                                 2000,
                                 2.0,

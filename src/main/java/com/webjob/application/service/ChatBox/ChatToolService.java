@@ -1,8 +1,12 @@
 package com.webjob.application.service.ChatBox;
 
+import com.webjob.application.dto.Request.JobSearchRequestAI;
+import com.webjob.application.dto.Request.SearchCompanyAI;
 import com.webjob.application.dto.Response.*;
 import com.webjob.application.dto.record.AlertMatchResult;
 import com.webjob.application.dto.record.SkillMatchResult;
+import com.webjob.application.elasticsearch.company.CompanyElasticsearchSearchService;
+import com.webjob.application.elasticsearch.job.JobElasticsearchSearchService;
 import com.webjob.application.enums.JobLevel;
 import com.webjob.application.enums.ResumeStatus;
 import com.webjob.application.enums.WorkMode;
@@ -26,10 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +42,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.webjob.application.utils.common.UtilFormat.parseEnumSafe;
 
 @Service
 @RequiredArgsConstructor
@@ -66,39 +69,72 @@ public class ChatToolService {
 
     private final SavedJobMapper savedJobMapper;
 
+    private final JobElasticsearchSearchService elasticsearchSearchService;
+    private final CompanyElasticsearchSearchService companyElasticsearchSearchService;
+
     private static final int MAX_ALERT_SCORE = 160;
 
     // 1. searchJobs — AI tìm việc bằng ngôn ngữ tự nhiên
     public List<JobAIResponseDTO> searchJobs(
-            String keyword, String location,
-            Double salaryMin, Integer experienceYears,
-            String level, String workMode, String workingType,
-            String companyName, String categoryName
-    ) {
+            String keyword,
+            String location,
+            Double salaryMin,
+            Integer experienceYears,
+            String level,
+            String workMode,
+            String workingType,
+            String companyName,
+            String categoryName) {
+
         JobLevel jobLevel = parseEnumSafe(JobLevel.class, level);
         WorkMode mode = parseEnumSafe(WorkMode.class, workMode);
         WorkingType type = parseEnumSafe(WorkingType.class, workingType);
+        JobSearchRequestAI jobSearchRequestAI = JobSearchRequestAI.builder()
+                .keyword(keyword)
+                .location(location)
+                .salaryMin(salaryMin)
+                .experienceYears(experienceYears)
+                .workMode(mode)
+                .workingType(type)
+                .companyName(companyName)
+                .categoryName(categoryName)
+                .build();
+        ElasticsearchSearchResult result;
+        try {
+            result = elasticsearchSearchService.searchJobAI(jobSearchRequestAI);
+            if (result == null || result.getIds() == null || result.getIds().isEmpty()) {
+                return List.of();
+            }
 
-        Specification<Job> specification =
-                Specification.where(JobSpecification.notDeleted())
-                        .and(JobSpecification.activeOnly())
-                        .and(JobSpecification.keyword(keyword))
-                        .and(JobSpecification.hasLocation(location))
-                        .and(JobSpecification.hasSalary(salaryMin, null))
-                        .and(JobSpecification.hasExperience(experienceYears))
-                        .and(JobSpecification.hasLevel(jobLevel))
-                        .and(JobSpecification.hasWorkMode(mode))
-                        .and(JobSpecification.hasWorkingType(type))
-                        .and(JobSpecification.hasCompanyName(companyName))
-                        .and(JobSpecification.companyActive())
-                        .and(JobSpecification.hasCategory(categoryName));
+            List<Job> jobs = jobRepository.findByIdIn(result.getIds());
+            List<Job> orderedJobs = reorderJobs(result.getIds(), jobs);
+            log.info("Search used Elasticsearch successful");
+            return orderedJobs.stream()
+                    .map(jobMapper::searchJobAI)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Elasticsearch search failed. Fallback to database. " + "keyword={}", keyword, e);
+            Specification<Job> specification =
+                    Specification.where(JobSpecification.notDeleted())
+                            .and(JobSpecification.activeOnly())
+                            .and(JobSpecification.keyword(keyword))
+                            .and(JobSpecification.hasLocation(location))
+                            .and(JobSpecification.hasSalary(salaryMin, null))
+                            .and(JobSpecification.hasExperience(experienceYears))
+                            .and(JobSpecification.hasLevel(jobLevel))
+                            .and(JobSpecification.hasWorkMode(mode))
+                            .and(JobSpecification.hasWorkingType(type))
+                            .and(JobSpecification.hasCompanyName(companyName))
+                            .and(JobSpecification.companyActive())
+                            .and(JobSpecification.hasCategory(categoryName));
 
-        List<Job> jobs = jobRepository.findAll(specification);
+            List<Job> jobs = jobRepository.findAll(specification);
 
-        return jobs.stream()
-                .limit(10)
-                .map(jobMapper::searchJobAI)
-                .collect(Collectors.toList());
+            return jobs.stream()
+                    .limit(10)
+                    .map(jobMapper::searchJobAI)
+                    .collect(Collectors.toList());
+        }
     }
 
     // 2. getJobDetail — chi tiết 1 job (mô tả, yêu cầu tiếng Anh, ...)
@@ -128,23 +164,57 @@ public class ChatToolService {
             String address,
             String industryName
     ) {
-        Specification<Company> specification =
-                Specification.where(CompanySpecification.visible())
-                        .and(CompanySpecification.active())
-                        .and(CompanySpecification.hasKeyword(name))
-                        .and(CompanySpecification.hasTaxCode(taxCode))
-                        .and(CompanySpecification.hasEmail(email))
-                        .and(CompanySpecification.hasPhone(phone))
-                        .and(CompanySpecification.hasWebsite(website))
-                        .and(CompanySpecification.hasAddress(address))
-                        .and(CompanySpecification.hasindustryName(industryName));
-        List<Company> companies = companyRepository.findAll(specification);
-        return companies.stream()
-                .limit(10)
-                .map(companyMapper::toCompanyAiDetailDTO)
-                .collect(Collectors.toList());
-    }
+        ElasticsearchSearchResult result;
+        try {
+            SearchCompanyAI searchCompanyAI = SearchCompanyAI.builder()
+                    .name(name)
+                    .taxCode(taxCode)
+                    .email(email)
+                    .phone(phone)
+                    .website(website)
+                    .address(address)
+                    .industryName(industryName)
+                    .build();
+            result = companyElasticsearchSearchService.searchCompanyForAi(searchCompanyAI);
 
+            if (result == null || result.getIds() == null || result.getIds().isEmpty()) {
+                log.warn("Elasticsearch search returned no results or null. Returning empty list.");
+                return List.of();
+            }
+            List<Company> companies = companyRepository.findByIdIn(result.getIds());
+            List<Company> orderedCompanies = reorderCompanies(result.getIds(), companies);
+
+            List<CompanyAiDetailDTO> response = orderedCompanies.stream()
+                    .map(companyMapper::toCompanyAiDetailDTO)
+                    .collect(Collectors.toList());
+
+            log.info("Successfully returned {} companies via Elasticsearch flow.", response.size());
+            return response;
+
+        } catch (Exception e) {
+            log.error("Elasticsearch search failed with error: {}. Falling back to Database Specification search.", e.getMessage(), e);
+            Specification<Company> specification =
+                    Specification.where(CompanySpecification.visible())
+                            .and(CompanySpecification.active())
+                            .and(CompanySpecification.hasKeyword(name))
+                            .and(CompanySpecification.hasTaxCode(taxCode))
+                            .and(CompanySpecification.hasEmail(email))
+                            .and(CompanySpecification.hasPhone(phone))
+                            .and(CompanySpecification.hasWebsite(website))
+                            .and(CompanySpecification.hasAddress(address))
+                            .and(CompanySpecification.hasindustryName(industryName));
+
+            List<Company> companies = companyRepository.findAll(specification);
+
+            List<CompanyAiDetailDTO> response = companies.stream()
+                    .limit(10)
+                    .map(companyMapper::toCompanyAiDetailDTO)
+                    .collect(Collectors.toList());
+
+            log.info("Successfully returned {} companies via Database fallback flow.", response.size());
+            return response;
+        }
+    }
     //    4.thống kế trạng thái úng tuyển
     public ApplicationSummaryDTO getApplicationSummary(Long userId) {
         Object[] result = applicationRepository.getApplicationSummary(userId);
@@ -215,7 +285,7 @@ public class ChatToolService {
         } catch (InterruptedException ex) {
 
             Thread.currentThread().interrupt();
-            throw new AppException("Không thể lấy lock."+ ex);
+            throw new AppException("Không thể lấy lock." , ex);
 
         } catch (DataIntegrityViolationException ex) {
 
@@ -432,17 +502,36 @@ public class ChatToolService {
     }
 
 
-    private <T extends Enum<T>> T parseEnumSafe(Class<T> enumClass, String value) {
-        if (value == null || value.isBlank()) return null;
-        try {
-            return Enum.valueOf(enumClass, value.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
     private String buildSaveFavoriteJobLock(Long userId, Long jobId) {
         return "favorite-job:" + userId + ":" + jobId;
     }
 
+    private List<Job> reorderJobs(List<Long> ids, List<Job> jobs) {
+
+        Map<Long, Job> jobMap = jobs.stream()
+                .collect(Collectors.toMap(
+                        Job::getId,
+                        Function.identity()
+                ));
+        return ids.stream()
+                .map(jobMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private List<Company> reorderCompanies(List<Long> ids, List<Company> companies) {
+
+        Map<Long, Company> companyMap = companies.stream()
+                .collect(Collectors.toMap(
+                        Company::getId,
+                        Function.identity()
+                ));
+
+        return ids.stream()
+                .map(companyMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+    }
 
 }
+

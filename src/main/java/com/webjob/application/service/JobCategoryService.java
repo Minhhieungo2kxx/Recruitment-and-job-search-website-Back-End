@@ -203,17 +203,8 @@ public class JobCategoryService {
 
     public ResponseDTO<List<JobCategoryResponse>> getAllPageList(int page, int size, JobCategorySearchRequest request) {
 
-        try {
-            if (page <= 0)
-                page = 1;
-            if (size <= 0) {
-                size = 8;
-            }
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
-            page = 1;
-            size = 8;
-        }
+        size = Math.min(Math.max(size, 1), 50);
+        page = Math.max(page, 1);
         Page<JobCategory> pagelist = getAllPage(page - 1, size,request);
         List<JobCategoryResponse> responseList = pagelist.getContent().stream()
                 .map(jobCategoryMapper::toResponse)

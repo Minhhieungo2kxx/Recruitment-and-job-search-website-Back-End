@@ -152,8 +152,6 @@ public class JobController {
                 jobService.searchJob(page, size, request)
         );
         return ResponseEntity.ok(apiResponse);
-
-
     }
 
 

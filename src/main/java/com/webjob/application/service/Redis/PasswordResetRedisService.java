@@ -40,7 +40,7 @@ public class PasswordResetRedisService {
 
         }catch (RedisConnectionFailureException ex){
             log.error("Cannot connect to Redis", ex);
-            throw new RedisUnavailableException(ex.getMessage());
+            throw new RedisUnavailableException(ex.getMessage(),ex);
 
         }
 
@@ -59,7 +59,7 @@ public class PasswordResetRedisService {
 
         }catch (RedisConnectionFailureException ex){
             log.error("Cannot connect to Redis", ex);
-            throw new RedisUnavailableException(ex.getMessage());
+            throw new RedisUnavailableException(ex.getMessage(),ex);
 
         }
 
@@ -82,7 +82,7 @@ public class PasswordResetRedisService {
         catch (RedisConnectionFailureException ex) {
             log.error("Cannot connect to Redis", ex);
 
-            throw new RedisUnavailableException(ex.getMessage());
+            throw new RedisUnavailableException(ex.getMessage(),ex);
         }
 
 

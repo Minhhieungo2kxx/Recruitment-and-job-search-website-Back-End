@@ -1,14 +1,19 @@
 package com.webjob.application.service;
 
 import com.webjob.application.dto.Request.ForgotPasswordRequest;
+import com.webjob.application.dto.Request.OutboxDTO;
 import com.webjob.application.dto.Response.ApiResponse;
+import com.webjob.application.enums.OutboxCategory;
+import com.webjob.application.enums.OutboxEventType;
 import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.exception.Customs.ResourceNotFoundException;
+import com.webjob.application.messaging.config.RabbitMQConfig;
 import com.webjob.application.messaging.dto.ForgotPasswordEmailEvent;
 import com.webjob.application.messaging.producer.EmailProducer;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.dto.Request.ResetPasswordRequest;
 import com.webjob.application.repository.UserRepository;
+import com.webjob.application.service.OutBox.OutboxService;
 import com.webjob.application.service.Redis.PasswordResetRedisService;
 import com.webjob.application.service.SendEmail.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +45,7 @@ public class PasswordResetService {
     private final ApplicationEventPublisher eventPublisher;
 
     private final PasswordResetRedisService redisService;
+    private final OutboxService outboxService;
 
     private String generateToken() {
 
@@ -90,17 +96,24 @@ public class PasswordResetService {
 
         redisService.save(user.getId(), token, Duration.ofMinutes(6));
 
-
-//        send Email
-        ForgotPasswordEmailEvent event =
-                ForgotPasswordEmailEvent.builder()
+         ForgotPasswordEmailEvent event =ForgotPasswordEmailEvent.builder()
                         .email(user.getEmail())
                         .fullName(user.getFullName())
                         .token(token)
                         .expiresAt(Instant.now().plusSeconds(360))
                         .build();
+        OutboxDTO dto = OutboxDTO.builder()
+                .aggregateType("USER")
+                .aggregateId(user.getId().toString())
+                .category(OutboxCategory.EMAIL)
+                .eventType(OutboxEventType.FORGOT_PASSWORD)
+                .payload(event)
+                .exchangeName(RabbitMQConfig.EMAIL_EXCHANGE)
+                .routingKey(RabbitMQConfig.FORGOT_ROUTING_KEY)
+                .build();
+        outboxService.save(dto);
 
-        eventPublisher.publishEvent(event);
+
     }
 
 

@@ -101,25 +101,25 @@ public class ApplicationEmailService {
     }
 
 
-//    @Async("taskExecutor")
-//    public void LoginNotification(Map<String, Object> emailVars) {
-//        // Lấy dữ liệu từ map
-//        String email = (String) emailVars.get("email");
-//        String ip = (String) emailVars.get("ip");
-//        String userAgent = (String) emailVars.get("userAgent");
-//
-//        Map<String, Object> emailTemplateVars = new HashMap<>();
-//        emailTemplateVars.put("email", email);
-//        emailTemplateVars.put("time", emailVars.get("time"));
-//        emailTemplateVars.put("location", getLocationByIp(ip));
-//        emailTemplateVars.put("device", getDeviceBasic(userAgent));
-//
-//        emailService.sendLoginNotification(
-//                "Thông Báo Đăng Nhập Hệ Thống TopWork",
-//                "emails/login-notification",
-//                emailTemplateVars
-//        );
-//    }
+    @Async("taskExecutor")
+    public void LoginNotification(Map<String, Object> emailVars) {
+        // Lấy dữ liệu từ map
+        String email = (String) emailVars.get("email");
+        String ip = (String) emailVars.get("ip");
+        String userAgent = (String) emailVars.get("userAgent");
+
+        Map<String, Object> emailTemplateVars = new HashMap<>();
+        emailTemplateVars.put("email", email);
+        emailTemplateVars.put("time", emailVars.get("time"));
+        emailTemplateVars.put("location", getLocationByIp(ip));
+        emailTemplateVars.put("device", getDeviceBasic(userAgent));
+
+        emailService.sendLoginNotification(
+                "Thông Báo Đăng Nhập Hệ Thống TopWork",
+                "emails/login-notification",
+                emailTemplateVars
+        );
+    }
 
 
     public void sendJobEmail(Subscriber subscriber, List<Job> jobs) {

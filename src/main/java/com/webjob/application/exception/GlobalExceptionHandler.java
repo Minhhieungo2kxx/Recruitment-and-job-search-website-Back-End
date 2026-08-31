@@ -69,31 +69,31 @@ public class GlobalExceptionHandler {
     }
 
     //    4. Xử lý NullPointerException (lỗi lập trình)
-    @ExceptionHandler(NullPointerException.class)
-    public ResponseEntity<?> handleNullPointerException(NullPointerException ex) {
-        ErrorResponException<?> errorResponException = new ErrorResponException<>(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Exception Error",
-                LocalDateTime.now(),
-                ex.getMessage(),
-                null
-        );
-        return new ResponseEntity<>(errorResponException, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+//    @ExceptionHandler(NullPointerException.class)
+//    public ResponseEntity<?> handleNullPointerException(NullPointerException ex) {
+//        ErrorResponException<?> errorResponException = new ErrorResponException<>(
+//                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+//                "Exception Error",
+//                LocalDateTime.now(),
+//                ex.getMessage(),
+//                null
+//        );
+//        return new ResponseEntity<>(errorResponException, HttpStatus.INTERNAL_SERVER_ERROR);
+//    }
 
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleGenericException(Exception ex) {
-        ErrorResponException<?> errorResponException = new ErrorResponException<>(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Có lỗi xảy ra, vui lòng thử lại sau",
-                LocalDateTime.now(),
-                ex.getMessage(),
-                null
-        );
-
-        return new ResponseEntity<>(errorResponException, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<?> handleGenericException(Exception ex) {
+//        ErrorResponException<?> errorResponException = new ErrorResponException<>(
+//                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+//                "Có lỗi xảy ra, vui lòng thử lại sau",
+//                LocalDateTime.now(),
+//                ex.getMessage(),
+//                null
+//        );
+//
+//        return new ResponseEntity<>(errorResponException, HttpStatus.INTERNAL_SERVER_ERROR);
+//    }
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<?> handleUsernameNotFoundException(UsernameNotFoundException ex) {
@@ -132,18 +132,18 @@ public class GlobalExceptionHandler {
 
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<?> handleRuntime(RuntimeException ex) {
-        ErrorResponException<?> errorResponException = new ErrorResponException<>(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Exception Error",
-                LocalDateTime.now(),
-                ex.getMessage(),
-                null
-        );
-        return new ResponseEntity<>(errorResponException, HttpStatus.INTERNAL_SERVER_ERROR);
-
-    }
+//    @ExceptionHandler(RuntimeException.class)
+//    public ResponseEntity<?> handleRuntime(RuntimeException ex) {
+//        ErrorResponException<?> errorResponException = new ErrorResponException<>(
+//                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+//                "Exception Error",
+//                LocalDateTime.now(),
+//                ex.getMessage(),
+//                null
+//        );
+//        return new ResponseEntity<>(errorResponException, HttpStatus.INTERNAL_SERVER_ERROR);
+//
+//    }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<?> handleAccessDeniedException(AccessDeniedException ex) {
@@ -291,19 +291,19 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
     }
-    @ExceptionHandler(ChatProcessingException.class)
-    public ResponseEntity<?> handleChatProcessingException(ChatProcessingException ex) {
-        log.error("Đã có lỗi xảy ra khi xử lý tin nhắn", ex);
-        ErrorResponException<?> errorResponse = new ErrorResponException<>(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Đã có lỗi xảy ra khi xử lý tin nhắn",
-                LocalDateTime.now(),
-                ex.getMessage(),
-                null
-        );
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-    }
+//    @ExceptionHandler(ChatProcessingException.class)
+//    public ResponseEntity<?> handleChatProcessingException(ChatProcessingException ex) {
+//        log.error("Đã có lỗi xảy ra khi xử lý tin nhắn", ex);
+//        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+//                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+//                "Đã có lỗi xảy ra khi xử lý tin nhắn",
+//                LocalDateTime.now(),
+//                ex.getMessage(),
+//                null
+//        );
+//
+//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+//    }
     @ExceptionHandler(ChatHistoryException.class)
     public ResponseEntity<?> handleChatHistoryException(ChatHistoryException ex) {
         log.error("Lỗi lịch sử chat", ex);
@@ -393,6 +393,22 @@ public class GlobalExceptionHandler {
                 .build();
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
     }
+    @ExceptionHandler(ElasticsearchException.class)
+    public ResponseEntity<ErrorResponException<Object>> handleElasticsearchException(
+            ElasticsearchException ex) {
+
+        ErrorResponException<Object> errorResponse = ErrorResponException.builder()
+                .statusCode(HttpStatus.SERVICE_UNAVAILABLE.value())
+                .message("Elasticsearch service is unavailable")
+                .error(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(errorResponse);
+    }
+
 
 
 

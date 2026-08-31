@@ -63,7 +63,6 @@ public class JobProducer {
                         event.getJobId(), follow.getUser().getId(), e.getMessage(), e);
             }
         }
-        // Log tổng kết kết quả bắn message
         log.info("Finished sending job notifications for jobId: {}. Total success: {}, Total failed: {}",
                 event.getJobId(), successCount, failCount);
     }

@@ -1,5 +1,6 @@
 package com.webjob.application.messaging.config;
 
+import com.webjob.application.dto.Response.RabbitEvent;
 import com.webjob.application.event.dto.JobCreatedEvent;
 import com.webjob.application.messaging.dto.EmailJobMessage;
 import com.webjob.application.messaging.dto.ForgotPasswordEmailEvent;
@@ -77,4 +78,47 @@ public class DeadLetterConsumer {
                 event.getUserId()
         );
     }
+
+    @RabbitListener(
+            queues = RabbitMQConfig.JOB_INDEX_DLQ,
+            containerFactory = "rabbitListenerContainerFactory"
+    )
+    public void receiveJobIndexDeadLetter(RabbitEvent<String> event) {
+        log.error("""
+            Job Index event moved to DLQ
+            eventId      : {}
+            eventType    : {}
+            aggregateType: {}
+            aggregateId  : {}
+            payload      : {}
+            """,
+                event.getEventId(),
+                event.getEventType(),
+                event.getAggregateType(),
+                event.getAggregateId(),
+                event.getPayload()
+        );
+    }
+    @RabbitListener(
+            queues = RabbitMQConfig.COMPANY_INDEX_DLQ,
+            containerFactory = "rabbitListenerContainerFactory"
+    )
+    public void receiveCompanyIndexDeadLetter(RabbitEvent<String> event) {
+        log.error("""
+            Company Index event moved to DLQ
+            eventId      : {}
+            eventType    : {}
+            aggregateType: {}
+            aggregateId  : {}
+            payload      : {}
+            """,
+                event.getEventId(),
+                event.getEventType(),
+                event.getAggregateType(),
+                event.getAggregateId(),
+                event.getPayload()
+        );
+    }
+
+
 }

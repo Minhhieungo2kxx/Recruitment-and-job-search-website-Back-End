@@ -3,14 +3,15 @@ package com.webjob.application.config.CustomOAuth2;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.dto.Response.LoginResponse;
-import com.webjob.application.service.AuthService;
-import com.webjob.application.service.SecurityUtil;
+import com.webjob.application.service.Redis.LoginNotificationService;
 import com.webjob.application.service.SendEmail.ApplicationEmailService;
 import com.webjob.application.service.UserService;
+import com.webjob.application.utils.common.SecurityUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -30,9 +31,9 @@ import java.util.Map;
 
 @RequiredArgsConstructor
 @Component
+@Slf4j
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final SecurityUtil securityUtil;
 
     private final UserService userService;
 
@@ -43,6 +44,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final ObjectMapper objectMapper;
     private final ApplicationEmailService applicationEmailService;
 
+    private final LoginNotificationService loginNotificationService;
+    private final SecurityUtils securityUtils;
+
 
 
     @Override
@@ -50,22 +54,26 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                                         Authentication authentication) throws IOException, ServletException {
 
         try {
-            // Lấy thông tin user từ Google OAuth2
-//            String email = ((DefaultOAuth2User) authentication.getPrincipal()).getAttribute("email");
-//            User userEntity = userService.getbyEmail(email);
+
             DefaultOAuth2User oauthUser = (DefaultOAuth2User) authentication.getPrincipal();
             Map<String, Object> attributes = oauthUser.getAttributes();
             String email = oauthUser.getAttribute("email");
             String userId = oauthUser.getAttribute("userId"); //ở CustomOAuth2UserService
+            if (userId == null) {
+                response.sendRedirect("/login-chat?error=user_not_found");
+                return;
+            }
             User userEntity = userService.getById(Long.valueOf(userId));
-            // Tạo JWT tokens
+            if (userEntity == null) {
+                response.sendRedirect("/login-chat?error=user_not_found");
+                return;
+            }
             LoginResponse.User userDto = modelMapper.map(userEntity, LoginResponse.User.class);
-            String accessToken = securityUtil.createacessToken(userEntity);
-            String refreshToken = securityUtil.createrefreshToken(userEntity);
-            // Cập nhật refresh token vào database
-            userService.updateRefreshtoken(userEntity.getId(), refreshToken);
+            String accessToken = securityUtils.createacessToken(userEntity);
 
-            // Gửi refresh token qua cookie
+            String refreshToken = securityUtils.createrefreshToken(userEntity);
+            String refreshTokenHash = securityUtils.sha256(refreshToken);
+            userService.updateRefreshtoken(userEntity.getId(), refreshTokenHash);
             ResponseCookie cookie = ResponseCookie.from("refresh", refreshToken)
                     .httpOnly(true)
                     .secure(true)
@@ -74,32 +82,30 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                     .build();
             response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-            // Chuyển hướng đến trang success với token trong URL parameters
+//            send email
+            handleLoginNotificationEmail(email,Long.valueOf(userId),request);
+
             String redirectUrl = String.format("/login-success?accessToken=%s&userInfo=%s",
                     accessToken,
                     URLEncoder.encode(objectMapper.writeValueAsString(userDto), StandardCharsets.UTF_8));
-
             response.sendRedirect(redirectUrl);
-            //send Email
-
-//            handleLoginNotification(request,email);
 
         } catch (Exception e) {
-            // Nếu có lỗi, chuyển hướng đến trang login với thông báo lỗi
+            log.error("OAuth2 authentication success handler failed", e);
             response.sendRedirect("/login-chat?error=oauth_failed");
         }
     }
-//    public void handleLoginNotification(HttpServletRequest request, String email) {
-//        // Trong Controller hoặc nơi gọi async
-//        String ip = getClientIp(request);
-//        String userAgent = request.getHeader("User-Agent");
-//        Map<String, Object> emailVars = new HashMap<>();
-//        emailVars.put("email", email);
-//        emailVars.put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
-//        emailVars.put("ip", ip);
-//        emailVars.put("userAgent", userAgent);
-//        applicationEmailService.LoginNotification(emailVars);
-//    }
+    public void LoginNotificationEvent(HttpServletRequest request, String email) {
+
+        String ip = getClientIp(request);
+        String userAgent = request.getHeader("User-Agent");
+        Map<String, Object> emailVars = new HashMap<>();
+        emailVars.put("email", email);
+        emailVars.put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
+        emailVars.put("ip", ip);
+        emailVars.put("userAgent", userAgent);
+        applicationEmailService.LoginNotification(emailVars);
+    }
     public String getClientIp(HttpServletRequest request) {
         String[] headers = {
                 "X-Forwarded-For",
@@ -120,6 +126,21 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             }
         }
         return request.getRemoteAddr();
+    }
+    private void handleLoginNotificationEmail(String email, Long userId,HttpServletRequest request) {
+        if (email == null || email.isBlank()) {
+            return;
+        }
+        if (!loginNotificationService.shouldSendLoginNotification(userId)) {
+            return;
+        }
+        try {
+            LoginNotificationEvent(request,email);
+
+        } catch (Exception e) {
+            log.error("Cannot send login notification. userId={}", userId, e);
+            loginNotificationService.removeNotificationFlag(userId);
+        }
     }
 
 
