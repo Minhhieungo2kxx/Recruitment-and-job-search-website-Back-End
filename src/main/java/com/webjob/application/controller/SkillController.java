@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,8 +24,8 @@ import java.util.List;
 public class SkillController {
     private final SkillService skillService;
 
-
-    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
+//    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<SkillResponse>> createSkill(@Valid @RequestBody SkillRequest skillRequest) {
         ApiResponse<SkillResponse> response = new ApiResponse<>(
@@ -70,7 +71,7 @@ public class SkillController {
     @GetMapping
     public ResponseEntity<ApiResponse<ResponseDTO<List<SkillResponse>>>> GetAllSkillPage(
             @RequestParam(defaultValue = "1") int page
-            ,@RequestParam(defaultValue = "8") int size) {
+            , @RequestParam(defaultValue = "8") int size) {
         ApiResponse<ResponseDTO<List<SkillResponse>>> response = new ApiResponse<>(
                 HttpStatus.OK.value(),
                 null,
@@ -85,8 +86,8 @@ public class SkillController {
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<ResponseDTO<List<SkillResponse>>>> searchSkill(
             @ModelAttribute SkillSearchRequest request
-            ,@RequestParam(defaultValue = "1") int page
-            ,@RequestParam(defaultValue = "8") int size) {
+            , @RequestParam(defaultValue = "1") int page
+            , @RequestParam(defaultValue = "8") int size) {
         ApiResponse<ResponseDTO<List<SkillResponse>>> response = new ApiResponse<>(
                 HttpStatus.OK.value(),
                 null,

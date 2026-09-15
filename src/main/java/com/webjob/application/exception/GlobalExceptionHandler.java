@@ -68,7 +68,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponException, HttpStatus.BAD_REQUEST);
     }
 
-    //    4. Xử lý NullPointerException (lỗi lập trình)
+//        4. Xử lý NullPointerException (lỗi lập trình)
 //    @ExceptionHandler(NullPointerException.class)
 //    public ResponseEntity<?> handleNullPointerException(NullPointerException ex) {
 //        ErrorResponException<?> errorResponException = new ErrorResponException<>(
@@ -291,19 +291,19 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
     }
-//    @ExceptionHandler(ChatProcessingException.class)
-//    public ResponseEntity<?> handleChatProcessingException(ChatProcessingException ex) {
-//        log.error("Đã có lỗi xảy ra khi xử lý tin nhắn", ex);
-//        ErrorResponException<?> errorResponse = new ErrorResponException<>(
-//                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-//                "Đã có lỗi xảy ra khi xử lý tin nhắn",
-//                LocalDateTime.now(),
-//                ex.getMessage(),
-//                null
-//        );
-//
-//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-//    }
+    @ExceptionHandler(ChatProcessingException.class)
+    public ResponseEntity<?> handleChatProcessingException(ChatProcessingException ex) {
+        log.error("Đã có lỗi xảy ra khi xử lý tin nhắn", ex);
+        ErrorResponException<?> errorResponse = new ErrorResponException<>(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Đã có lỗi xảy ra khi xử lý tin nhắn",
+                LocalDateTime.now(),
+                ex.getMessage(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
     @ExceptionHandler(ChatHistoryException.class)
     public ResponseEntity<?> handleChatHistoryException(ChatHistoryException ex) {
         log.error("Lỗi lịch sử chat", ex);
@@ -408,6 +408,22 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(errorResponse);
     }
+
+    @ExceptionHandler(CvProcessingException.class)
+    public ResponseEntity<ErrorResponException<Object>> handleCvProcessingException(
+            CvProcessingException ex) {
+        ErrorResponException<Object> errorResponse = ErrorResponException.builder()
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .message("Failed to process CV")
+                .error(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(errorResponse);
+    }
+
 
 
 

@@ -25,6 +25,7 @@ public class JobCategoryResponse {
     private CategoryStatus status;
 
     private Long parentId;
+    private String nameParent;
 
 //    private Integer childrenCount;
 

@@ -19,7 +19,7 @@ import com.webjob.application.repository.JobRepository;
 import com.webjob.application.repository.SkillRepository;
 import com.webjob.application.service.OutBox.OutboxService;
 import com.webjob.application.service.Specification.JobSpecification;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

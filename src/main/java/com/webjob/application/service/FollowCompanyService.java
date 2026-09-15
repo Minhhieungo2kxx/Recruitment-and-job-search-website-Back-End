@@ -3,17 +3,15 @@ package com.webjob.application.service;
 import com.webjob.application.dto.Response.FollowCompanyResponse;
 import com.webjob.application.dto.Response.MetaDTO;
 import com.webjob.application.dto.Response.ResponseDTO;
-import com.webjob.application.dto.Response.SavedJobResponse;
 import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.exception.Customs.ResourceNotFoundException;
 import com.webjob.application.models.Entity.Company;
 import com.webjob.application.models.Entity.FollowCompany;
-import com.webjob.application.models.Entity.SavedJob;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.repository.CompanyRepository;
 import com.webjob.application.repository.FollowCompanyRepository;
 import com.webjob.application.repository.UserRepository;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor

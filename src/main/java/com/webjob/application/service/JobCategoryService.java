@@ -46,7 +46,7 @@ public class JobCategoryService {
     @Transactional
     public JobCategoryResponse create(JobCategoryRequest request) {
         if (jobCategoryRepository.existsByName(request.getName())) {
-            throw new IllegalArgumentException("Category name already exists");
+            throw new IllegalArgumentException("Category name : "+request.getName()+" already exists");
         }
         JobCategory category = new JobCategory();
         modelMapper.map(request, category);

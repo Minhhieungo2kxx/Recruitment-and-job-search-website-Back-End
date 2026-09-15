@@ -30,5 +30,5 @@ public class ApplyRequest {
     //upload mới
     private String publicId;
 
-    private Boolean isDefault=false;
+    private Boolean isDefault;
 }

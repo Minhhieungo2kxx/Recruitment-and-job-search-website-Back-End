@@ -1,10 +1,9 @@
 package com.webjob.application.service;
 
-import com.webjob.application.dto.Request.JobFilterAdminRequest;
-import com.webjob.application.dto.Response.JobResponse;
 import com.webjob.application.dto.Response.MetaDTO;
 import com.webjob.application.dto.Response.ResponseDTO;
 import com.webjob.application.dto.Response.SavedJobResponse;
+import com.webjob.application.dto.record.RecommendationCacheInvalidateEvent;
 import com.webjob.application.exception.Customs.*;
 import com.webjob.application.mapper.SavedJobMapper;
 import com.webjob.application.models.Entity.Job;
@@ -13,11 +12,12 @@ import com.webjob.application.models.Entity.User;
 import com.webjob.application.repository.JobRepository;
 import com.webjob.application.repository.SavedJobRepository;
 import com.webjob.application.repository.UserRepository;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,7 +26,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -44,6 +43,8 @@ public class SavedJobService {
 
     private final SavedJobMapper savedJobMapper;
     private final RedissonClient redissonClient;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void saveJob(Long jobId) {
@@ -69,7 +70,10 @@ public class SavedJobService {
             savedJob.setUser(user);
             savedJob.setJob(job);
 
+
             savedJobRepository.save(savedJob);
+            publishRecommendationCacheInvalidateEvent(user.getId(),"saved_job");
+
 
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
@@ -85,6 +89,9 @@ public class SavedJobService {
             }
         }
     }
+    public void publishRecommendationCacheInvalidateEvent(Long userId, String message) {
+        eventPublisher.publishEvent(new RecommendationCacheInvalidateEvent(userId, message));
+    }
 
 
     @Transactional
@@ -96,6 +103,8 @@ public class SavedJobService {
                 .orElseThrow(() -> new ResourceNotFoundException("Saved job not found"));
 
         savedJobRepository.delete(savedJob);
+
+        publishRecommendationCacheInvalidateEvent(userId,"saved_job");
     }
     public ResponseDTO<List<SavedJobResponse>> getSavedJobs(int page, int size) {
 

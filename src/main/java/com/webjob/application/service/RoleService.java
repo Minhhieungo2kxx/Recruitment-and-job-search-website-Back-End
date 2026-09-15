@@ -3,6 +3,7 @@ package com.webjob.application.service;
 
 import com.webjob.application.dto.Request.RoleRequest;
 import com.webjob.application.dto.Response.RoleResponse;
+import com.webjob.application.dto.record.PermissionCacheInvalidationEvent;
 import com.webjob.application.mapper.RoleMapper;
 import com.webjob.application.models.Entity.Permission;
 import com.webjob.application.models.Entity.Role;
@@ -18,6 +19,7 @@ import com.webjob.application.service.Redis.PermissionCacheService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +45,9 @@ public class RoleService {
     private final RoleMapper roleMapper; // Tiêm mapper vào đây
 
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
+
 
 
     @Transactional
@@ -75,6 +80,7 @@ public class RoleService {
     public RoleResponse editRole(Long id, RoleRequest request) {
         Role role = roleRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new IllegalArgumentException("Role not found"));
+        List<Long> userIds = userRepository.findUserIdsByRoleId(role.getId());
 
         modelMapper.map(request, role);
 
@@ -98,6 +104,9 @@ public class RoleService {
 
         role.setRolePermissions(rolePermissions);
 
+
+        eventPublisher.publishEvent(
+                new PermissionCacheInvalidationEvent(userIds));
         return roleMapper.toResponse(roleRepository.save(role));
     }
 
@@ -124,22 +133,19 @@ public class RoleService {
         return roleRepository.findByIdAndActiveFalse(id);
     }
 
+
     @Transactional
     public void deleteRole(Long id) {
-        Role role = getByid(id).orElseThrow(() -> new IllegalArgumentException("Role not found with " + id));
-        if (userRepository.existsByRoleAndDeletedFalse(role)) {
-            throw new IllegalArgumentException(
-                    "Role đang được sử dụng bởi User.");
-        }
+        Role role = getByid(id)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Role not found with " + id));
+
+        List<Long> userIds = userRepository.findUserIdsByRoleId(role.getId());
         role.setActive(false);
-        for (User user : role.getUsers()) {
-            permissionCacheService.evict(user.getId().toString());
-        }
         roleRepository.save(role);
+        eventPublisher.publishEvent(
+                new PermissionCacheInvalidationEvent(userIds));
     }
-
-
-
     public ResponseDTO<List<RoleResponse>> getPaginated(int page,int size) {
 
         try {
@@ -175,11 +181,11 @@ public class RoleService {
         if (role.isActive()) {
             throw new IllegalArgumentException("Role đã ở trạng thái hoạt động.");
         }
+        List<Long> userIds = userRepository.findUserIdsByRoleId(role.getId());
         role.setActive(true);
         Role restore=roleRepository.save(role);
-        for (User user : role.getUsers()) {
-            permissionCacheService.evict(user.getId().toString());
-        }
+
+        eventPublisher.publishEvent(new PermissionCacheInvalidationEvent(userIds));
         return roleMapper.toResponse(restore);
     }
 

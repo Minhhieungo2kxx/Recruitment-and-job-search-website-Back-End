@@ -1,8 +1,6 @@
 package com.webjob.application.event;
 
-import com.webjob.application.dto.Request.JobRestoredEvent;
 import com.webjob.application.dto.Request.NotificationRequest;
-import com.webjob.application.dto.record.*;
 import com.webjob.application.elasticsearch.job.JobIndexService;
 import com.webjob.application.enums.NotificationType;
 import com.webjob.application.event.dto.JobAppliedNotificationEvent;
@@ -11,7 +9,7 @@ import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.messaging.producer.JobProducer;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.service.NotificationService;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;

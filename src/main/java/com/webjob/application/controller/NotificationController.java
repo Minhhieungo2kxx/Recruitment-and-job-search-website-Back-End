@@ -129,13 +129,3 @@ public class NotificationController {
 
 
 }
-//feat(notification): implement notification module with RabbitMQ and realtime support
-//
-//- add notification REST APIs
-//        - publish JobCreatedEvent when a new job is created
-//        - notify company followers through RabbitMQ
-//        - process notification events with RabbitMQ consumers
-//        - add Dead Letter Queue handling for failed messages
-//        - support notification read, unread, pin and delete operations
-//        - prepare realtime notification delivery via WebSocket for job applications, payments and application status updates
-//        - improve logging and event reliability

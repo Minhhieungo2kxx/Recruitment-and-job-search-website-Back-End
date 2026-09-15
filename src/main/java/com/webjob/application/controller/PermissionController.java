@@ -21,7 +21,7 @@ public class PermissionController {
 
     private final PermissionService permissionService;
 
-    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
+//    @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping
     public ResponseEntity<ApiResponse<Object>> createPermission(@Valid @RequestBody Permission permission) {
         Permission save=permissionService.createPermission(permission);

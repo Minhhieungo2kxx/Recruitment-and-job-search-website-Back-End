@@ -104,5 +104,12 @@ public interface ApplicationRepository extends JpaRepository<Application, Long>,
             Pageable pageable
     );
 
+    @Query("SELECT a.job.id FROM Application a WHERE a.user.id = :userId")
+    List<Long> findJobIdsByUserId(@Param("userId") Long userId);
+
+    @EntityGraph(attributePaths = {"job"})
+    List<Application> findTop10ByUserIdOrderByCreatedAtDesc(Long userId);
+
+
 
 }

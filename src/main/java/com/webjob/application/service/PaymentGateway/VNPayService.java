@@ -1,11 +1,8 @@
 package com.webjob.application.service.PaymentGateway;
 
-import com.webjob.application.config.VnPay.VNPayConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;

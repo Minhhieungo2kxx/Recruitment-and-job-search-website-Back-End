@@ -13,7 +13,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "user_resumes")
+@Table(
+        name = "user_resumes",
+        indexes = {
+                @Index(
+                        name = "idx_user_resumes_user_default",
+                        columnList = "user_id, is_default"
+                )
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -59,12 +67,16 @@ public class UserResume {
     @JoinColumn(name = "user_id")
     private User user;
 
-    /**
-     * Một CV có thể được dùng để apply nhiều Job
-     */
+
+//    Một CV có thể được dùng để apply nhiều Job
     @OneToMany(mappedBy = "resume")
     @JsonIgnore
     private List<Application> applications = new ArrayList<>();
+
+
+    @OneToMany(mappedBy = "resume")
+    @JsonIgnore
+    private List<JobRecommendation> jobRecommendations = new ArrayList<>();
 
 
 }

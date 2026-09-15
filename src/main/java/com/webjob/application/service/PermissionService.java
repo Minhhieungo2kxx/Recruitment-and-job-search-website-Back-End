@@ -1,17 +1,21 @@
 package com.webjob.application.service;
 
+import com.webjob.application.dto.record.PermissionCacheInvalidationEvent;
 import com.webjob.application.models.Entity.Permission;
 import com.webjob.application.dto.Response.MetaDTO;
 import com.webjob.application.dto.Response.ResponseDTO;
 import com.webjob.application.repository.PermissionRepository;
 import com.webjob.application.repository.RolePermissionRepository;
-import jakarta.transaction.Transactional;
+import com.webjob.application.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -24,6 +28,10 @@ public class PermissionService {
 
     private final RolePermissionRepository rolePermissionRepository;
 
+    private final ApplicationEventPublisher eventPublisher;
+
+    private final UserRepository userRepository;
+
 
 
 
@@ -33,22 +41,29 @@ public class PermissionService {
                 permission.getApiPath(), permission.getMethod(), permission.getModule()
         );
         if(exist){
-            throw new IllegalArgumentException("Permission already exists.");
+            throw new IllegalArgumentException("Permission already exists :" +permission.getCode());
         }
         return permissionRepository.save(permission);
 
     }
     @Transactional
-
     public Permission editPermission(Long id,Permission permission){
         Permission edit=getByID(id);
+        // Lấy user trước khi thay đổi permission
+        List<Long> userIds = userRepository.findUserIdsByPermissionId(id);
 
         edit.setName(permission.getName());
         edit.setApiPath(permission.getApiPath());
         edit.setMethod(permission.getMethod());
         edit.setModule(permission.getModule());
         edit.setCode(permission.getCode());
+
+        // Clear cache của những user bị ảnh hưởng
+        eventPublisher.publishEvent(
+                new PermissionCacheInvalidationEvent(userIds)
+        );
         return permissionRepository.save(edit);
+
     }
 
 
@@ -62,8 +77,14 @@ public class PermissionService {
     @Transactional
     public void deletePerMission(Long id){
         Permission permission=getByID(id);
+        // Lấy user trước khi thay đổi permission
+        List<Long> userIds = userRepository.findUserIdsByPermissionId(id);
 
         rolePermissionRepository.deleteByPermissionId(permission.getId());
+        // Clear cache của những user bị ảnh hưởng
+        eventPublisher.publishEvent(
+                new PermissionCacheInvalidationEvent(userIds)
+        );
         permissionRepository.delete(permission);
 
     }

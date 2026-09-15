@@ -2,7 +2,6 @@ package com.webjob.application.service;
 
 import com.webjob.application.dto.Request.NotificationRequest;
 import com.webjob.application.dto.Request.Payments.MomoPaymentCallback;
-import com.webjob.application.dto.Response.ApiResponse;
 import com.webjob.application.dto.record.PaymentSuccessEvent;
 import com.webjob.application.enums.NotificationType;
 import com.webjob.application.exception.Customs.BadRequestException;
@@ -25,16 +24,13 @@ import com.webjob.application.service.PaymentGateway.MomoService;
 import com.webjob.application.service.Redis.RedisLockService;
 import com.webjob.application.service.SendEmail.ApplicationEmailService;
 import com.webjob.application.service.PaymentGateway.VNPayService;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import com.webjob.application.utils.common.UtilFormat;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

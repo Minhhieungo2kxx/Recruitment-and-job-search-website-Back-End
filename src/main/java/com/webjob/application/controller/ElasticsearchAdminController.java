@@ -45,8 +45,4 @@ public class ElasticsearchAdminController {
         );
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
-
-
-
 }

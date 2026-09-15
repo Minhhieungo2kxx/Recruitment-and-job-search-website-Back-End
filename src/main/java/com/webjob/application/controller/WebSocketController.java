@@ -38,7 +38,6 @@ public class WebSocketController {
 
     @MessageMapping("/chat.seen")
     public void seenMessage(SeenRequest seenRequest, Principal principal) {
-
         websocketService.seenMessage(seenRequest);
     }
 

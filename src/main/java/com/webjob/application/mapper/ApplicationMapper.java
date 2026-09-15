@@ -1,6 +1,8 @@
 package com.webjob.application.mapper;
 
 import com.webjob.application.dto.Response.*;
+
+import com.webjob.application.dto.record.ApplicationHistoryDtoGemini;
 import com.webjob.application.messaging.dto.JobAppliedEvent;
 import com.webjob.application.models.Entity.*;
 import org.springframework.stereotype.Component;
@@ -277,4 +279,26 @@ public class ApplicationMapper {
                 .appliedAt(app.getCreatedAt() != null ? app.getCreatedAt() : null)
                 .build();
     }
+    public ApplicationHistoryDtoGemini applicationHistoryDtoGemini (Application a){
+        return new ApplicationHistoryDtoGemini(
+                a.getJob() != null ? a.getJob().getId() : null,
+                a.getJob() != null && a.getJob().getName() != null
+                        && !a.getJob().getName().isBlank()
+                        ? a.getJob().getName()
+                        : null,
+                a.getStatus() != null
+                        ? a.getStatus().name()
+                        : null,
+                a.getHrNote() != null && !a.getHrNote().isBlank()
+                        ? a.getHrNote()
+                        : null,
+                a.getCreatedAt() != null
+                        ? a.getCreatedAt().toString()
+                        : null
+        );
+
+    }
+
+
+
 }

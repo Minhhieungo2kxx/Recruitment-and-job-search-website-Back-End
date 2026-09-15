@@ -1,8 +1,9 @@
 package com.webjob.application.service;
 
-import com.webjob.application.dto.Request.UpdateNameAnDefaultCVRequest;
+import com.webjob.application.dto.Request.UpdateResumeNameRequest;
 import com.webjob.application.dto.Request.UploadResumeRequest;
 import com.webjob.application.dto.Response.*;
+import com.webjob.application.dto.record.RecommendationCacheInvalidateEvent;
 import com.webjob.application.event.ResumeFileDeletedEvent;
 import com.webjob.application.exception.Customs.AppException;
 import com.webjob.application.exception.Customs.BadRequestException;
@@ -10,13 +11,15 @@ import com.webjob.application.exception.Customs.ForbiddenException;
 import com.webjob.application.exception.Customs.ResourceNotFoundException;
 import com.webjob.application.mapper.ApplicationMapper;
 import com.webjob.application.mapper.UserResumeMapper;
+import com.webjob.application.models.Entity.JobRecommendation;
 import com.webjob.application.models.Entity.TemporaryUpload;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.models.Entity.UserResume;
 import com.webjob.application.repository.ApplicationRepository;
+import com.webjob.application.repository.JobRecommendationRepository;
 import com.webjob.application.repository.TemporaryUploadRepository;
 import com.webjob.application.repository.UserResumeRepository;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
@@ -41,6 +44,7 @@ public class UserResumeService {
     private final TemporaryUploadRepository temporaryUploadRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final ApplicationRepository applicationRepository;
+    private final JobRecommendationRepository jobRecommendationRepository;
 
 
     public List<UserResumeResponse> getMyResumes() {
@@ -137,30 +141,65 @@ public class UserResumeService {
                 .url(upload.getUrl())
                 .publicId(upload.getPublicId())
                 .resourceType(upload.getResourceType())
-                .isDefault(request.getIsDefault())
+                .isDefault(isDefault)
                 .user(user).build();
 
         UserResume savedResume = userResumeRepository.save(resume);
         upload.setUsed(true);
         temporaryUploadRepository.save(upload);
+        if (isDefault) {
+            publishRecommendationCacheInvalidateEvent(user.getId(), "CV mặc định thay đổi");
+        }
         return modelMapper.map(savedResume, UserResumeResponse.class);
     }
 
-    @Transactional
-    public UserResumeResponse updateResume(Long id, UpdateNameAnDefaultCVRequest request) {
+    public void publishRecommendationCacheInvalidateEvent(Long userId, String message) {
+        eventPublisher.publishEvent(new RecommendationCacheInvalidateEvent(userId, message));
+    }
 
+
+    @Transactional
+    public UserResumeResponse updateResumeName(Long id, UpdateResumeNameRequest request) {
         User currentUser = securityUtils.getCurrentUser();
 
         UserResume resume = userResumeRepository.findByIdAndUserId(id, currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy CV."));
 
-        if (Boolean.TRUE.equals(request.getIsDefault())) {
-            userResumeRepository.clearDefaultResume(currentUser.getId());
-            resume.setIsDefault(request.getIsDefault());
-        }
-        resume.setName(request.getName());
-        return modelMapper.map(userResumeRepository.save(resume), UserResumeResponse.class);
+        resume.setName(request.getName().trim());
+
+        UserResume savedResume = userResumeRepository.save(resume);
+
+        return modelMapper.map(savedResume, UserResumeResponse.class);
     }
+    @Transactional
+    public UserResumeResponse setDefaultResume(Long id) {
+        User currentUser = securityUtils.getCurrentUser();
+
+        UserResume resume = userResumeRepository.findByIdAndUserId(id, currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy CV."));
+
+        // Đã là default thì không cần xử lý gì
+        if (Boolean.TRUE.equals(resume.getIsDefault())) {
+            return modelMapper.map(resume, UserResumeResponse.class);
+        }
+
+        // Bỏ default của CV hiện tại
+        userResumeRepository.clearDefaultResume(currentUser.getId());
+
+        // Set CV này thành default
+        resume.setIsDefault(true);
+
+        UserResume savedResume = userResumeRepository.save(resume);
+
+        // Chỉ invalidate cache khi default thực sự thay đổi
+        publishRecommendationCacheInvalidateEvent(
+                currentUser.getId(),
+                "CV mặc định thay đổi"
+        );
+
+        return modelMapper.map(savedResume, UserResumeResponse.class);
+    }
+
     @Transactional
     public void deleteMyResume(Long resumeId) {
 
@@ -174,6 +213,7 @@ public class UserResumeService {
 
         deleteResumeInternal(resume);
     }
+
     @Transactional
     public void deleteResumeByAdmin(Long resumeId) {
 
@@ -182,23 +222,55 @@ public class UserResumeService {
 
         deleteResumeInternal(resume);
     }
+
     private void deleteResumeInternal(UserResume resume) {
 
         if (applicationRepository.existsByResumeId(resume.getId())) {
             throw new BadRequestException("CV đang được sử dụng để ứng tuyển.");
         }
 
+        Long userId = resume.getUser().getId();
+        boolean wasDefault = Boolean.TRUE.equals(resume.getIsDefault());
+
         String publicId = resume.getPublicId();
         String resourceType = resume.getResourceType();
 
-        TemporaryUpload temporaryUpload = temporaryUploadRepository.findByPublicId(publicId).orElse(null);
+        TemporaryUpload temporaryUpload =
+                temporaryUploadRepository.findByPublicId(publicId).orElse(null);
 
+        // Xóa các JobRecommendation liên quan (JPA sẽ tự động xóa các JobRecommendationItem nhờ CascadeType.ALL)
+        List<JobRecommendation> recommendations = jobRecommendationRepository.findByResumeId(resume.getId());
+        if (!recommendations.isEmpty()) {
+            jobRecommendationRepository.deleteAll(recommendations);
+        }
+
+        // Xóa CV
         userResumeRepository.delete(resume);
 
+        // Xóa temporary upload
         if (temporaryUpload != null) {
             temporaryUploadRepository.delete(temporaryUpload);
         }
-        eventPublisher.publishEvent(new ResumeFileDeletedEvent(publicId, resourceType));
+
+        //Nếu CV vừa xóa là default → chọn CV mới nhất làm default
+        if (wasDefault) {
+            userResumeRepository
+                    .findFirstByUserIdOrderByCreatedAtDescIdDesc(userId)
+                    .ifPresent(nextDefault -> {
+                        nextDefault.setIsDefault(true);
+                        userResumeRepository.save(nextDefault);
+                    });
+
+            //  Dù có CV mới hay không, recommendation cache đều phải invalidate
+            publishRecommendationCacheInvalidateEvent(userId, "CV mặc định thay đổi");
+
+        }
+
+        // Event xóa file trên storage
+        eventPublisher.publishEvent(
+                new ResumeFileDeletedEvent(publicId, resourceType)
+        );
     }
+
 
 }

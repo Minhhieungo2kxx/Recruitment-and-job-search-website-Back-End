@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -37,46 +38,45 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     List<User> findAllByCompanyAndDeletedFalse(Company company);
 
 
-
     @Query("""
-        SELECT u
-        FROM User u
-        WHERE u.deleted = false
-          AND u.role.code LIKE 'HR_%'
-          AND u.fullName LIKE %:searchTerm%
-        """)
+            SELECT u
+            FROM User u
+            WHERE u.deleted = false
+              AND u.role.code LIKE 'HR_%'
+              AND u.fullName LIKE %:searchTerm%
+            """)
     List<User> findHRsByName(@Param("searchTerm") String searchTerm);
 
     @Query("""
-        SELECT u
-        FROM User u
-        WHERE u.deleted = false
-          AND u.role.code = 'USER'
-          AND u.fullName LIKE %:searchTerm%
-        """)
+            SELECT u
+            FROM User u
+            WHERE u.deleted = false
+              AND u.role.code = 'USER'
+              AND u.fullName LIKE %:searchTerm%
+            """)
     List<User> findCandidatesByName(@Param("searchTerm") String searchTerm);
 
 
     @Query("""
-        SELECT u
-        FROM User u
-        WHERE u.deleted = false
-          AND u.isOnline = false
-          AND u.lastSeenAt > :since
-        """)
+            SELECT u
+            FROM User u
+            WHERE u.deleted = false
+              AND u.isOnline = false
+              AND u.lastSeenAt > :since
+            """)
     List<User> findRecentlyOfflineUsers(@Param("since") Instant since);
 
 
     boolean existsByRoleAndDeletedFalse(Role role);
 
     @Query("""
-        SELECT u
-        FROM User u
-        JOIN FETCH u.role r
-        WHERE u.id = :id
-          AND u.deleted = false
-          AND r.active = true
-        """)
+            SELECT u
+            FROM User u
+            JOIN FETCH u.role r
+            WHERE u.id = :id
+              AND u.deleted = false
+              AND r.active = true
+            """)
     Optional<User> findActiveRoleUser(@Param("id") Long id);
 
     Optional<User> findByIdAndDeletedTrue(Long id);
@@ -88,6 +88,21 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     Page<User> findAllByDeletedTrue(Pageable pageable);  // User đã xóa
 
+    @Query("""
+                SELECT u.id
+                FROM User u
+                WHERE u.role.id = :roleId
+            """)
+    List<Long> findUserIdsByRoleId(@Param("roleId") Long roleId);
+
+    @Query("""
+        SELECT DISTINCT u.id
+        FROM User u
+        JOIN u.role r
+        JOIN r.rolePermissions rp
+        WHERE rp.permission.id = :permissionId
+    """)
+    List<Long> findUserIdsByPermissionId(@Param("permissionId") Long permissionId);
 
 
 

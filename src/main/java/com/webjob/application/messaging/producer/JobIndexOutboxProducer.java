@@ -22,7 +22,7 @@ public class JobIndexOutboxProducer {
 
 
 
-    @Scheduled(fixedDelay =  10000)
+//    @Scheduled(fixedDelay =  10000)
     public void publishEvents() {
 
         List<OutboxEvent> events = outboxService.claimJobIndexEvents();

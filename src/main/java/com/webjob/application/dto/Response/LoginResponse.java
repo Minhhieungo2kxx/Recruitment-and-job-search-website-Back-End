@@ -79,7 +79,7 @@ public class LoginResponse {
     @Builder
     public static class Permission{
         private Long id;
-        private String name;
+//        private String name;
 
     }
 

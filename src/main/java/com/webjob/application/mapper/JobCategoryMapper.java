@@ -24,6 +24,7 @@ public class JobCategoryMapper {
                 .level(category.getLevel())
                 .status(category.getStatus())
                 .parentId(category.getParent() != null ? category.getParent().getId() : null)
+                .nameParent(category.getParent().getName())
 
                 .skills(category.getJobCategorySkills() == null
                         ? Collections.emptyList()
@@ -32,9 +33,9 @@ public class JobCategoryMapper {
                                 .id(s.getId())
                                 .skillId(s.getSkill() != null ? s.getSkill().getId() : null)
                                 .skillName(s.getSkill() != null ? s.getSkill().getName() : null)
-                                .level(s.getLevel())
+                                .level(s.getLevel() !=null ? s.getLevel() :null)
                                 .required(s.getRequired())
-                                .weight(s.getWeight())
+                                .weight(s.getWeight() !=null ? s.getWeight():null)
                                 .build()
                         ).toList()
                 )

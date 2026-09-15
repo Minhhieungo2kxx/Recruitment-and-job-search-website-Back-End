@@ -5,9 +5,12 @@ import com.webjob.application.document.JobSkillDocument;
 import com.webjob.application.dto.Response.JobAIDetailResponseDTO;
 import com.webjob.application.dto.Response.JobAIResponseDTO;
 import com.webjob.application.dto.Response.JobResponse;
+import com.webjob.application.dto.record.GeminiJobDto;
 import com.webjob.application.enums.JobSort;
 import com.webjob.application.models.Entity.Job;
 import com.webjob.application.models.Entity.JobSkill;
+import com.webjob.application.models.Entity.Skill;
+import com.webjob.application.utils.common.UtilFormat;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Sort;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -154,25 +158,25 @@ public class JobMapper {
                 .salaryMax(job.getSalaryMax())
                 .negotiable(job.isNegotiable())
                 .quantity(job.getQuantity())
-                .level(toString(job.getLevel()))
+                .level(UtilFormat.toString(job.getLevel()))
                 .experienceRequired(job.getExperienceRequired())
-                .workingType(toString(job.getWorkingType()))
-                .workMode(toString(job.getWorkMode()))
+                .workingType(UtilFormat.toString(job.getWorkingType()))
+                .workMode(UtilFormat.toString(job.getWorkMode()))
                 .benefits(job.getBenefits())
                 .requirement(job.getRequirement())
                 .responsibility(job.getResponsibility())
                 .viewCount(job.getViewCount())
                 .appliedCount(job.getAppliedCount())
-                .competitionLevel(toString(job.getCompetitionLevel()))
+                .competitionLevel(UtilFormat.toString(job.getCompetitionLevel()))
                 .description(job.getDescription())
                 .startDate(job.getStartDate())
                 .endDate(job.getEndDate())
-                .status(toString(job.getStatus()))
+                .status(UtilFormat.toString(job.getStatus()))
                 .createdAt(job.getCreatedAt())
                 .deleted(false)
                 .companyId(job.getCompany() != null ? job.getCompany().getId() : null)
                 .companyName(job.getCompany() != null ? job.getCompany().getName() : null)
-                .companyStatus(job.getCompany() != null ? toString(job.getCompany().getStatus()) : null)
+                .companyStatus(job.getCompany() != null ? UtilFormat.toString(job.getCompany().getStatus()) : null)
                 .companyDeleted(job.getCompany() != null ? job.getCompany().getDeleted() : null)
                 .jobCategoryId(job.getJobCategory() != null ? job.getJobCategory().getId() : null)
                 .jobCategoryName(job.getJobCategory() != null ? job.getJobCategory().getName() : null
@@ -197,10 +201,34 @@ public class JobMapper {
                 .skillName(jobSkill.getSkill() != null ? jobSkill.getSkill().getName() : null)
                 .build();
     }
-
-    private String toString(Enum<?> value) {
-        return value != null ? value.name() : null;
+    public GeminiJobDto toGeminiJobDto(Job j) {
+        return new GeminiJobDto(
+                j.getId(),
+                UtilFormat.clean(j.getName()),
+                UtilFormat.clean(j.getCompany().getName()),
+                j.getLocation(),
+                UtilFormat.toString(j.getLevel()),
+                j.getExperienceRequired() != null ? j.getExperienceRequired() : 0,
+                j.getJobSkills() == null ? List.of() : j.getJobSkills()
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .map(JobSkill::getSkill)
+                        .filter(Objects::nonNull)
+                        .map(Skill::getName)
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(s -> !s.isBlank())
+                        .distinct()
+                        .toList(),
+                UtilFormat.toString(j.getWorkMode()),
+                j.getSalaryMin(),
+                j.getSalaryMax(),
+                j.getJobCategory() != null ? UtilFormat.clean(j.getJobCategory().getName()) : null,
+                UtilFormat.toString(j.getWorkingType()),
+                UtilFormat.clean(j.getRequirement())
+        );
     }
+
 
 
 }

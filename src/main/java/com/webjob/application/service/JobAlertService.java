@@ -1,35 +1,27 @@
 package com.webjob.application.service;
 
 import com.webjob.application.dto.Request.JobAlertRequest;
-import com.webjob.application.dto.Request.Search.SubscriberFilterRequest;
 import com.webjob.application.dto.Response.JobAlertResponse;
 import com.webjob.application.dto.Response.MetaDTO;
 import com.webjob.application.dto.Response.ResponseDTO;
-import com.webjob.application.dto.Response.SubscriberListResponse;
 import com.webjob.application.enums.AlertFrequency;
 import com.webjob.application.exception.Customs.BadRequestException;
-import com.webjob.application.exception.Customs.ForbiddenException;
 import com.webjob.application.exception.Customs.ResourceNotFoundException;
 import com.webjob.application.models.Entity.JobAlert;
 import com.webjob.application.models.Entity.JobCategory;
-import com.webjob.application.models.Entity.Subscriber;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.repository.JobAlertRepository;
 import com.webjob.application.repository.JobCategoryRepository;
-import com.webjob.application.service.Specification.SubscriberSpecification;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.redisson.Redisson;
 import org.redisson.RedissonMultiLock;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
