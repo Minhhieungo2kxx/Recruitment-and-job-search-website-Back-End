@@ -1,6 +1,7 @@
 package com.webjob.application.mapper;
 
 import com.webjob.application.dto.Response.SavedJobResponse;
+import com.webjob.application.dto.record.SavedJobDtoGemini;
 import com.webjob.application.models.Entity.Job;
 import com.webjob.application.models.Entity.SavedJob;
 import org.springframework.stereotype.Component;
@@ -46,5 +47,14 @@ public class SavedJobMapper {
                 .jobType(job.getWorkingType() != null ? job.getWorkingType().name() : null)
                 .deadline(job.getEndDate())
                 .build();
+    }
+    public SavedJobDtoGemini savedJobDtoGemini (SavedJob s){
+        Job job = s.getJob();
+        return new SavedJobDtoGemini(
+                job.getId(),
+                job.getName(),
+                job.getCompany() != null ? job.getCompany().getName() : null,
+                s.getSavedAt() != null ? s.getSavedAt().toString() : null
+        );
     }
 }

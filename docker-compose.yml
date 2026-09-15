@@ -12,7 +12,7 @@ services:
     hostname: rabbitmq
 
     ports:
-      - "30080:5672"
+      - "${SPRING_RABBITMQ_PORT}:5672"
       - "15672:15672"
 
     environment:
@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
 
     ports:
-      - "30081:6379"
+      - "${SPRING_REDIS_PORT}:6379"
 
     environment:
       REDIS_PASSWORD: ${SPRING_REDIS_PASSWORD}
@@ -71,7 +71,7 @@ services:
       bootstrap.memory_lock: false
 
     ports:
-      - "30082:9200"
+      - "${ELASTICSEARCH_PORT}:9200"
 
 
     volumes:

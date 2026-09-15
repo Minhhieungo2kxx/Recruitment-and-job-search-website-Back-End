@@ -18,7 +18,7 @@ public class EmailOutboxProducer {
     private final OutboxService outboxService;
     private final RabbitTemplate rabbitTemplate;
 
-    @Scheduled(fixedDelay =  10000)
+//    @Scheduled(fixedDelay =  10000)
     public void publishEvents() {
 
         List<OutboxEvent> events = outboxService.claimEmailEvents();

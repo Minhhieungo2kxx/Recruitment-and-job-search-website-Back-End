@@ -21,7 +21,7 @@ public class CompanyIndexOutboxProducer {
     private final RabbitTemplate rabbitTemplate;
 
 
-    @Scheduled(fixedDelay = 10000)
+//    @Scheduled(fixedDelay = 10000)
     public void publishEvents() {
 
         List<OutboxEvent> events = outboxService.claimCompanyIndexEvents();

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.webjob.application.dto.Request.Redis.PermissionSet;
+import com.webjob.application.dto.record.JobRecommendationResponse;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
@@ -20,10 +21,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.serializer.*;
 
 import java.time.Duration;
 
@@ -77,13 +75,23 @@ public class RedisConfig {
 
         RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .serializeValuesWith(pair)
-                .entryTtl(Duration.ofMinutes(5));
+                .entryTtl(Duration.ofMinutes(8));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(cacheConfig)
                 .build();
     }
 
+    //    dung cho phan quyen L1:Caffeine (local cache tren RAM)
+    @Bean
+    public Cache<String, PermissionSet> permissionLocalCache() {
+        return Caffeine.newBuilder()
+                .maximumSize(10_000)
+                .expireAfterWrite(Duration.ofMinutes(10))
+                .build();
+    }
+
+    //    dung cho phan quyen L2: Redis  (distributed cache) tren Server Redis,source cache chung
     @Bean
     public RedisTemplate<String, PermissionSet> permissionRedisTemplate(
             RedisConnectionFactory connectionFactory) {
@@ -107,13 +115,70 @@ public class RedisConfig {
         return template;
     }
 
+    //    dung cho JobRecommendation L1:Caffeine (local cache tren RAM)
     @Bean
-    public Cache<String, PermissionSet> permissionLocalCache() {
+    public Cache<String, JobRecommendationResponse> recommendationLocalCache() {
         return Caffeine.newBuilder()
                 .maximumSize(10_000)
                 .expireAfterWrite(Duration.ofMinutes(10))
                 .build();
     }
+
+    //    dung cho JobRecommendation L2: Redis(distributed cache) tren Server Redis,source cache chung
+    @Bean
+    public RedisTemplate<String, JobRecommendationResponse> recommendationRedisTemplate(
+            RedisConnectionFactory connectionFactory,
+            ObjectMapper redisObjectMapper) {
+
+        RedisTemplate<String, JobRecommendationResponse> template =
+                new RedisTemplate<>();
+
+        template.setConnectionFactory(connectionFactory);
+
+        StringRedisSerializer keySerializer = new StringRedisSerializer();
+
+        Jackson2JsonRedisSerializer<JobRecommendationResponse> valueSerializer =
+                new Jackson2JsonRedisSerializer<>(
+                        redisObjectMapper,
+                        JobRecommendationResponse.class
+                );
+
+        template.setKeySerializer(keySerializer);
+        template.setValueSerializer(valueSerializer);
+
+        template.setHashKeySerializer(keySerializer);
+        template.setHashValueSerializer(valueSerializer);
+
+        template.afterPropertiesSet();
+
+        return template;
+    }
+
+    // JobRecommendation version
+    @Bean
+    public RedisTemplate<String, Long> recommendationVersionRedisTemplate(
+            RedisConnectionFactory connectionFactory) {
+
+        RedisTemplate<String, Long> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+
+        StringRedisSerializer keySerializer =
+                new StringRedisSerializer();
+
+        GenericToStringSerializer<Long> valueSerializer =
+                new GenericToStringSerializer<>(Long.class);
+
+        template.setKeySerializer(keySerializer);
+        template.setValueSerializer(valueSerializer);
+
+        template.setHashKeySerializer(keySerializer);
+        template.setHashValueSerializer(valueSerializer);
+
+        template.afterPropertiesSet();
+
+        return template;
+    }
+
 
     @Bean
     public ObjectMapper redisObjectMapper() {
@@ -128,6 +193,7 @@ public class RedisConfig {
 
         return mapper;
     }
+
     @Bean
     public RedissonClient redissonClient() {
 
@@ -141,8 +207,14 @@ public class RedisConfig {
     }
 
 
-
 }
+
+//Caffeine: Local Cache, nằm trên RAM của 1 máy chủ đơn lẻ, tốc độ siêu nhanh nhưng mất dữ liệu khi restart hoặc
+//không chia sẻ được giữa các server.
+//
+//RedisTemplate (Redis): Distributed Cache (Cache phân tán), nằm ở một server/cluster Redis độc lập bên ngoài.
+//Nhiều instance ứng dụng cùng đọc/ghi chung một kho dữ liệu Redis này, dữ liệu có thể được
+//cấu hình lưu bền vững (persistent) và không bị mất khi ứng dụng khởi động lại.
 
 
 

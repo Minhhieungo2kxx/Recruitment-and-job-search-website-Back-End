@@ -19,11 +19,5 @@ public class UserResumeResponse {
 
     private Boolean isDefault;
 
-    @JsonFormat(
-            shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd HH:mm:ss a z",
-            timezone = "Asia/Ho_Chi_Minh",
-            locale = "en_US"
-    )
     private Instant createdAt;
 }

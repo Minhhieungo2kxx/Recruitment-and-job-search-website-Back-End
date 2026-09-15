@@ -2,40 +2,30 @@ package com.webjob.application.service.UploadFileServer;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.webjob.application.config.UploadfileServer.UploadFile;
-import com.webjob.application.config.UploadfileServer.UploadProperties;
-import com.webjob.application.dto.Response.ApiResponse;
+import com.webjob.application.component.UploadFile;
+import com.webjob.application.component.UploadProperties;
 import com.webjob.application.dto.Response.FileDownloadResponseDto;
 import com.webjob.application.dto.Response.UploadFileResponse;
+import com.webjob.application.enums.FileType;
 import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.models.Entity.TemporaryUpload;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.repository.TemporaryUploadRepository;
 import com.webjob.application.utils.common.Base64Util;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -210,31 +200,50 @@ public FileDownloadResponseDto proxyDownloadCloudinary(String encodedUrl)  {
 }
 
     public Map<String, String> uploadFile(MultipartFile file, String folderName) throws IOException {
-        uploadFile.vadidateUploadFile(file, folderName);
+
+        FileType fileType = uploadFile.validateUploadFile(file);
+
         String originalName = file.getOriginalFilename();
         String baseName = originalName.substring(0, originalName.lastIndexOf("."));
-        String uniqueName = System.currentTimeMillis() + "-" + baseName;
+
+        String uniqueName = UUID.randomUUID() + "-" + baseName;
+
+        String resourceType;
+        if (fileType == FileType.IMAGE) {
+            resourceType = "image";
+        } else if (fileType == FileType.PDF) {
+            // Upload PDF dưới dạng image để Cloudinary xử lý và preview được
+            resourceType = "image";
+        } else {
+            resourceType = "raw";
+        }
+        Map<String, Object> uploadOptions = new HashMap<>();
+
+        uploadOptions.put("folder", folderName);
+        uploadOptions.put("public_id", uniqueName);
+        uploadOptions.put("resource_type", resourceType);
+        uploadOptions.put("access_mode", "public");
+        // PDF
+        if (fileType == FileType.PDF) {
+            uploadOptions.put("format", "pdf");
+        }
 
         Map<?, ?> result = cloudinary.uploader().upload(
                 file.getBytes(),
-                ObjectUtils.asMap(
-                        "folder", folderName,
-                        "public_id", uniqueName,
-                        "resource_type", "auto",
-                        "access_mode", "public"
-
-                )
+                uploadOptions
         );
 
         String secureUrl = result.get("secure_url").toString();
         String publicId = result.get("public_id").toString();
-        String resourceType = result.get("resource_type").toString();
-        handleTemporaryUpload(publicId, secureUrl, resourceType);
+
+        String cloudinaryResourceType = result.get("resource_type").toString();
+
+        handleTemporaryUpload(publicId, secureUrl,cloudinaryResourceType);
 
         return Map.of(
                 "url", secureUrl,
                 "publicId", publicId,
-                "resourceType", resourceType //  TRẢ VỀ
+                "resourceType", cloudinaryResourceType //  TRẢ VỀ
         );
     }
 
@@ -284,19 +293,19 @@ public UploadFileResponse  uploadFileCloudinary(MultipartFile file,String folder
     return uploadFileResponse;
 }
 
-    public UploadFileResponse uploadFileServer (MultipartFile file, String folder){
-        String uploadedFileName = null;
-        try {
-            uploadedFileName = uploadFile.getnameFile(file, folder);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        UploadFileResponse uploadFileResponse =UploadFileResponse.builder()
-                .fileName(uploadedFileName).uploadedAt(Instant.now())
-                .fileSize(file.getSize())
-                .contentType(file.getContentType())
-                .folder(folder).build();
-        return uploadFileResponse;
-    }
+//    public UploadFileResponse uploadFileServer (MultipartFile file, String folder){
+//        String uploadedFileName = null;
+//        try {
+//            uploadedFileName = uploadFile.getnameFile(file, folder);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//        UploadFileResponse uploadFileResponse =UploadFileResponse.builder()
+//                .fileName(uploadedFileName).uploadedAt(Instant.now())
+//                .fileSize(file.getSize())
+//                .contentType(file.getContentType())
+//                .folder(folder).build();
+//        return uploadFileResponse;
+//    }
 
 }

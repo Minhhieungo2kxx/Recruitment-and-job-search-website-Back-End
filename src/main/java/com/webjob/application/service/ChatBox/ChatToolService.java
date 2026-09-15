@@ -12,7 +12,6 @@ import com.webjob.application.enums.ResumeStatus;
 import com.webjob.application.enums.WorkMode;
 import com.webjob.application.enums.WorkingType;
 import com.webjob.application.exception.Customs.AppException;
-import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.exception.Customs.ResourceLockedException;
 import com.webjob.application.exception.Customs.ResourceNotFoundException;
 import com.webjob.application.mapper.ApplicationMapper;
@@ -23,8 +22,7 @@ import com.webjob.application.models.Entity.*;
 import com.webjob.application.repository.*;
 import com.webjob.application.service.Specification.CompanySpecification;
 import com.webjob.application.service.Specification.JobSpecification;
-import com.webjob.application.utils.common.SecurityUtils;
-import com.webjob.application.utils.common.UtilFormat;
+import com.webjob.application.component.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
@@ -35,13 +33,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.webjob.application.utils.common.UtilFormat.parseEnumSafe;
 

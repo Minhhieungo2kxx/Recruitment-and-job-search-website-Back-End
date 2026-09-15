@@ -5,6 +5,7 @@ import com.webjob.application.dto.Request.ApplyRequest;
 import com.webjob.application.dto.Request.OutboxDTO;
 import com.webjob.application.dto.Request.UpdateApplicationStatusRequest;
 import com.webjob.application.dto.Response.*;
+import com.webjob.application.dto.record.RecommendationCacheInvalidateEvent;
 import com.webjob.application.enums.OutboxCategory;
 import com.webjob.application.enums.OutboxEventType;
 import com.webjob.application.enums.ResumeStatus;
@@ -21,7 +22,7 @@ import com.webjob.application.repository.TemporaryUploadRepository;
 import com.webjob.application.repository.UserResumeRepository;
 import com.webjob.application.service.OutBox.OutboxService;
 import com.webjob.application.service.Specification.ApplicationSpecification;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
@@ -97,7 +98,8 @@ public class ApplicationService {
 
             UserResume resume = resolveResume(request, user);
             Application application = Application.builder()
-                    .email(user.getEmail()).status(ResumeStatus.PENDING)
+                    .email(user.getEmail())
+                    .status(ResumeStatus.PENDING)
                     .user(user).job(job)
                     .resume(resume)
                     .build();
@@ -110,7 +112,7 @@ public class ApplicationService {
 //            ham gui su kien 2 cai notification + email
             publishJobAppliedEvents(saved,job,user,hr);
             JobAppliedCountIncrementedOutbox(job.getId());
-
+            publishRecommendationCacheInvalidateEvent(user.getId(),"Có application mới");
             log.info("Apply success. resumeId={}, userId={}, jobId={}", saved.getId(), user.getId(), job.getId());
             return applicationMapper.toResponseApplication(saved);
 
@@ -163,42 +165,62 @@ public class ApplicationService {
 
     private UserResume resolveResume(ApplyRequest request, User user) {
 
+        // 1. Người dùng chọn CV đã lưu
         if (request.getResumeId() != null) {
-
-            return userResumeRepository.findByIdAndUserId(request.getResumeId(), user.getId())
+            return userResumeRepository
+                    .findByIdAndUserId(request.getResumeId(), user.getId())
                     .orElseThrow(() -> new AppException("CV không tồn tại."));
         }
 
+        // 2. Người dùng upload CV mới
         TemporaryUpload upload = temporaryUploadRepository
                 .findByPublicIdAndUsedFalse(request.getPublicId())
-                .orElseThrow(() -> new BadRequestException("File không tồn tại hoặc đã được sử dụng."));
+                .orElseThrow(() ->
+                        new BadRequestException("File không tồn tại hoặc đã được sử dụng."));
 
+        // 3. Đảm bảo file thuộc user hiện tại
         if (!upload.getUser().getId().equals(user.getId())) {
             throw new AppException("CV không thuộc người dùng.");
         }
+
+        // 4. Giới hạn tối đa 5 CV
         long count = userResumeRepository.countByUserId(user.getId());
+
         if (count >= 5) {
             throw new BadRequestException("Bạn chỉ được lưu tối đa 5 CV.");
         }
+
+        /*
+         * Rule:
+         * - User chưa có CV -> CV đầu tiên bắt buộc là default.
+         * - User đã có CV -> chỉ set default nếu request yêu cầu.
+         */
         boolean isDefault = count == 0 || Boolean.TRUE.equals(request.getIsDefault());
 
+        // 5. Nếu CV mới là default -> bỏ default của CV cũ
         if (isDefault) {
             userResumeRepository.clearDefaultResume(user.getId());
         }
 
+        // 6. Tạo CV
         UserResume resume = UserResume.builder()
-                .name("CV_"+user.getFullName()+"_"+LocalDate.now())
+                .name("CV_" + user.getFullName() + "_" + LocalDate.now())
                 .url(upload.getUrl())
                 .publicId(upload.getPublicId())
                 .resourceType(upload.getResourceType())
-                .isDefault(request.getIsDefault())
-                .user(user).build();
+                .isDefault(isDefault)
+                .user(user)
+                .build();
+
         UserResume savedResume = userResumeRepository.save(resume);
+
+        // 7. Đánh dấu temporary upload đã được sử dụng
         upload.setUsed(true);
         temporaryUploadRepository.save(upload);
 
         return savedResume;
     }
+
 
     public Page<Application> getAllResumeHRCompany(int page, int size) {
 
@@ -446,6 +468,9 @@ public class ApplicationService {
             jobRepository.decreaseAppliedCount(jobId);
             JobApplicationWithdrawnOutbox(jobId);
         }
+        Long userId=securityUtils.getCurrentUserId();
+        publishRecommendationCacheInvalidateEvent(userId,"delete application");
+
         applicationRepository.delete(application);
     }
 
@@ -461,6 +486,8 @@ public class ApplicationService {
             jobRepository.decreaseAppliedCount(job.getId());
         }
         applicationRepository.delete(application);
+        Long userId=securityUtils.getCurrentUserId();
+        publishRecommendationCacheInvalidateEvent(userId,"delete application");
     }
 
     public void JobAppliedCountIncrementedOutbox(Long jobId) {
@@ -478,6 +505,11 @@ public class ApplicationService {
                 .build();
         outboxService.save(dto);
     }
+
+    public void publishRecommendationCacheInvalidateEvent(Long userId, String message) {
+        eventPublisher.publishEvent(new RecommendationCacheInvalidateEvent(userId, message));
+    }
+
     public void JobApplicationWithdrawnOutbox(Long jobId) {
         JobDocument document = JobDocument.builder()
                 .id(jobId)

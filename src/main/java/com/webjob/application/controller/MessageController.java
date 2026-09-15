@@ -114,12 +114,4 @@ public class MessageController {
 
 }
 
-//feat(realtime): refactor WebSocket architecture with Redis Pub/Sub
-//
-//- add Redis Pub/Sub infrastructure for distributed realtime communication
-//- register Redis subscribers using RedisMessageListenerContainer
-//- configure MessageListenerAdapter for chat, presence and notification handlers
-//- publish chat, presence and notification events to Redis channels
-//- consume Redis events and broadcast them through STOMP WebSocket endpoints
-//- synchronize realtime state across clustered application instances
-//- support horizontal scaling for realtime services
+

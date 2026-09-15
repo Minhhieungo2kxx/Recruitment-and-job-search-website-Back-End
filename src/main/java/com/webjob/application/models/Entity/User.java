@@ -169,4 +169,8 @@ public class User {
     @JsonIgnore
     private List<Subscriber> subscribers = new ArrayList<>();
 
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<JobRecommendation> jobRecommendations = new ArrayList<>();
+
 }

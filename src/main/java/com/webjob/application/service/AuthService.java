@@ -10,7 +10,7 @@ import com.webjob.application.dto.Response.UserDTO;
 import com.webjob.application.service.Redis.LoginNotificationService;
 import com.webjob.application.service.Redis.TokenBlacklistService;
 import com.webjob.application.service.SendEmail.ApplicationEmailService;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

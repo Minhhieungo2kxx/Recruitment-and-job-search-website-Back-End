@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import lombok.*;
 
 import java.security.SecureRandom;
+import java.text.Normalizer;
 import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -114,6 +115,34 @@ public class UtilFormat {
         return taxCode == null
                 ? null
                 : taxCode.replaceAll("[\\s-]", "");
+    }
+
+    public static String normalize(String text) {
+
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+
+        String normalized = Normalizer.normalize(text, Normalizer.Form.NFD);
+
+        normalized = normalized.replaceAll("\\p{M}+", "");
+        normalized = normalized.toLowerCase(Locale.ROOT);
+        normalized = normalized.replaceAll("\\s+", " ");
+
+        return normalized.trim();
+    }
+    public static String clean(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    public static String toString(Enum<?> value) {
+
+        return value != null ? value.name() : null;
     }
 
 

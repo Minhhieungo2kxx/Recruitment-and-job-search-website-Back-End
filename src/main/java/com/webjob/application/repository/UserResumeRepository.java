@@ -20,8 +20,11 @@ public interface UserResumeRepository extends JpaRepository<UserResume, Long> {
 
     Page<UserResume> findByUserId(Long userId, Pageable pageable);
 
+    Optional<UserResume> findByUserIdAndIsDefaultTrue(Long userID);
+
 
     boolean existsByIdAndUserId(Long id, Long userId);
+
 
     @Query("""
             SELECT new com.webjob.application.dto.Response.AdminResumeResponse(
@@ -51,11 +54,15 @@ public interface UserResumeRepository extends JpaRepository<UserResume, Long> {
 
     @Modifying
     @Query("""
-            update UserResume r
-            set r.isDefault=false
-            where r.user.id=:userId
+                UPDATE UserResume ur
+                SET ur.isDefault = false
+                WHERE ur.user.id = :userId
+                  AND ur.isDefault = true
             """)
     void clearDefaultResume(Long userId);
 
-   Long countByUserId(Long userId);
+    Long countByUserId(Long userId);
+
+    Optional<UserResume> findFirstByUserIdOrderByCreatedAtDescIdDesc(Long userId);
+
 }

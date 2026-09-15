@@ -3,25 +3,18 @@ package com.webjob.application.service;
 
 import com.webjob.application.dto.Request.Search.SubscriberFilterRequest;
 import com.webjob.application.dto.Response.*;
-import com.webjob.application.enums.ResumeStatus;
 import com.webjob.application.exception.Customs.BadRequestException;
-import com.webjob.application.exception.Customs.ConflictException;
 import com.webjob.application.exception.Customs.ForbiddenException;
 import com.webjob.application.exception.Customs.ResourceNotFoundException;
 import com.webjob.application.mapper.SubscriberMapper;
-import com.webjob.application.messaging.producer.EmailProducer;
 import com.webjob.application.models.Entity.*;
 import com.webjob.application.dto.Request.SubscriberRequest;
-import com.webjob.application.repository.JobRepository;
 import com.webjob.application.repository.SkillRepository;
 import com.webjob.application.repository.SubscriberRepository;
 
 
-import com.webjob.application.service.SendEmail.ApplicationEmailService;
-import com.webjob.application.service.SendEmail.EmailService;
-import com.webjob.application.service.Specification.ApplicationSpecification;
 import com.webjob.application.service.Specification.SubscriberSpecification;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -34,12 +27,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.NumberFormat;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;

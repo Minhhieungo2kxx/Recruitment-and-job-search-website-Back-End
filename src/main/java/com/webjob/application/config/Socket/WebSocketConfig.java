@@ -1,5 +1,6 @@
 package com.webjob.application.config.Socket;
 
+import com.webjob.application.component.PresenceChannelInterceptor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;

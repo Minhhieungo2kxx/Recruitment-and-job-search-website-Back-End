@@ -3,6 +3,7 @@ package com.webjob.application.repository;
 import com.webjob.application.dto.record.AlertMatchResult;
 import com.webjob.application.dto.record.SkillMatchResult;
 import com.webjob.application.enums.JobLevel;
+import com.webjob.application.enums.JobStatus;
 import com.webjob.application.enums.WorkMode;
 import com.webjob.application.enums.WorkingType;
 import com.webjob.application.dto.Interface.JobCountDto;
@@ -26,14 +27,6 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
 
     boolean existsByNameAndDeletedFalse(String name);
 
-    @Query("""
-            SELECT DISTINCT j
-            FROM Job j
-            JOIN j.jobSkills js
-            WHERE js.skill IN :skills
-              AND j.deleted = false
-            """)
-    List<Job> findAllBySkills(@Param("skills") List<Skill> skills);
 
     @Query("""
             SELECT DISTINCT j
@@ -100,7 +93,7 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
             """)
     List<JobCountDto> countJobsByCategory();
 
-//    Page<Job> findByDeletedFalse(Pageable pageable);
+
 
     @EntityGraph(attributePaths = "company")
     Optional<Job> findByIdAndDeletedFalse(Long id);
@@ -110,13 +103,12 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
 
     @Modifying
     @Query("""
-    UPDATE Job j
-    SET j.viewCount = COALESCE(j.viewCount, 0) + 1
-    WHERE j.id = :id
-      AND j.deleted = false
-""")
+                UPDATE Job j
+                SET j.viewCount = COALESCE(j.viewCount, 0) + 1
+                WHERE j.id = :id
+                  AND j.deleted = false
+            """)
     int increaseViewCount(@Param("id") Long id);
-
 
 
     int countByCompanyIdAndDeletedFalse(Long companyId);
@@ -248,23 +240,22 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     Optional<Job> findByIdWithDetails(@Param("id") Long id);
 
 
-
     @Query("""
-    SELECT new com.webjob.application.dto.record.SkillMatchResult(
-        j,
-        COUNT(DISTINCT filterJs.skill)
-    )
-    FROM Job j
-    JOIN j.jobSkills filterJs
-            WHERE filterJs.skill.id IN :skills
-                
-    AND j.deleted = false
-    AND j.status = com.webjob.application.enums.JobStatus.OPEN
-    AND j.endDate >= :now
-    GROUP BY j
-    ORDER BY COUNT(DISTINCT filterJs.skill) DESC,
-             j.createdAt DESC
-    """)
+            SELECT new com.webjob.application.dto.record.SkillMatchResult(
+                j,
+                COUNT(DISTINCT filterJs.skill)
+            )
+            FROM Job j
+            JOIN j.jobSkills filterJs
+                    WHERE filterJs.skill.id IN :skills
+                        
+            AND j.deleted = false
+            AND j.status = com.webjob.application.enums.JobStatus.OPEN
+            AND j.endDate >= :now
+            GROUP BY j
+            ORDER BY COUNT(DISTINCT filterJs.skill) DESC,
+                     j.createdAt DESC
+            """)
     List<SkillMatchResult> findTop10BySkillsChatbox(
             @Param("skills") Set<Long> skillIds,
             @Param("now") Instant now,
@@ -272,176 +263,176 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     );
 
     @Query("""
-        SELECT new com.webjob.application.dto.record.AlertMatchResult(
-            j,
+            SELECT new com.webjob.application.dto.record.AlertMatchResult(
+                j,
 
-            (
-                CASE 
-                    WHEN :keyword IS NOT NULL 
-                    AND LOWER(j.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                    THEN 40
-                    ELSE 0
-                END
+                (
+                    CASE 
+                        WHEN :keyword IS NOT NULL 
+                        AND LOWER(j.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        THEN 40
+                        ELSE 0
+                    END
 
-                +
+                    +
 
-                CASE 
-                    WHEN :keyword IS NOT NULL 
-                    AND LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                    THEN 15
-                    ELSE 0
-                END
+                    CASE 
+                        WHEN :keyword IS NOT NULL 
+                        AND LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        THEN 15
+                        ELSE 0
+                    END
 
-                +
+                    +
 
-                CASE
-                    WHEN :location IS NOT NULL
-                    AND LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))
-                    THEN 20
-                    ELSE 0
-                END
+                    CASE
+                        WHEN :location IS NOT NULL
+                        AND LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))
+                        THEN 20
+                        ELSE 0
+                    END
 
-                +
+                    +
 
-                CASE
-                    WHEN :categoryId IS NOT NULL
-                    AND j.jobCategory.id = :categoryId
-                    THEN 30
-                    ELSE 0
-                END
+                    CASE
+                        WHEN :categoryId IS NOT NULL
+                        AND j.jobCategory.id = :categoryId
+                        THEN 30
+                        ELSE 0
+                    END
 
-                +
+                    +
 
-                CASE
-                    WHEN :level IS NOT NULL
-                    AND j.level = :level
-                    THEN 15
-                    ELSE 0
-                END
+                    CASE
+                        WHEN :level IS NOT NULL
+                        AND j.level = :level
+                        THEN 15
+                        ELSE 0
+                    END
 
-                +
+                    +
 
-                CASE
-                    WHEN :workMode IS NOT NULL
-                    AND j.workMode = :workMode
-                    THEN 15
-                    ELSE 0
-                END
+                    CASE
+                        WHEN :workMode IS NOT NULL
+                        AND j.workMode = :workMode
+                        THEN 15
+                        ELSE 0
+                    END
 
-                +
+                    +
 
-                CASE
-                    WHEN :workingType IS NOT NULL
-                    AND j.workingType = :workingType
-                    THEN 15
-                    ELSE 0
-                END
+                    CASE
+                        WHEN :workingType IS NOT NULL
+                        AND j.workingType = :workingType
+                        THEN 15
+                        ELSE 0
+                    END
 
-                +
+                    +
 
-                CASE
-                    WHEN :salaryMin IS NOT NULL
-                    AND :salaryMax IS NOT NULL
-                    AND j.salaryMin <= :salaryMax
-                    AND j.salaryMax >= :salaryMin
-                    THEN 25
-                    ELSE 0
-                END
-            )
-        )
-
-        FROM Job j
-
-        WHERE
-            j.deleted = false
-            AND j.status = com.webjob.application.enums.JobStatus.OPEN
-            AND j.endDate > CURRENT_TIMESTAMP
-
-            AND (
-                :keyword IS NULL
-                OR LOWER(j.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                    CASE
+                        WHEN :salaryMin IS NOT NULL
+                        AND :salaryMax IS NOT NULL
+                        AND j.salaryMin <= :salaryMax
+                        AND j.salaryMax >= :salaryMin
+                        THEN 25
+                        ELSE 0
+                    END
+                )
             )
 
-        ORDER BY
+            FROM Job j
 
-            (
-                CASE 
-                    WHEN :keyword IS NOT NULL 
-                    AND LOWER(j.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                    THEN 40
-                    ELSE 0
-                END
+            WHERE
+                j.deleted = false
+                AND j.status = com.webjob.application.enums.JobStatus.OPEN
+                AND j.endDate > CURRENT_TIMESTAMP
 
-                +
+                AND (
+                    :keyword IS NULL
+                    OR LOWER(j.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                    OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                )
 
-                CASE 
-                    WHEN :keyword IS NOT NULL 
-                    AND LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                    THEN 15
-                    ELSE 0
-                END
+            ORDER BY
 
-                +
+                (
+                    CASE 
+                        WHEN :keyword IS NOT NULL 
+                        AND LOWER(j.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        THEN 40
+                        ELSE 0
+                    END
 
-                CASE
-                    WHEN :location IS NOT NULL
-                    AND LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))
-                    THEN 20
-                    ELSE 0
-                END
+                    +
 
-                +
+                    CASE 
+                        WHEN :keyword IS NOT NULL 
+                        AND LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        THEN 15
+                        ELSE 0
+                    END
 
-                CASE
-                    WHEN :categoryId IS NOT NULL
-                    AND j.jobCategory.id = :categoryId
-                    THEN 30
-                    ELSE 0
-                END
+                    +
 
-                +
+                    CASE
+                        WHEN :location IS NOT NULL
+                        AND LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))
+                        THEN 20
+                        ELSE 0
+                    END
 
-                CASE
-                    WHEN :level IS NOT NULL
-                    AND j.level = :level
-                    THEN 15
-                    ELSE 0
-                END
+                    +
 
-                +
+                    CASE
+                        WHEN :categoryId IS NOT NULL
+                        AND j.jobCategory.id = :categoryId
+                        THEN 30
+                        ELSE 0
+                    END
 
-                CASE
-                    WHEN :workMode IS NOT NULL
-                    AND j.workMode = :workMode
-                    THEN 15
-                    ELSE 0
-                END
+                    +
 
-                +
+                    CASE
+                        WHEN :level IS NOT NULL
+                        AND j.level = :level
+                        THEN 15
+                        ELSE 0
+                    END
 
-                CASE
-                    WHEN :workingType IS NOT NULL
-                    AND j.workingType = :workingType
-                    THEN 15
-                    ELSE 0
-                END
+                    +
 
-                +
+                    CASE
+                        WHEN :workMode IS NOT NULL
+                        AND j.workMode = :workMode
+                        THEN 15
+                        ELSE 0
+                    END
 
-                CASE
-                    WHEN :salaryMin IS NOT NULL
-                    AND :salaryMax IS NOT NULL
-                    AND j.salaryMin <= :salaryMax
-                    AND j.salaryMax >= :salaryMin
-                    THEN 25
-                    ELSE 0
-                END
+                    +
 
-            ) DESC,
+                    CASE
+                        WHEN :workingType IS NOT NULL
+                        AND j.workingType = :workingType
+                        THEN 15
+                        ELSE 0
+                    END
 
-            j.createdAt DESC
-        """)
+                    +
+
+                    CASE
+                        WHEN :salaryMin IS NOT NULL
+                        AND :salaryMax IS NOT NULL
+                        AND j.salaryMin <= :salaryMax
+                        AND j.salaryMax >= :salaryMin
+                        THEN 25
+                        ELSE 0
+                    END
+
+                ) DESC,
+
+                j.createdAt DESC
+            """)
     List<AlertMatchResult> findTopJobsForAlertChatbox(
             @Param("keyword") String keyword,
             @Param("location") String location,
@@ -464,6 +455,67 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
 
     @Query("SELECT j.id FROM Job j")
     Page<Long> findAllIds(Pageable pageable);
+
+
+
+    @Query("""
+    SELECT j.id
+    FROM Job j
+    WHERE j.status = :status
+      AND j.deleted = false
+      AND j.startDate <= :now
+      AND j.endDate >= :now
+      AND j.id NOT IN :excludedJobIds
+    ORDER BY j.createdAt DESC
+    """)
+    Page<Long> findJobIds(
+            @Param("status") JobStatus status,
+            @Param("now") Instant now,
+            @Param("excludedJobIds") List<Long> excludedJobIds,
+            Pageable pageable
+    );
+
+
+
+    @Query("""
+    SELECT DISTINCT j
+    FROM Job j
+    LEFT JOIN FETCH j.company
+    LEFT JOIN FETCH j.jobSkills js
+    LEFT JOIN FETCH js.skill
+    LEFT JOIN FETCH j.jobCategory
+    WHERE j.id IN :ids
+    """)
+    List<Job> findJobsWithDetails(
+            @Param("ids") List<Long> ids
+    );
+
+
+
+    @Query("""
+    SELECT j.id
+    FROM Job j
+    JOIN j.jobSkills js
+    JOIN js.skill s
+    WHERE j.status = :status
+      AND j.deleted = false
+      AND j.startDate <= :now
+      AND j.endDate >= :now
+      AND s.id IN :skillIds
+      AND j.id NOT IN :excludedJobIds
+    GROUP BY j.id
+    ORDER BY COUNT(DISTINCT s.id) DESC, j.createdAt DESC
+    """)
+    List<Long> findCandidateJobIdsBySkills(
+            @Param("skillIds") List<Long> skillIds,
+            @Param("excludedJobIds") List<Long> excludedJobIds,
+            @Param("status") JobStatus status,
+            @Param("now") Instant now,
+            Pageable pageable
+    );
+
+
+
 
 
 

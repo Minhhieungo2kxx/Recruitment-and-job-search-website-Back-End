@@ -136,9 +136,10 @@ public class Job {
     private String deletedBy;
 
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private Company company;
+
 
 
     @OneToMany(

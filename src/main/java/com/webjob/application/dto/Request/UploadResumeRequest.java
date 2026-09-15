@@ -7,6 +7,6 @@ import lombok.Data;
 public class UploadResumeRequest {
     @NotNull
     private String publicId;
-    private Boolean isDefault=false;
+    private Boolean isDefault;
 
 }

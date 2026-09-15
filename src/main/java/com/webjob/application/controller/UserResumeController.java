@@ -1,7 +1,7 @@
 package com.webjob.application.controller;
 
 import com.webjob.application.annotation.RateLimit;
-import com.webjob.application.dto.Request.UpdateNameAnDefaultCVRequest;
+import com.webjob.application.dto.Request.UpdateResumeNameRequest;
 import com.webjob.application.dto.Request.UploadResumeRequest;
 import com.webjob.application.dto.Response.AdminResumeResponse;
 import com.webjob.application.dto.Response.ApiResponse;
@@ -82,7 +82,7 @@ public class UserResumeController {
 
     }
 
-//    tao cv cho user
+    //    tao cv cho user
     @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping
     public ResponseEntity<ApiResponse<UserResumeResponse>> uploadResume(@Valid @RequestBody UploadResumeRequest request) {
@@ -95,19 +95,35 @@ public class UserResumeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(api);
     }
 
-//    update ten va default cho user
     @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "TOKEN")
-    @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResumeResponse>> updateNameAndDefaultCV(@PathVariable Long id
-            , @Valid @RequestBody UpdateNameAnDefaultCVRequest request) {
+    @PutMapping("/{id}/name")
+    public ResponseEntity<ApiResponse<UserResumeResponse>> updateResumeName(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateResumeNameRequest request
+    ) {
         ApiResponse<UserResumeResponse> api = new ApiResponse<>(
                 HttpStatus.OK.value(),
                 null,
-                "Update Resume Name and Default thành công",
-                userResumeService.updateResume(id, request)
+                "Update Resume Name thành công",
+                userResumeService.updateResumeName(id, request)
         );
         return ResponseEntity.status(HttpStatus.OK).body(api);
     }
+    @RateLimit(maxRequests = 15, timeWindowSeconds = 60, keyType = "TOKEN")
+    @PutMapping("/{id}/default")
+    public ResponseEntity<ApiResponse<UserResumeResponse>> setDefaultResume(@PathVariable Long id) {
+        ApiResponse<UserResumeResponse> api = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                null,
+                "Set DefaultResume successfully",
+                userResumeService.setDefaultResume(id)
+        );
+        return ResponseEntity.status(HttpStatus.OK).body(api);
+    }
+
+
+
+
     @RateLimit(maxRequests = 7, timeWindowSeconds = 60, keyType = "TOKEN")
     @DeleteMapping("/my-resumes/{id}")
     public ResponseEntity<ApiResponse<Object>> deleteMyResume(@PathVariable Long id) {
@@ -121,6 +137,7 @@ public class UserResumeController {
         );
         return ResponseEntity.status(HttpStatus.OK).body(api);
     }
+
     @RateLimit(maxRequests = 7, timeWindowSeconds = 60, keyType = "TOKEN")
     @DeleteMapping("/admin/resumes/{id}")
     public ResponseEntity<ApiResponse<Object>> deleteResume(@PathVariable Long id) {
@@ -138,7 +155,4 @@ public class UserResumeController {
     }
 
 }
-//user:get all,detail,create,update
-//admin:get all,detail,
 
-//git commit -m "feat(resume): implement user resume lifecycle management"

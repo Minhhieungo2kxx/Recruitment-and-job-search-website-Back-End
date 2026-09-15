@@ -99,13 +99,8 @@ public class FollowCompanyController {
 
         return ResponseEntity.ok(apiResponse);
     }
-//
+
 
 }
-//git commit -m "feat(follow-company): implement follow company APIs" -m "
-////            - add follow company endpoint
-////- add unfollow company endpoint
-////- add current user's followed companies endpoint
-////            - add enable/disable notification endpoints
-////"
+
 

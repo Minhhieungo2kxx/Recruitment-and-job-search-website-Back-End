@@ -64,11 +64,11 @@ public class UserService {
         // Chỉ HR mới cần Company
         if (code.startsWith("HR")) {
             if (userrequest.getCompanyId() == null) {
-                throw new RuntimeException("HR phải thuộc một công ty.");
+                throw new ResourceNotFoundException ("HR phải thuộc một công ty.");
             }
 
             Company company = companyService.getbyID(userrequest.getCompanyId())
-                    .orElseThrow(() -> new RuntimeException("Company không tồn tại"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Company không tồn tại"));
 
             user.setCompany(company);
         } else {

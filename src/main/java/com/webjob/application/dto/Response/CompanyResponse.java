@@ -49,7 +49,6 @@ public class CompanyResponse {
     private Instant deletedAt;
 
 
-
     // Thống kê
     private Integer jobCount;
     private boolean followed;

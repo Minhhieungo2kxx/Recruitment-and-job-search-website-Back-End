@@ -110,4 +110,4 @@ public class IndustryController {
 
 
 }
-//git commit -m "feat(industry): implement complete industry management"
+

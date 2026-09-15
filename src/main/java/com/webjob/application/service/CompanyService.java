@@ -2,10 +2,8 @@ package com.webjob.application.service;
 
 
 import com.webjob.application.document.CompanyDocument;
-import com.webjob.application.document.JobDocument;
 import com.webjob.application.dto.Request.*;
 import com.webjob.application.dto.Response.*;
-import com.webjob.application.dto.record.*;
 import com.webjob.application.elasticsearch.company.CompanyElasticsearchSearchService;
 import com.webjob.application.enums.CompanyStatus;
 import com.webjob.application.enums.OutboxCategory;
@@ -15,15 +13,12 @@ import com.webjob.application.exception.Customs.ResourceNotFoundException;
 import com.webjob.application.mapper.CompanyMapper;
 import com.webjob.application.messaging.config.RabbitMQConfig;
 import com.webjob.application.models.Entity.Company;
-import com.webjob.application.dto.Request.Search.SearchCompanyDTO;
 import com.webjob.application.models.Entity.Industry;
-import com.webjob.application.models.Entity.Job;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.repository.*;
 import com.webjob.application.service.OutBox.OutboxService;
 import com.webjob.application.service.Specification.CompanySpecification;
-import com.webjob.application.service.Specification.JobSpecification;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import com.webjob.application.utils.common.UtilFormat;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +27,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -221,6 +214,7 @@ public class CompanyService {
         modelMapper.map(saved, response);
         response.setJobCount(0);
         response.setFollowerCount(0);
+        response.setIndustry(industry.getName());
         publishCompanyEventIndex(saved);
         return response;
     }

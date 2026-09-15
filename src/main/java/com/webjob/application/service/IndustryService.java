@@ -2,24 +2,16 @@ package com.webjob.application.service;
 
 import com.webjob.application.dto.Request.IndustryFilter;
 import com.webjob.application.dto.Request.IndustryRequest;
-import com.webjob.application.dto.Request.JobFilterHrRequest;
 import com.webjob.application.dto.Response.IndustryResponse;
-import com.webjob.application.dto.Response.JobResponse;
 import com.webjob.application.dto.Response.MetaDTO;
 import com.webjob.application.dto.Response.ResponseDTO;
-import com.webjob.application.enums.CompanyStatus;
 import com.webjob.application.exception.Customs.BadRequestException;
-import com.webjob.application.exception.Customs.ConflictException;
 import com.webjob.application.exception.Customs.ResourceNotFoundException;
-import com.webjob.application.exception.Customs.UnauthorizedException;
-import com.webjob.application.models.Entity.Company;
 import com.webjob.application.models.Entity.Industry;
-import com.webjob.application.models.Entity.Job;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.repository.IndustryRepository;
 import com.webjob.application.service.Specification.IndustrySpecification;
-import com.webjob.application.service.Specification.JobSpecification;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -43,7 +35,7 @@ public class IndustryService {
     @Transactional
     public IndustryResponse create(IndustryRequest request) {
         if (industryRepository.existsByNameIgnoreCaseAndDeletedFalse(request.getName())) {
-            throw new BadRequestException("Tên ngành nghề đã tồn tại,vui lòng tạo tên khác !");
+            throw new BadRequestException("Tên ngành nghề : "+request.getName()+" đã tồn tại,vui lòng tạo tên khác !");
         }
         Industry industry = modelMapper.map(request, Industry.class);
         return modelMapper.map(industryRepository.save(industry), IndustryResponse.class);

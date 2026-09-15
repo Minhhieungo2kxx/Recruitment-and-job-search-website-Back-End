@@ -6,7 +6,7 @@ import com.webjob.application.event.dto.JobCreatedEvent;
 import com.webjob.application.messaging.config.RabbitMQConfig;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.service.NotificationService;
-import com.webjob.application.utils.common.SecurityUtils;
+import com.webjob.application.component.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

@@ -1,10 +1,7 @@
 package com.webjob.application.config.Redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.webjob.application.pubsub.subscriber.ChatPrivateSubscriber;
-import com.webjob.application.pubsub.subscriber.ChatPublicSubscriber;
-import com.webjob.application.pubsub.subscriber.NotificationSubscriber;
-import com.webjob.application.pubsub.subscriber.PresenceSubscriber;
+import com.webjob.application.pubsub.subscriber.*;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.context.annotation.Bean;
@@ -40,6 +37,7 @@ public class RedisPubSubConfig {
         return createAdapter(subscriber,redisObjectMapper);
     }
 
+
     @Bean
     public MessageListenerAdapter chatPrivateAdapter(ChatPrivateSubscriber subscriber,ObjectMapper redisObjectMapper) {
         return createAdapter(subscriber,redisObjectMapper);
@@ -57,6 +55,19 @@ public class RedisPubSubConfig {
         return createAdapter(subscriber,redisObjectMapper);
     }
 
+    @Bean
+    public MessageListenerAdapter recommendationCacheAdapter(RecommendationCacheSubscriber subscriber,ObjectMapper redisObjectMapper
+    ) {
+        return createAdapter(subscriber, redisObjectMapper);
+    }
+    @Bean
+    public MessageListenerAdapter permissionCacheAdapter(
+            PermissionCacheSubscriber subscriber,
+            ObjectMapper redisObjectMapper) {
+
+        return createAdapter(subscriber, redisObjectMapper);
+    }
+
 
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(
@@ -64,7 +75,9 @@ public class RedisPubSubConfig {
             MessageListenerAdapter chatPublicAdapter,
             MessageListenerAdapter chatPrivateAdapter,
             MessageListenerAdapter presenceAdapter,
-            MessageListenerAdapter notificationAdapter) {
+            MessageListenerAdapter notificationAdapter,
+            MessageListenerAdapter recommendationCacheAdapter,
+            MessageListenerAdapter permissionCacheAdapter) {
 
         RedisMessageListenerContainer container =
                 new RedisMessageListenerContainer();
@@ -90,6 +103,18 @@ public class RedisPubSubConfig {
                 notificationAdapter,
                 new ChannelTopic("notification")
         );
+
+        container.addMessageListener(
+                recommendationCacheAdapter,
+                new ChannelTopic(
+                        "recommendation.invalidate"
+                )
+        );
+        container.addMessageListener(
+                permissionCacheAdapter,
+                new ChannelTopic("permission.invalidate")
+        );
+
 
         return container;
     }

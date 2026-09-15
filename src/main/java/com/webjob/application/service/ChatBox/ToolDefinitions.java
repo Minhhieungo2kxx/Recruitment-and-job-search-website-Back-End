@@ -3,11 +3,12 @@ package com.webjob.application.service.ChatBox;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 
-@Component
+@Service
 @AllArgsConstructor
 public class ToolDefinitions {
 
@@ -86,7 +87,6 @@ public class ToolDefinitions {
                                         "address", param("string", "Địa chỉ hoặc khu vực của công ty (ví dụ: Hà Nội, TP.HCM, Đà Nẵng)"),
                                         "industry", param("string", "Ngành hoặc lĩnh vực kinh doanh của công ty nếu người dùng có đề cập.")
 
-//                                        "industry", param("string", "Lĩnh vực hoặc ngành nghề kinh doanh của công ty (ví dụ: Công nghệ thông tin, Tài chính, Giáo dục)")
                                 ),
                                 List.of()
                         ),

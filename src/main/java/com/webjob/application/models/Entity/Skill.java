@@ -40,14 +40,17 @@ public class Skill {
     private Long id;
 
     /**
+     * Tên skill chuẩn trong hệ thống.
+     *
+     * Ví dụ:
      * Java
      * Spring Boot
-     * Excel
+     * React
+     * PostgreSQL
      * SEO
-     * AutoCAD
      */
     @NotBlank(message = "Tên kỹ năng không được để trống")
-    @Size(max = 100)
+    @Size(max = 100, message = "Tên kỹ năng không được vượt quá 100 ký tự")
     @Column(nullable = false, length = 100)
     private String name;
 
@@ -57,28 +60,27 @@ public class Skill {
     /**
      * ACTIVE / INACTIVE
      */
-    @NotNull
+    @NotNull(message = "Trạng thái không được để trống")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private SkillStatus status = SkillStatus.ACTIVE;
 
-    @Column(name = "created_at", updatable = false)
     @CreatedDate
-
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
-    @Column(name = "updated_at")
     @LastModifiedDate
+    @Column(name = "updated_at")
     private Instant updatedAt;
 
-    @Column(name = "created_by")
-    @Size(max = 100, message = "Người tạo không được vượt quá 100 ký tự")
     @CreatedBy
+    @Size(max = 100, message = "Người tạo không được vượt quá 100 ký tự")
+    @Column(name = "created_by", updatable = false, length = 100)
     private String createdBy;
 
-    @Column(name = "updated_by")
-    @Size(max = 100, message = "Người cập nhật không được vượt quá 100 ký tự")
     @LastModifiedBy
+    @Size(max = 100, message = "Người cập nhật không được vượt quá 100 ký tự")
+    @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
     @OneToMany(mappedBy = "skill", fetch = FetchType.LAZY)
@@ -93,10 +95,37 @@ public class Skill {
     @JsonIgnore
     private List<JobCategorySkill> jobCategorySkills = new ArrayList<>();
 
+    /**
+     * Các alias dùng để nhận diện skill khi phân tích/matching CV.
+     *
+     * Ví dụ:
+     *
+     * Skill: Kubernetes
+     * Alias:
+     * - Kubernetes
+     * - K8s
+     * - Kube
+     */
+    @OneToMany(
+            mappedBy = "skill",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    @JsonIgnore
+    private List<SkillAlias> aliases = new ArrayList<>();
+
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Skill skill)) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof Skill skill)) {
+            return false;
+        }
+
         return Objects.equals(id, skill.id);
     }
 
@@ -104,6 +133,9 @@ public class Skill {
     public int hashCode() {
         return Objects.hash(id);
     }
+
+
+
 
 
 
