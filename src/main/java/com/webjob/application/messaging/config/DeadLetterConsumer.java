@@ -1,8 +1,7 @@
 package com.webjob.application.messaging.config;
 
 import com.webjob.application.dto.Response.RabbitEvent;
-import com.webjob.application.event.dto.JobCreatedEvent;
-import com.webjob.application.messaging.config.RabbitMQConfig;
+import com.webjob.application.dto.event.dto.JobCreatedEvent;
 import com.webjob.application.messaging.dto.EmailJobMessage;
 import com.webjob.application.messaging.dto.ForgotPasswordEmailEvent;
 import com.webjob.application.messaging.dto.JobAlertMessage;
@@ -18,6 +17,10 @@ public class DeadLetterConsumer {
     @RabbitListener(queues = RabbitMQConfig.DLQ_QUEUE,
             containerFactory = "rabbitListenerContainerFactory")
     public void receive(EmailJobMessage message){
+        if (message == null) {
+            log.error("Received null EmailJob event from DLQ");
+            return;
+        }
 
         log.error("Dead Letter Queue {}",message.getSubscriberId());
 
@@ -25,12 +28,21 @@ public class DeadLetterConsumer {
     @RabbitListener(queues = RabbitMQConfig.JOB_ALERT_DLQ,
             containerFactory = "rabbitListenerContainerFactory")
     public void receive(JobAlertMessage message){
+        if (message == null) {
+            log.error("Received null JOB_ALERT event from DLQ");
+            return;
+        }
+
         log.error("Dead Letter Queue {}",message.getJobAlertId());
     }
 
     @RabbitListener(queues = RabbitMQConfig.FORGOT_DLQ,
             containerFactory = "rabbitListenerContainerFactory")
     public void receive(ForgotPasswordEmailEvent event){
+        if (event == null) {
+            log.error("Received null FORGOT event from DLQ");
+            return;
+        }
 
         log.error("""
             Forgot Password Email moved to DLQ
@@ -47,6 +59,10 @@ public class DeadLetterConsumer {
     @RabbitListener(queues = RabbitMQConfig.JOB_APPLY_DLQ,
             containerFactory = "rabbitListenerContainerFactory")
     public void receive(JobAppliedEvent event){
+        if (event == null) {
+            log.error("Received null JOB_APPLY event from DLQ");
+            return;
+        }
 
         log.error("""
            Job Applied Email moved to DLQ
@@ -68,6 +84,10 @@ public class DeadLetterConsumer {
     @RabbitListener(queues = RabbitMQConfig.FOLLOW_COMPANY_JOB_DLQ,
             containerFactory = "rabbitListenerContainerFactory")
     public void receive(JobCreatedEvent event) {
+        if (event == null) {
+            log.error("Received null FOLLOW_COMPANY_JOB event from DLQ");
+            return;
+        }
         log.error("""
                 JobCreated Notification moved to DLQ
                 jobName     : {}
@@ -85,6 +105,11 @@ public class DeadLetterConsumer {
             containerFactory = "rabbitListenerContainerFactory"
     )
     public void receiveJobIndexDeadLetter(RabbitEvent<String> event) {
+        if (event == null) {
+            log.error("Received null JOB_INDEX event from DLQ");
+            return;
+        }
+
         log.error("""
             Job Index event moved to DLQ
             eventId      : {}
@@ -105,6 +130,10 @@ public class DeadLetterConsumer {
             containerFactory = "rabbitListenerContainerFactory"
     )
     public void receiveCompanyIndexDeadLetter(RabbitEvent<String> event) {
+        if (event == null) {
+            log.error("Received null COMPANY_INDEX event from DLQ");
+            return;
+        }
         log.error("""
             Company Index event moved to DLQ
             eventId      : {}
@@ -121,5 +150,29 @@ public class DeadLetterConsumer {
         );
     }
 
+    @RabbitListener(
+            queues = RabbitMQConfig.CANDIDATE_MATCH_DLQ_QUEUE,
+            containerFactory = "rabbitListenerContainerFactory"
+    )
+    public void receiveDeadLetter(RabbitEvent<String> event) {
+        if (event == null) {
+            log.error("Received null CANDIDATE_MATCH event from DLQ");
+            return;
+        }
+
+        log.error("""
+            ===== CANDIDATE_MATCH DEAD LETTER EVENT =====
+            eventId       : {}
+            eventType     : {}
+            aggregateType : {}
+            aggregateId   : {}
+            =============================================
+            """,
+                event.getEventId(),
+                event.getEventType(),
+                event.getAggregateType(),
+                event.getAggregateId()
+        );
+    }
 
 }

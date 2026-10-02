@@ -56,7 +56,6 @@ public class JobIndexOutboxProducer {
             outboxService.markPublished(event.getId());
             log.debug("Successfully published JobIndex outbox event - ID: {}, Exchange: {}, RoutingKey: {}",
                     event.getId(), event.getExchangeName(), event.getRoutingKey());
-
         } catch (Exception e) {
 
             log.error("Failed to publish outbox JobIndex event id={}", event.getId(), e);

@@ -22,7 +22,14 @@ import java.time.Instant;
                                 "job_id"
                         }
                 )
+        },
+        indexes = {
+                @Index(
+                        name = "idx_applications_job_status_id",
+                        columnList = "job_id, status, id"
+                )
         }
+
 )
 @Getter
 @Setter
@@ -84,4 +91,12 @@ public class Application {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resume_id")
     private UserResume resume;
+
+    @OneToOne(
+            mappedBy = "application",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    private MatchResult matchResult;
 }

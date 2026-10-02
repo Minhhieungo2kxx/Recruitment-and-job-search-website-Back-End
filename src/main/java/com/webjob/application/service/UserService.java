@@ -4,6 +4,7 @@ import com.webjob.application.dto.Request.*;
 import com.webjob.application.dto.Response.MetaDTO;
 import com.webjob.application.dto.Response.ResponseDTO;
 import com.webjob.application.dto.Response.UserDTO;
+import com.webjob.application.enums.AccountType;
 import com.webjob.application.enums.UserStatus;
 import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.exception.Customs.ResourceNotFoundException;
@@ -13,6 +14,7 @@ import com.webjob.application.models.Entity.*;
 import com.webjob.application.repository.ConversationRepository;
 import com.webjob.application.repository.MessageRepository;
 
+import com.webjob.application.repository.RoleRepository;
 import com.webjob.application.repository.UserRepository;
 import com.webjob.application.service.Redis.TokenBlacklistService;
 import com.webjob.application.service.Socket.PresenceService;
@@ -46,11 +48,12 @@ public class UserService {
     private final MessageRepository messageRepository;
     private final ConversationRepository conversationRepository;
     private final TokenBlacklistService tokenBlacklistService;
+    private final RoleRepository roleRepository;
 
     private final PresenceService presenceService;
 
 
-    public User handleUser(Userrequest userrequest) {
+    public User handleUser(UserrequestAdmin userrequest) {
 
         if (userRepository.existsByEmailAndDeletedFalse(userrequest.getEmail())) {
             throw new IllegalArgumentException("Email: " + userrequest.getEmail() + " đã tồn tại trong hệ thống.");
@@ -64,7 +67,7 @@ public class UserService {
         // Chỉ HR mới cần Company
         if (code.startsWith("HR")) {
             if (userrequest.getCompanyId() == null) {
-                throw new ResourceNotFoundException ("HR phải thuộc một công ty.");
+                throw new ResourceNotFoundException("HR phải thuộc một công ty.");
             }
 
             Company company = companyService.getbyID(userrequest.getCompanyId())
@@ -82,6 +85,7 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
     public User registerClientUser(Userrequest userrequest) {
 
         if (userRepository.existsByEmailAndDeletedFalse(userrequest.getEmail())) {
@@ -89,9 +93,25 @@ public class UserService {
         }
 
         User user = modelMapper.map(userrequest, User.class);
-        Role role = roleService.getByid(3L)
-                .orElse(null);
-        user.setRole(role);
+
+        if (userrequest.getAccountType() == AccountType.HR) {
+            if (userrequest.getCompanyId() == null) {
+                throw new IllegalArgumentException("HR phải chọn công ty.");
+            }
+            Company company = companyService.getbyID(userrequest.getCompanyId())
+                    .orElseThrow(() -> new RuntimeException("Company không tồn tại"));
+
+            user.setCompany(company);
+            Role role = roleRepository.findByCodeAndActiveTrue("HR")
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy role HR"));
+            user.setRole(role);
+        } else {
+            user.setCompany(null);
+            Role role = roleRepository.findByCodeAndActiveTrue("USER")
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy role USER"));
+            user.setRole(role);
+        }
+
         if (user.getPassword() != null && !user.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
@@ -154,7 +174,6 @@ public class UserService {
     }
 
 
-
     public User getById(Long id) {
         return userRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found or no Active  with id: " + id));
@@ -185,7 +204,7 @@ public class UserService {
     }
 
 
-    public User  getUserByRefreshTokenHash(String refreshToken) {
+    public User getUserByRefreshTokenHash(String refreshToken) {
         User user = userRepository.findByRefreshTokenAndDeletedFalse(refreshToken);
 
         if (user == null) {
@@ -288,7 +307,7 @@ public class UserService {
     }
 
     @Transactional
-    public UserDTO createUser(Userrequest userrequest) {
+    public UserDTO createUser(UserrequestAdmin userrequest) {
         User userSaved = handleUser(userrequest);
         UserDTO userDTO = modelMapper.map(userSaved, UserDTO.class);
         return userDTO;

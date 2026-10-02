@@ -78,5 +78,14 @@ public class UserResume {
     @JsonIgnore
     private List<JobRecommendation> jobRecommendations = new ArrayList<>();
 
+    @OneToOne(
+            mappedBy = "resume",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    private CandidateProfile candidateProfile;
+
+
 
 }

@@ -129,18 +129,38 @@ public class EmailConsumer {
     public void receive(RabbitEvent<String> event) {
         String queueName = RabbitMQConfig.FORGOT_QUEUE;
         String eventId = event.getEventId();
-        boolean acquired = rabbitMessageDedupService.tryStartProcessing(queueName, eventId
-        );
-        if (!acquired) {
+        String ownerToken = rabbitMessageDedupService.tryStartProcessing(queueName, eventId);
+
+        if (ownerToken == null) {
             log.info("Duplicate/in-flight event ignored. eventId={}, eventType={}",
-                    eventId, event.getEventType());
+                    eventId,
+                    event.getEventType()
+            );
             return;
         }
         try {
             processEventForgotpassword(event);
-            rabbitMessageDedupService.markProcessed(queueName, eventId);
+            boolean markedProcessed = rabbitMessageDedupService.markProcessed(
+                    queueName,
+                    eventId,
+                    ownerToken
+            );
+            if (!markedProcessed) {
+                throw new IllegalStateException(
+                        "Lost ownership while marking event as processed. " +
+                                "eventId=" + eventId
+                );
+            }
+            log.info("Successfully processed  event. eventId={}", eventId);
         } catch (Exception e) {
-            rabbitMessageDedupService.removeProcessing(queueName, eventId);
+            log.error("Failed to process  event. eventId={}, error={}",
+                    eventId, e.getMessage(), e);
+
+            rabbitMessageDedupService.removeProcessing(
+                    queueName,
+                    eventId,
+                    ownerToken
+            );
             throw new RuntimeException(e);
         }
     }
@@ -173,18 +193,40 @@ public class EmailConsumer {
     public void receiveJobApply(RabbitEvent<String> event) {
         String queueName = RabbitMQConfig.JOB_APPLY_QUEUE;
         String eventId = event.getEventId();
-        boolean acquired = rabbitMessageDedupService.tryStartProcessing(queueName, eventId
-        );
-        if (!acquired) {
+        String ownerToken = rabbitMessageDedupService.tryStartProcessing(queueName, eventId);
+
+        if (ownerToken == null) {
             log.info("Duplicate/in-flight event ignored. eventId={}, eventType={}",
-                    eventId, event.getEventType());
+                    eventId,
+                    event.getEventType()
+            );
             return;
         }
+
         try {
             processEventJobApply(event);
-            rabbitMessageDedupService.markProcessed(queueName, eventId);
+//            rabbitMessageDedupService.markProcessed(queueName, eventId);
+            boolean markedProcessed = rabbitMessageDedupService.markProcessed(
+                    queueName,
+                    eventId,
+                    ownerToken
+            );
+            if (!markedProcessed) {
+                throw new IllegalStateException("Lost ownership while marking event as processed. " +
+                        "eventId=" + eventId
+                );
+            }
+            log.info("Successfully processed  event. eventId={}", eventId);
         } catch (Exception e) {
-            rabbitMessageDedupService.removeProcessing(queueName, eventId);
+
+            log.error("Failed to process event. eventId={}, error={}",
+                    eventId, e.getMessage(), e);
+
+            rabbitMessageDedupService.removeProcessing(
+                    queueName,
+                    eventId,
+                    ownerToken
+            );
             throw new RuntimeException(e);
         }
     }

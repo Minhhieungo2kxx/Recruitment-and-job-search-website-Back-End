@@ -25,7 +25,7 @@ public class UserController {
 
     @RateLimit(maxRequests = 5, timeWindowSeconds = 60, keyType = "TOKEN")
     @PostMapping
-    public ResponseEntity<ApiResponse<UserDTO>> create(@Valid @RequestBody Userrequest userrequest) {
+    public ResponseEntity<ApiResponse<UserDTO>> create(@Valid @RequestBody UserrequestAdmin userrequest) {
 
         ApiResponse<UserDTO> response = new ApiResponse<>(
                 HttpStatus.CREATED.value(),

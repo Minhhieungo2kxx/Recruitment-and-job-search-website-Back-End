@@ -4,7 +4,7 @@ import com.webjob.application.dto.Request.UpdateResumeNameRequest;
 import com.webjob.application.dto.Request.UploadResumeRequest;
 import com.webjob.application.dto.Response.*;
 import com.webjob.application.dto.record.RecommendationCacheInvalidateEvent;
-import com.webjob.application.event.ResumeFileDeletedEvent;
+import com.webjob.application.dto.event.ResumeFileDeletedEvent;
 import com.webjob.application.exception.Customs.AppException;
 import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.exception.Customs.ForbiddenException;
@@ -243,6 +243,7 @@ public class UserResumeService {
         if (!recommendations.isEmpty()) {
             jobRecommendationRepository.deleteAll(recommendations);
         }
+
 
         // Xóa CV
         userResumeRepository.delete(resume);

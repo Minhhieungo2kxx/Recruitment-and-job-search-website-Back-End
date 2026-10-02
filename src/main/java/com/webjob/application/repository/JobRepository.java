@@ -515,6 +515,8 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     );
 
 
+    boolean existsByIdAndCompanyId(Long id, Long companyId);
+
 
 
 
