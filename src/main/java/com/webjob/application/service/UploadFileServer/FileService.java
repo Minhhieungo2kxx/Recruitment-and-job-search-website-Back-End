@@ -41,163 +41,72 @@ public class FileService {
     private final SecurityUtils securityUtils;
 
 
+    public FileDownloadResponseDto proxyDownloadCloudinary(String encodedUrl) {
 
-//public  Resource  handledownloadFile(String folder, String filename) {
-//
-//    Path baseDir = Paths.get(uploadProperties.getBaseDir())
-//            .toAbsolutePath()
-//            .normalize();
-//
-//    Path filePath = baseDir.resolve(folder)
-//            .resolve(filename)
-//            .normalize();
-//
-//    // Chống path traversal
-//    if (!filePath.startsWith(baseDir) || !Files.exists(filePath)) {
-//        throw new BadRequestException("File Path not found");
-//    }
-//
-//    Resource resource = null;
-//    try {
-//        resource = new UrlResource(filePath.toUri());
-//    } catch (MalformedURLException e) {
-//        throw new RuntimeException(e);
-//    }
-//
-//    String contentType = null;
-//    try {
-//        contentType = Files.probeContentType(filePath);
-//    } catch (IOException e) {
-//        throw new RuntimeException(e);
-//    }
-//    if (contentType == null) {
-//        contentType = "application/octet-stream";
-//    }
-//
-//    String encodedFilename = URLEncoder.encode(
-//            resource.getFilename(),
-//            StandardCharsets.UTF_8)
-//            .replace("+", "%20");
-//    return resource;
-//}
-//public FileDownloadResponseDto downloadFile(String folder, String filename)  {
-//
-//    Path baseDir = Paths.get(uploadProperties.getBaseDir())
-//            .toAbsolutePath()
-//            .normalize();
-//
-//    Path filePath = baseDir.resolve(folder)
-//            .resolve(filename)
-//            .normalize();
-//
-//    if (!filePath.startsWith(baseDir) || !Files.exists(filePath)) {
-//        try {
-//            throw new FileNotFoundException("File not found");
-//        } catch (FileNotFoundException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-//
-//    Resource resource = null;
-//    try {
-//        resource = new UrlResource(filePath.toUri());
-//    } catch (MalformedURLException e) {
-//        throw new RuntimeException(e);
-//    }
-//
-//    String contentType = null;
-//    try {
-//        contentType = Files.probeContentType(filePath);
-//    } catch (IOException e) {
-//        throw new RuntimeException(e);
-//    }
-//    if (contentType == null) {
-//        contentType = "application/octet-stream";
-//    }
-//
-//    String encodedFilename = URLEncoder.encode(
-//            resource.getFilename(),
-//            StandardCharsets.UTF_8
-//    ).replace("+", "%20");
-//
-//    try {
-//        return FileDownloadResponseDto.builder()
-//                .resource(resource)
-//                .contentType(contentType)
-//                .encodedFilename(encodedFilename)
-//                .fileSize(Files.size(filePath))
-//                .build();
-//    } catch (IOException e) {
-//        throw new RuntimeException(e);
-//    }
-//}
+        String decodedUrl = Base64Util.decode(encodedUrl);
 
-public FileDownloadResponseDto proxyDownloadCloudinary(String encodedUrl)  {
+        if (!decodedUrl.startsWith("https://res.cloudinary.com/")) {
+            throw new BadRequestException("Invalid Cloudinary URL");
+        }
 
-    String decodedUrl = Base64Util.decode(encodedUrl);
-
-    if (!decodedUrl.startsWith("https://res.cloudinary.com/")) {
-        throw new BadRequestException("Invalid Cloudinary URL");
-    }
-
-    URL url = null;
-    try {
-        url = new URL(decodedUrl);
-    } catch (MalformedURLException e) {
-        throw new RuntimeException(e);
-    }
-    HttpURLConnection connection = null;
-    try {
-        connection = (HttpURLConnection) url.openConnection();
-    } catch (IOException e) {
-        throw new RuntimeException(e);
-    }
-    try {
-        connection.setRequestMethod("GET");
-    } catch (ProtocolException e) {
-        throw new RuntimeException(e);
-    }
-
-    int statusCode = 0;
-    try {
-        statusCode = connection.getResponseCode();
-    } catch (IOException e) {
-        throw new RuntimeException(e);
-    }
-
-    if (statusCode != HttpURLConnection.HTTP_OK) {
+        URL url = null;
         try {
-            throw new IOException("Cloudinary response: " + statusCode);
+            url = new URL(decodedUrl);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) url.openConnection();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        try {
+            connection.setRequestMethod("GET");
+        } catch (ProtocolException e) {
+            throw new RuntimeException(e);
+        }
+
+        int statusCode = 0;
+        try {
+            statusCode = connection.getResponseCode();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (statusCode != HttpURLConnection.HTTP_OK) {
+            try {
+                throw new IOException("Cloudinary response: " + statusCode);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        String contentType = connection.getContentType();
+        if (contentType == null) {
+            contentType = "application/octet-stream";
+        }
+
+        String fileName = Paths.get(url.getPath())
+                .getFileName()
+                .toString();
+
+        InputStreamResource resource =
+                null;
+        try {
+            resource = new InputStreamResource(connection.getInputStream());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return FileDownloadResponseDto.builder()
+                .resource(resource)
+                .contentType(contentType)
+                .encodedFileName(URLEncoder.encode(fileName, StandardCharsets.UTF_8)
+                )
+                .statusCode(statusCode)
+                .build();
     }
-
-    String contentType = connection.getContentType();
-    if (contentType == null) {
-        contentType = "application/octet-stream";
-    }
-
-    String fileName = Paths.get(url.getPath())
-            .getFileName()
-            .toString();
-
-    InputStreamResource resource =
-            null;
-    try {
-        resource = new InputStreamResource(connection.getInputStream());
-    } catch (IOException e) {
-        throw new RuntimeException(e);
-    }
-
-    return FileDownloadResponseDto.builder()
-            .resource(resource)
-            .contentType(contentType)
-            .encodedFileName(URLEncoder.encode(fileName, StandardCharsets.UTF_8)
-            )
-            .statusCode(statusCode)
-            .build();
-}
 
     public Map<String, String> uploadFile(MultipartFile file, String folderName) throws IOException {
 
@@ -238,7 +147,7 @@ public FileDownloadResponseDto proxyDownloadCloudinary(String encodedUrl)  {
 
         String cloudinaryResourceType = result.get("resource_type").toString();
 
-        handleTemporaryUpload(publicId, secureUrl,cloudinaryResourceType);
+        handleTemporaryUpload(publicId, secureUrl, cloudinaryResourceType);
 
         return Map.of(
                 "url", secureUrl,
@@ -248,8 +157,8 @@ public FileDownloadResponseDto proxyDownloadCloudinary(String encodedUrl)  {
     }
 
     public void handleTemporaryUpload(String publicId, String secureUrl, String resourceType) {
-        User user=securityUtils.getCurrentUser();
-        TemporaryUpload temporaryUpload=TemporaryUpload.builder()
+        User user = securityUtils.getCurrentUser();
+        TemporaryUpload temporaryUpload = TemporaryUpload.builder()
                 .publicId(publicId)
                 .url(secureUrl)
                 .resourceType(resourceType)
@@ -275,37 +184,24 @@ public FileDownloadResponseDto proxyDownloadCloudinary(String encodedUrl)  {
         }
     }
 
-public UploadFileResponse  uploadFileCloudinary(MultipartFile file,String folder)  {
-    Map<String,String> uploadedFileName = null;
-    try {
-        uploadedFileName = uploadFile(file, folder);
-    } catch (IOException e) {
-        throw new RuntimeException(e);
+    public UploadFileResponse uploadFileCloudinary(MultipartFile file, String folder) {
+        Map<String, String> uploadedFileName = null;
+        try {
+            uploadedFileName = uploadFile(file, folder);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        UploadFileResponse uploadFileResponse = UploadFileResponse.builder()
+                .fileName(uploadedFileName.get("url"))
+                .public_id(uploadedFileName.get("publicId"))
+                .resourceType(uploadedFileName.get("resourceType"))
+                .uploadedAt(Instant.now())
+                .fileSize(file.getSize())
+                .contentType(file.getContentType())
+                .folder(folder).build();
+        return uploadFileResponse;
     }
-    UploadFileResponse uploadFileResponse =UploadFileResponse.builder()
-            .fileName(uploadedFileName.get("url"))
-            .public_id(uploadedFileName.get("publicId"))
-            .resourceType(uploadedFileName.get("resourceType"))
-            .uploadedAt(Instant.now())
-            .fileSize(file.getSize())
-            .contentType(file.getContentType())
-            .folder(folder).build();
-    return uploadFileResponse;
-}
 
-//    public UploadFileResponse uploadFileServer (MultipartFile file, String folder){
-//        String uploadedFileName = null;
-//        try {
-//            uploadedFileName = uploadFile.getnameFile(file, folder);
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-//        UploadFileResponse uploadFileResponse =UploadFileResponse.builder()
-//                .fileName(uploadedFileName).uploadedAt(Instant.now())
-//                .fileSize(file.getSize())
-//                .contentType(file.getContentType())
-//                .folder(folder).build();
-//        return uploadFileResponse;
-//    }
+
 
 }

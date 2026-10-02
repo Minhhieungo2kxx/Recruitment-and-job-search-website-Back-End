@@ -8,7 +8,7 @@ import com.webjob.application.enums.CompanyStatus;
 import com.webjob.application.enums.JobStatus;
 import com.webjob.application.enums.OutboxCategory;
 import com.webjob.application.enums.OutboxEventType;
-import com.webjob.application.event.dto.JobCreatedEvent;
+import com.webjob.application.dto.event.dto.JobCreatedEvent;
 import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.exception.Customs.ForbiddenException;
 import com.webjob.application.mapper.JobMapper;

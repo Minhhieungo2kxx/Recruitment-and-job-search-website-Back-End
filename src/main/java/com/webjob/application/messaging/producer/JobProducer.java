@@ -1,12 +1,14 @@
 package com.webjob.application.messaging.producer;
 
-import com.webjob.application.event.dto.JobCreatedEvent;
+import com.webjob.application.dto.event.dto.JobCreatedEvent;
 import com.webjob.application.messaging.config.RabbitMQConfig;
 import com.webjob.application.models.Entity.FollowCompany;
 import com.webjob.application.repository.FollowCompanyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,6 +21,12 @@ public class JobProducer {
     private final RabbitTemplate rabbitTemplate;
     private final FollowCompanyRepository followCompanyRepository;
 
+
+    @Retryable(
+            retryFor = Exception.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
+    )
     public void sendJobCreated(JobCreatedEvent event) {
         log.info("Fetching followers with notification enabled for companyId: {}", event.getCompanyId());
 
@@ -34,7 +42,6 @@ public class JobProducer {
                 followers.size(), event.getJobId());
 
         int successCount = 0;
-        int failCount = 0;
 
         for (FollowCompany follow : followers) {
             try {
@@ -57,14 +64,15 @@ public class JobProducer {
                 successCount++;
 
             } catch (Exception e) {
-                failCount++;
 
                 log.error("Failed to send notification for jobId: {} to userId: {}. Error: {}",
                         event.getJobId(), follow.getUser().getId(), e.getMessage(), e);
+                throw e;
+
             }
         }
-        log.info("Finished sending job notifications for jobId: {}. Total success: {}, Total failed: {}",
-                event.getJobId(), successCount, failCount);
+        log.info("Finished sending job notifications for jobId: {}. Total success: {}",
+                event.getJobId(), successCount);
     }
 
 }

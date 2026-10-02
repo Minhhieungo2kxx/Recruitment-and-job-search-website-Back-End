@@ -8,6 +8,7 @@ import org.apache.tika.exception.TikaException;
 import org.hibernate.annotations.Comment;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayInputStream;
@@ -18,19 +19,32 @@ import java.io.InputStream;
 @RequiredArgsConstructor
 @Slf4j
 public class CvExtractionService {
-    private final RestTemplate restTemplate = new RestTemplate();
+
+
+
+    private final RestTemplate cloudinaryRestTemplate;
+
     private final Tika tika = new Tika();
 
-    private static final int MAX_CV_TEXT_LENGTH = 12000;
+    /** Chặn file quá lớn trước khi tải về, tránh OOM/tốn băng thông vô ích */
+    private static final long MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024; // 10MB
 
 
     //     Tải file CV về (Cloudinary URL) và trích xuất raw text.
     public String extractRawText(String cvUrl) {
+        if (cvUrl == null || cvUrl.isBlank()) {
+            throw new CvProcessingException("URL CV không hợp lệ");
+        }
         try {
-            byte[] fileBytes = restTemplate.getForObject(cvUrl, byte[].class);
+            byte[] fileBytes = cloudinaryRestTemplate.getForObject(cvUrl, byte[].class);
 
             if (fileBytes == null || fileBytes.length == 0) {
                 throw new CvProcessingException("CV file rỗng hoặc không tải được: " + cvUrl);
+            }
+            if (fileBytes.length > MAX_FILE_SIZE_BYTES) {
+                throw new CvProcessingException(
+                        "File CV vượt quá giới hạn %d MB: %s".formatted(MAX_FILE_SIZE_BYTES / (1024 * 1024), cvUrl)
+                );
             }
 
             try (InputStream is = new ByteArrayInputStream(fileBytes)) {
@@ -43,7 +57,7 @@ public class CvExtractionService {
                 return text.trim();
             }
 
-        } catch (IOException | TikaException e) {
+        } catch (IOException | TikaException | RestClientException e) {
             log.error("Lỗi trích xuất CV: {}", cvUrl, e);
             throw new CvProcessingException("Không thể xử lý file CV", e);
         }

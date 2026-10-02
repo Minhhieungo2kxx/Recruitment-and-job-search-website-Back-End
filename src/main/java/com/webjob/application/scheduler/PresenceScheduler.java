@@ -1,6 +1,5 @@
 package com.webjob.application.scheduler;
 
-import com.webjob.application.event.PresenceNotifier;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.dto.Response.UserPresenceDTO;
 import com.webjob.application.repository.UserRepository;

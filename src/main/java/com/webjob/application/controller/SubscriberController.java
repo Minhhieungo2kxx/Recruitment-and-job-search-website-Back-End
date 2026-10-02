@@ -78,7 +78,7 @@ public class SubscriberController {
 
 
     @RateLimit(maxRequests = 20, timeWindowSeconds = 60, keyType = "TOKEN")
-    @GetMapping()
+    @GetMapping
     public ResponseEntity<ApiResponse<ResponseDTO<List<SubscriberListResponse>>>> getSubscriberSkills(
             @RequestParam(defaultValue = "0") int page
             , @RequestParam(defaultValue = "10") int size

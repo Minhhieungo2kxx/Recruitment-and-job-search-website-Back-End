@@ -52,7 +52,7 @@ public class RabbitMQConfig {
     public static final String FOLLOW_COMPANY_JOB_DLQ = "follow.company.job.dead.queue";
     public static final String FOLLOW_COMPANY_JOB_DLQ_ROUTING = "follow.company.job.dead";
 
-// JOB INDEX
+    // JOB INDEX
     public static final String JOB_INDEX_EXCHANGE = "job.index.exchange";
     public static final String JOB_INDEX_QUEUE = "job.index.queue";
     public static final String JOB_INDEX_CREATED_ROUTING_KEY = "job.index.created";
@@ -74,23 +74,22 @@ public class RabbitMQConfig {
 
     // COMPANY INDEX
     public static final String COMPANY_INDEX_EXCHANGE = "company.index.exchange";
-
     public static final String COMPANY_INDEX_QUEUE = "company.index.queue";
-
     public static final String COMPANY_INDEX_CREATED_ROUTING_KEY = "company.index.created";
-
     public static final String COMPANY_INDEX_UPDATED_ROUTING_KEY = "company.index.updated";
-
     public static final String COMPANY_INDEX_DELETED_ROUTING_KEY = "company.index.deleted";
-
     public static final String COMPANY_INDEX_RESTORED_ROUTING_KEY = "company.index.restored";
-
-
     public static final String COMPANY_INDEX_DLX = "company.index.dlx";
-
     public static final String COMPANY_INDEX_DLQ = "company.index.dead.queue";
-
     public static final String COMPANY_INDEX_DLQ_ROUTING_KEY = "company.index.dead";
+
+    // CANDIDATE_MATCH
+    public static final String CANDIDATE_MATCH_EXCHANGE = "candidate.match.exchange";
+    public static final String CANDIDATE_MATCH_QUEUE = "candidate.match.queue";
+    public static final String CANDIDATE_MATCH_ROUTING_KEY = "candidate.match.job";
+    public static final String CANDIDATE_MATCH_DLX_EXCHANGE = "candidate.match.dlx";
+    public static final String CANDIDATE_MATCH_DLQ_QUEUE = "candidate.match.dead.queue";
+    public static final String CANDIDATE_MATCH_DLQ_ROUTING_KEY = "candidate.match.dead";
 
 
     @Bean
@@ -178,6 +177,15 @@ public class RabbitMQConfig {
                         COMPANY_INDEX_DLX,
                         COMPANY_INDEX_DLQ,
                         COMPANY_INDEX_DLQ_ROUTING_KEY
+                ),
+                // CANDIDATE_MATCH
+                new RabbitQueueConfig(
+                        CANDIDATE_MATCH_EXCHANGE,
+                        CANDIDATE_MATCH_QUEUE,
+                        List.of(CANDIDATE_MATCH_ROUTING_KEY),
+                        CANDIDATE_MATCH_DLX_EXCHANGE,
+                        CANDIDATE_MATCH_DLQ_QUEUE,
+                        CANDIDATE_MATCH_DLQ_ROUTING_KEY
                 )
 
         );

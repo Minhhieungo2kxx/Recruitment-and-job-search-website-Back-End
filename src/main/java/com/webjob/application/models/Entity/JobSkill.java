@@ -2,6 +2,9 @@ package com.webjob.application.models.Entity;
 
 import com.webjob.application.enums.SkillLevel;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -56,11 +59,15 @@ public class JobSkill {
     /**
      * Độ ưu tiên
      */
-    private Integer priority;
+    @Min(1)
+    @Max(10)
+    @Column(nullable = false)
+    private Integer priority =1;
 
     /**
      * Yêu cầu kinh nghiệm riêng cho skill này
      */
+    @DecimalMin("0.0")
     private Integer experienceYear;
 
     @Enumerated(EnumType.STRING)

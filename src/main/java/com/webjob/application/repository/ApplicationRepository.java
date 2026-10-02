@@ -33,8 +33,10 @@ public interface ApplicationRepository extends JpaRepository<Application, Long>,
     Page<Application> findApplicationsByCompany(Long companyId, Pageable pageable);
 
 
-    @EntityGraph(attributePaths = {"job", "user"})
+    @Override
+    @EntityGraph(attributePaths = {"job", "resume"})
     Optional<Application> findById(Long id);
+
 
     @Query("""
                 select a
@@ -109,6 +111,23 @@ public interface ApplicationRepository extends JpaRepository<Application, Long>,
 
     @EntityGraph(attributePaths = {"job"})
     List<Application> findTop10ByUserIdOrderByCreatedAtDesc(Long userId);
+
+
+//    Keyset Pagination (hay còn gọi là Cursor-based Pagination hoặc Phân trang dựa trên con trỏ).
+    @Query("""
+    SELECT a.id
+    FROM Application a
+    WHERE a.job.id = :jobId
+      AND a.status IN :statuses
+      AND a.id > :lastId
+    ORDER BY a.id ASC
+""")
+    List<Long> findNextIdsByJobIdAndStatusIn(
+            @Param("jobId") Long jobId,
+            @Param("statuses") List<ResumeStatus> statuses,
+            @Param("lastId") Long lastId,
+            Pageable pageable
+    );
 
 
 

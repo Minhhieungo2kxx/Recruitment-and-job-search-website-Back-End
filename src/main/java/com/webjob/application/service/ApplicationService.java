@@ -9,8 +9,8 @@ import com.webjob.application.dto.record.RecommendationCacheInvalidateEvent;
 import com.webjob.application.enums.OutboxCategory;
 import com.webjob.application.enums.OutboxEventType;
 import com.webjob.application.enums.ResumeStatus;
-import com.webjob.application.event.dto.ApplicationStatusChangedEvent;
-import com.webjob.application.event.dto.JobAppliedNotificationEvent;
+import com.webjob.application.dto.event.dto.ApplicationStatusChangedEvent;
+import com.webjob.application.dto.event.dto.JobAppliedNotificationEvent;
 import com.webjob.application.exception.Customs.*;
 import com.webjob.application.mapper.ApplicationMapper;
 import com.webjob.application.messaging.config.RabbitMQConfig;
@@ -175,8 +175,7 @@ public class ApplicationService {
         // 2. Người dùng upload CV mới
         TemporaryUpload upload = temporaryUploadRepository
                 .findByPublicIdAndUsedFalse(request.getPublicId())
-                .orElseThrow(() ->
-                        new BadRequestException("File không tồn tại hoặc đã được sử dụng."));
+                .orElseThrow(() -> new BadRequestException("File không tồn tại hoặc đã được sử dụng."));
 
         // 3. Đảm bảo file thuộc user hiện tại
         if (!upload.getUser().getId().equals(user.getId())) {
@@ -343,7 +342,6 @@ public class ApplicationService {
         }
         Set<ResumeStatus> allowed =
                 VALID_TRANSITIONS.getOrDefault(current, Collections.emptySet());
-
         if (!allowed.contains(next)) {
             throw new BadRequestException(
                     String.format(
@@ -359,33 +357,48 @@ public class ApplicationService {
                     ResumeStatus.PENDING,
                     Set.of(
                             ResumeStatus.REVIEWING,
-                            ResumeStatus.REJECTED
+                            ResumeStatus.REJECTED,
+                            ResumeStatus.WITHDRAWN
                     ),
 
                     ResumeStatus.REVIEWING,
                     Set.of(
+                            ResumeStatus.SHORTLISTED,
+                            ResumeStatus.REJECTED,
+                            ResumeStatus.WITHDRAWN
+                    ),
+
+                    ResumeStatus.SHORTLISTED,
+                    Set.of(
                             ResumeStatus.INTERVIEWING,
-                            ResumeStatus.REJECTED
+                            ResumeStatus.REJECTED,
+                            ResumeStatus.WITHDRAWN
                     ),
 
                     ResumeStatus.INTERVIEWING,
                     Set.of(
                             ResumeStatus.OFFERED,
-                            ResumeStatus.REJECTED
+                            ResumeStatus.REJECTED,
+                            ResumeStatus.WITHDRAWN
                     ),
 
                     ResumeStatus.OFFERED,
                     Set.of(
                             ResumeStatus.HIRED,
-                            ResumeStatus.REJECTED
+                            ResumeStatus.REJECTED,
+                            ResumeStatus.WITHDRAWN
                     ),
 
                     ResumeStatus.HIRED,
                     Set.of(),
 
                     ResumeStatus.REJECTED,
+                    Set.of(),
+
+                    ResumeStatus.WITHDRAWN,
                     Set.of()
             );
+
 
     @Transactional(readOnly = true)
     public ApplicationUserDetailResponse getApplicationDetailForUser(Long id) {

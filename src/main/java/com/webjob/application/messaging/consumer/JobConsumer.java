@@ -2,7 +2,7 @@ package com.webjob.application.messaging.consumer;
 
 import com.webjob.application.dto.Request.NotificationRequest;
 import com.webjob.application.enums.NotificationType;
-import com.webjob.application.event.dto.JobCreatedEvent;
+import com.webjob.application.dto.event.dto.JobCreatedEvent;
 import com.webjob.application.messaging.config.RabbitMQConfig;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.service.NotificationService;

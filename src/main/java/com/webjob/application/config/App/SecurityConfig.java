@@ -48,6 +48,9 @@ public class SecurityConfig {
     private static final String[] PUBLIC_GET_APIS = {
             "/api/v1/companies/**", "/api/v1/jobs/**", "/api/v1/skills/**", "/api/v1/industries/**"
     };
+    private static final String[] PUBLIC_POST_APIS = {
+            "/api/v1/companies","/api/v1/auth/register"
+    };
 
 
 
@@ -59,8 +62,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                                 .requestMatchers(HttpMethod.GET,PUBLIC_GET_APIS).permitAll()
-                        .anyRequest().access(permissionAuthorizationManager)
-//                                .anyRequest().authenticated()
+                                .requestMatchers(HttpMethod.POST,PUBLIC_POST_APIS).permitAll()
+//                        .anyRequest().access(permissionAuthorizationManager)
+                                .anyRequest().authenticated()
 //                                .anyRequest().permitAll()
                 )
                 .formLogin(form -> form.disable())

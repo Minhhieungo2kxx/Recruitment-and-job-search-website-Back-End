@@ -1,5 +1,6 @@
 package com.webjob.application.dto.Request;
 
+import com.webjob.application.enums.AccountType;
 import com.webjob.application.enums.UserStatus;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -35,7 +36,10 @@ public class Userrequest {
     private LocalDate dateOfBirth;
 
     @NotBlank(message = "Giới tính không được để trống")
-    @Pattern(regexp = "MALE|FEMALE", message = "Giới tính phải là MALE hoặc FEMALE")
+    @Pattern(
+            regexp = "MALE|FEMALE",
+            message = "Giới tính phải là MALE hoặc FEMALE"
+    )
     private String gender;
 
     @Size(max = 20, message = "Số điện thoại không được vượt quá 20 ký tự")
@@ -45,12 +49,11 @@ public class Userrequest {
     @Size(max = 500, message = "Địa chỉ không được vượt quá 500 ký tự")
     private String address;
 
-    private UserStatus status;
+    @NotNull(message = "Loại tài khoản không được để trống")
+    private AccountType accountType;
 
     private Long companyId;
 
-
-    private Long roleId;
 
 
 }
