@@ -1,6 +1,6 @@
 package com.webjob.application.messaging.producer;
 
-import com.webjob.application.dto.event.dto.JobCreatedEvent;
+import com.webjob.application.event.dto.JobCreatedEvent;
 import com.webjob.application.messaging.config.RabbitMQConfig;
 import com.webjob.application.models.Entity.FollowCompany;
 import com.webjob.application.repository.FollowCompanyRepository;

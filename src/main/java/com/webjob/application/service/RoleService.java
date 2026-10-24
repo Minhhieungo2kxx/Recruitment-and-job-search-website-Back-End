@@ -35,7 +35,6 @@ import java.util.Optional;
 public class RoleService {
 
     private final RoleRepository roleRepository;
-
     private final PermissionRepository permissionRepository;
     private final PermissionCacheService permissionCacheService;
 
@@ -84,11 +83,12 @@ public class RoleService {
 
         modelMapper.map(request, role);
 
-        rolePermissionRepository.deleteByRoleId(role.getId());
+
         List<Permission> permissions = getValidPerMissions(request.getPermissionIds());
 
         List<RolePermission> rolePermissions = new ArrayList<>();
         if (!permissions.isEmpty()) {
+            rolePermissionRepository.deleteByRoleId(role.getId());
             for (Permission permission : permissions) {
 
                 RolePermission rp = new RolePermission();
@@ -97,7 +97,7 @@ public class RoleService {
                 rp.setPermission(permission);
                 rolePermissions.add(rp);
             }
-            rolePermissionRepository.saveAll(rolePermissions);
+
         }
 
         rolePermissionRepository.saveAll(rolePermissions);
@@ -148,17 +148,9 @@ public class RoleService {
     }
     public ResponseDTO<List<RoleResponse>> getPaginated(int page,int size) {
 
-        try {
-
-            if (page <= 0)
-                page = 1;
-            if(size<=0)
-                size=10;
-        } catch (NumberFormatException e) {
-            // Nếu người dùng nhập sai, mặc định về trang đầu
-            page = 1;
-            size=10;
-        }
+        size = Math.min(Math.max(size, 1), 50);
+        page = Math.max(page, 1);
+        
         Page<Role> pagelist = getAllPage(page - 1, size);
         int currentpage = pagelist.getNumber() + 1;
         int pagesize = pagelist.getSize();

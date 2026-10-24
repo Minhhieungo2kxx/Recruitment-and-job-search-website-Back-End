@@ -3,7 +3,6 @@ package com.webjob.application.component;
 import com.webjob.application.enums.UserStatus;
 import com.webjob.application.exception.Customs.UnauthorizedException;
 import com.webjob.application.service.UserService;
-import com.webjob.application.utils.common.CustomUserDetails;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

@@ -1,4 +1,4 @@
-package com.webjob.application.dto.event;
+package com.webjob.application.event;
 
 import com.webjob.application.service.UploadFileServer.FileService;
 import lombok.RequiredArgsConstructor;

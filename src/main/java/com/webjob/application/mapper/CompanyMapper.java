@@ -1,11 +1,9 @@
 package com.webjob.application.mapper;
 
-import com.webjob.application.document.CompanyDocument;
+import com.webjob.application.elasticsearch.document.CompanyDocument;
 import com.webjob.application.dto.Response.CompanyAiDetailDTO;
 import com.webjob.application.models.Entity.Company;
 import org.springframework.stereotype.Component;
-
-import java.util.Map;
 
 @Component
 public class CompanyMapper {

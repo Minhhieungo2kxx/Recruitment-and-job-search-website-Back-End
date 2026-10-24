@@ -1,6 +1,6 @@
 package com.webjob.application.utils.common;
 
-import com.webjob.application.utils.common.CustomUserDetails;
+import com.webjob.application.component.CustomUserDetails;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

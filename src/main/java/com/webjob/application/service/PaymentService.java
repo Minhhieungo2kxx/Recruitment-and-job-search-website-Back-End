@@ -57,14 +57,31 @@ public class PaymentService {
     private final MomoService momoService;
 
     private final SecurityUtils securityUtils;
-
     private static final Long COMPETITION_VIEW_PRICE = 30000L;
     private final ApplicationEventPublisher eventPublisher;
 
     private final NotificationService notificationService;
 
+    @Transactional
+    public PaymentResponse createPaymentGateway(PaymentCreateRequest request, HttpServletRequest httpRequest) {
+        User currentUser = securityUtils.getCurrentUser();
 
-    public PaymentResponse createPaymentVnpay(Long userId, PaymentCreateRequest request, HttpServletRequest httpRequest) {
+        if ("VNPAY".equals(request.getGateway())) {
+            return createPaymentVnpay(
+                    currentUser.getId(), request, httpRequest
+            );
+        }
+        if ("MOMO".equals(request.getGateway())) {
+            return createPaymentMomo(
+                    currentUser.getId(), request, httpRequest
+            );
+        }
+        throw new BusinessException("Cổng thanh toán không hợp lệ");
+    }
+
+
+    public PaymentResponse createPaymentVnpay(Long userId,PaymentCreateRequest request,
+                                              HttpServletRequest httpRequest) {
 
         String lockKey = "payment:create:" + userId + ":" + request.getJobId();
         String lockValue = UtilFormat.generate8CharToken();
@@ -83,68 +100,117 @@ public class PaymentService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-            // Kiểm tra mức độ cạnh tranh của công việc
-            if (job.getCompetitionLevel() != CompetitionLevel.HIGH) {
-                throw new BusinessException("Công việc này không yêu cầu thanh toán để xem thông tin ứng viên");
-            }
-            boolean hasPending = paymentRepository.existsByUserIdAndJobIdAndStatusAndExpiredAtAfter(
-                    userId, job.getId(), PaymentStatus.PENDING.name(), LocalDateTime.now()
-            );
-            if (hasPending) {
-                throw new BusinessException("Bạn đang có giao dịch đang xử lý cho công việc này. Vui lòng chờ.");
-            }
-            // Kiểm tra xem user đã thanh toán thành công cho job này chưa
-            boolean hasPaid = paymentRepository.existsByUserIdAndJobIdAndStatus(userId, job.getId(), PaymentStatus.SUCCESS.name());
-            if (hasPaid) {
-                throw new BusinessException("Bạn đã thanh toán để xem thông tin ứng viên của công việc này");
-            }
-            // Tạo link thanh toán VNPay
-            String orderInfo = String.format("Thanh toán xem thông tin ứng viên - Công việc: %s", job.getName());
-            // Tạo bản ghi thanh toán
-            Payment payment = new Payment();
-            payment.setUser(user);
-            payment.setJob(job);
-            payment.setAmount(COMPETITION_VIEW_PRICE);
-            payment.setStatus(PaymentStatus.PENDING.name());
-            payment.setExpiredAt(LocalDateTime.now().plusMinutes(15));
-            // Tạo txnRef duy nhất dựa trên paymentId
-            String txnRef = vnPayService.generateTxnRef(user.getId());
-            payment.setOrderCode(txnRef);
-            payment.setProvider(request.getGateway());
-            payment.setOrderInfo(orderInfo);
-            payment = paymentRepository.save(payment);
+            validatePaymentForJob(userId, job);
 
+            Payment payment = createPayment(user, job, request.getGateway());
 
-            Map<String, Object> dataMap = new HashMap<>();
-            dataMap.put("amount", COMPETITION_VIEW_PRICE.intValue());
-            dataMap.put("orderInfo", orderInfo);
-            dataMap.put("userId", userId);
-            dataMap.put("txnRef", txnRef);
+            Map<String, Object> dataMap = buildPaymentData(payment, userId);
+
             String paymentUrl = vnPayService.createOrder(httpRequest, dataMap);
-
-            // Tạo response
-            PaymentResponse response = new PaymentResponse();
-            response.setId(payment.getId());
-            response.setUserId(userId);
-            response.setJobId(job.getId());
-            response.setJobName(job.getName());
-            response.setAmount(COMPETITION_VIEW_PRICE);
-            response.setStatus(payment.getStatus());
-            response.setPaymentUrl(paymentUrl);
-            response.setCreatedAt(payment.getCreatedAt());
-
-            log.info("Payment created | userId: {}, jobId: {}, paymentId: {}", userId, job.getId(), payment.getId());
-
-            return response;
+            log.info(
+                    "Payment created | userId: {}, jobId: {}, paymentId: {}",
+                    userId, job.getId(), payment.getId()
+            );
+            return buildPaymentResponse(payment, userId, job, paymentUrl);
 
         } finally {
             // Luôn unlock dù success hay exception
             redisLockService.unlock(lockKey, lockValue); // unlock an toàn theo value
 
         }
-
     }
 
+    private void validatePaymentForJob(Long userId, Job job) {
+        if (job.getCompetitionLevel() != CompetitionLevel.HIGH) {
+            throw new BusinessException("Công việc này không yêu cầu thanh toán để xem thông tin ứng viên");
+        }
+        boolean hasPending = paymentRepository
+                .existsByUserIdAndJobIdAndStatusAndExpiredAtAfter(
+                        userId,
+                        job.getId(),
+                        PaymentStatus.PENDING.name(),
+                        LocalDateTime.now()
+                );
+
+        if (hasPending) {
+            throw new BusinessException("Bạn đang có giao dịch đang xử lý cho công việc này. Vui lòng chờ."
+            );
+        }
+        boolean hasPaid = paymentRepository
+                .existsByUserIdAndJobIdAndStatus(
+                        userId,
+                        job.getId(),
+                        PaymentStatus.SUCCESS.name()
+                );
+
+        if (hasPaid) {
+            throw new BusinessException(
+                    "Bạn đã thanh toán để xem thông tin ứng viên của công việc này"
+            );
+        }
+    }
+    private Payment createPayment(User user, Job job, String gateway) {
+        // Thông tin đơn hàng
+        String orderInfo = String.format(
+                "Thanh toán xem thông tin ứng viên - Công việc: %s",
+                job.getName()
+        );
+
+        // Khởi tạo bản ghi thanh toán
+        Payment payment = new Payment();
+        payment.setUser(user);
+        payment.setJob(job);
+        payment.setAmount(COMPETITION_VIEW_PRICE);
+        payment.setStatus(PaymentStatus.PENDING.name());
+        payment.setExpiredAt(LocalDateTime.now().plusMinutes(15));
+
+        // Tạo mã giao dịch duy nhất
+        String txnRef = vnPayService.generateTxnRef(user.getId());
+        payment.setOrderCode(txnRef);
+
+        payment.setProvider(gateway);
+        payment.setOrderInfo(orderInfo);
+
+        return paymentRepository.save(payment);
+    }
+    private Map<String, Object> buildPaymentData(Payment payment, Long userId) {
+        Map<String, Object> dataMap = new HashMap<>();
+
+        dataMap.put("amount", COMPETITION_VIEW_PRICE.intValue());
+        dataMap.put("orderInfo", payment.getOrderInfo());
+        dataMap.put("userId", userId);
+        dataMap.put("txnRef", payment.getOrderCode());
+
+        return dataMap;
+    }
+    private PaymentResponse buildPaymentResponse(
+            Payment payment,
+            Long userId,
+            Job job,
+            String paymentUrl
+    ) {
+        PaymentResponse response = new PaymentResponse();
+
+        response.setId(payment.getId());
+        response.setUserId(userId);
+        response.setJobId(job.getId());
+        response.setJobName(job.getName());
+        response.setAmount(COMPETITION_VIEW_PRICE);
+        response.setStatus(payment.getStatus());
+        response.setPaymentUrl(paymentUrl);
+        response.setCreatedAt(payment.getCreatedAt());
+
+        return response;
+    }
+
+    @Transactional
+    public PaymentResponse handleVNPayReturn(HttpServletRequest request) {
+        // Parse VNPay callback parameters
+        PaymentCallbackRequest callbackRequest = extractVNPayCallbackParams(request);
+        // Xử lý callback
+        PaymentResponse response = handlePaymentCallbackVnPay(callbackRequest, request);
+        return response;
+    }
 
     public PaymentResponse handlePaymentCallbackVnPay(PaymentCallbackRequest callbackRequest, HttpServletRequest request) {
         // 1. Validate chữ ký từ VNPay
@@ -336,49 +402,19 @@ public class PaymentService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-            // Kiểm tra mức độ cạnh tranh của công việc
-            if (job.getCompetitionLevel() != CompetitionLevel.HIGH) {
-                throw new BusinessException("Công việc này không yêu cầu thanh toán để xem thông tin ứng viên");
-            }
-            boolean hasPending = paymentRepository.existsByUserIdAndJobIdAndStatusAndExpiredAtAfter(
-                    userId, job.getId(), PaymentStatus.PENDING.name(), LocalDateTime.now()
-            );
-            if (hasPending) {
-                throw new BusinessException("Bạn đang có giao dịch đang xử lý cho công việc này. Vui lòng chờ.");
-            }
-            // Kiểm tra xem user đã thanh toán thành công cho job này chưa
-            boolean hasPaid = paymentRepository.existsByUserIdAndJobIdAndStatus(userId, job.getId(), PaymentStatus.SUCCESS.name());
-            if (hasPaid) {
-                throw new BusinessException("Bạn đã thanh toán để xem thông tin ứng viên của công việc này");
-            }
-            // Tạo link thanh toán VNPay
-            String orderInfo = String.format("Thanh toán xem thông tin ứng viên - Công việc: %s", job.getName());
-            String requestId = "MOMO" + new Date().getTime();
-            String paymentUrl = momoService.createPaymentRequest(COMPETITION_VIEW_PRICE.toString(), requestId);
-            // Tạo bản ghi thanh toán
-            Payment payment = new Payment();
-            payment.setUser(user);
-            payment.setJob(job);
-            payment.setAmount(COMPETITION_VIEW_PRICE);
-            payment.setStatus(PaymentStatus.PENDING.name());
-            payment.setExpiredAt(LocalDateTime.now().plusMinutes(15));
+            validatePaymentForJob(userId,job);
 
-            payment.setOrderCode(requestId);
-            payment.setProvider(request.getGateway());
-            payment.setOrderInfo(orderInfo);
-            payment = paymentRepository.save(payment);
-            // Tạo response
-            PaymentResponse response = new PaymentResponse();
-            response.setId(payment.getId());
-            response.setUserId(userId);
-            response.setJobId(job.getId());
-            response.setJobName(job.getName());
-            response.setAmount(COMPETITION_VIEW_PRICE);
-            response.setStatus(payment.getStatus());
-            response.setPaymentUrl(paymentUrl);
-            response.setCreatedAt(payment.getCreatedAt());
-            log.info("Payment created | userId: {}, jobId: {}, paymentId: {}", userId, job.getId(), payment.getId());
-            return response;
+            Payment payment = createMomoPayment(user, job, request);
+            String paymentUrl = momoService.createPaymentRequest(
+                    COMPETITION_VIEW_PRICE.toString()
+                    ,payment.getOrderCode()
+            );
+            log.info("Payment created | userId: {}, jobId: {}, paymentId: {}",
+                    userId, job.getId(), payment.getId()
+            );
+            return buildPaymentResponse(
+                    payment,userId,job,paymentUrl
+            );
 
         } finally {
             // Luôn unlock dù success hay exception
@@ -386,6 +422,33 @@ public class PaymentService {
 
         }
 
+    }
+    private Payment createMomoPayment(User user, Job job, PaymentCreateRequest request) {
+        String orderInfo = String.format(
+                "Thanh toán xem thông tin ứng viên - Công việc: %s",
+                job.getName()
+        );
+
+        String requestId = "MOMO" + new Date().getTime();
+
+        // Tạo bản ghi thanh toán
+        Payment payment = new Payment();
+        payment.setUser(user);
+        payment.setJob(job);
+        payment.setAmount(COMPETITION_VIEW_PRICE);
+        payment.setStatus(PaymentStatus.PENDING.name());
+        payment.setExpiredAt(LocalDateTime.now().plusMinutes(15));
+
+        payment.setOrderCode(requestId);
+        payment.setProvider(request.getGateway());
+        payment.setOrderInfo(orderInfo);
+
+        return paymentRepository.save(payment);
+    }
+    @Transactional
+    public PaymentResponse handleMomoReturn(MomoPaymentCallback callback) {
+
+        return handlePaymentMomo(callback);
     }
 
     public PaymentResponse handlePaymentMomo(MomoPaymentCallback callbackRequest) {
@@ -445,64 +508,10 @@ public class PaymentService {
         return buildPaymentResponse(payment);
     }
 
-    @Scheduled(fixedDelay = 120000)
-    @Transactional
-    public void expirePendingPayments() {
-        List<Payment> expiredPayments =
-                paymentRepository.findByStatusAndExpiredAtBefore(
-                        PaymentStatus.PENDING.name(), LocalDateTime.now()
-                );
-
-        expiredPayments.forEach(p -> {
-            p.setStatus(PaymentStatus.SUCCESS.EXPIRED.name());
-            paymentRepository.save(p);
-        });
-    }
-
-    @Scheduled(cron = "0 0 3 * * ?") // 3h sáng
-    @Transactional
-    public void cleanupOldPayments() {
-        int deleted = paymentRepository.deleteOldPayments();
-        log.info("Deleted {} old payments", deleted);
-    }
-
-    @Transactional
-    public PaymentResponse createPaymentGateway(PaymentCreateRequest request, HttpServletRequest httpRequest) {
-        User currentUser = securityUtils.getCurrentUser();
-        PaymentResponse paymentResponse;
-
-        if ("VNPAY".equals(request.getGateway())) {
-            paymentResponse = createPaymentVnpay(
-                    currentUser.getId(), request, httpRequest);
-        } else {
-            paymentResponse = createPaymentMomo(
-                    currentUser.getId(), request, httpRequest);
-        }
-        return paymentResponse;
-    }
-
-
-    @Transactional
-    public PaymentResponse handleVNPayReturn(HttpServletRequest request) {
-        // Parse VNPay callback parameters
-        PaymentCallbackRequest callbackRequest = extractVNPayCallbackParams(request);
-        // Xử lý callback
-        PaymentResponse response = handlePaymentCallbackVnPay(callbackRequest, request);
-        return response;
-    }
-
-
-    @Transactional
-    public PaymentResponse handleMomoReturn(MomoPaymentCallback callback) {
-
-        return handlePaymentMomo(callback);
-    }
-
     public List<PaymentResponse> getPaymentHistory() {
         // Lấy user ID từ authentication (giả sử có getUserId method)
         User user = securityUtils.getCurrentUser();
         return getUserPaymentHistory(user.getId());
     }
-
 
 }

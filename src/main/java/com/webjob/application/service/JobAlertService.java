@@ -135,8 +135,7 @@ public class JobAlertService {
         String keyword = normalize(request.getKeyword());
         String location = normalize(request.getLocation());
 
-        RLock jobalertLock =
-                redissonClient.getLock("job-alert:update:" + alertId);
+        RLock jobalertLock = redissonClient.getLock("job-alert:update:" + alertId);
 
         RLock filterLock =
                 redissonClient.getLock(

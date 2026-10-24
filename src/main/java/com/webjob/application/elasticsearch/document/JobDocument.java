@@ -1,6 +1,5 @@
-package com.webjob.application.document;
+package com.webjob.application.elasticsearch.document;
 
-import com.webjob.application.enums.CompanyStatus;
 import lombok.*;
 
 import java.time.Instant;

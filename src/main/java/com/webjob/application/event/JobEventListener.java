@@ -1,8 +1,8 @@
-package com.webjob.application.dto.event;
+package com.webjob.application.event;
 
 import com.webjob.application.dto.Request.NotificationRequest;
-import com.webjob.application.dto.event.dto.JobAppliedNotificationEvent;
-import com.webjob.application.dto.event.dto.JobCreatedEvent;
+import com.webjob.application.event.dto.JobAppliedNotificationEvent;
+import com.webjob.application.event.dto.JobCreatedEvent;
 import com.webjob.application.elasticsearch.job.JobIndexService;
 import com.webjob.application.enums.NotificationType;
 import com.webjob.application.exception.Customs.BadRequestException;

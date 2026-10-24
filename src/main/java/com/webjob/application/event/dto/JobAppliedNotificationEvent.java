@@ -1,4 +1,4 @@
-package com.webjob.application.dto.event.dto;
+package com.webjob.application.event.dto;
 
 import com.webjob.application.models.Entity.Job;
 import com.webjob.application.models.Entity.User;

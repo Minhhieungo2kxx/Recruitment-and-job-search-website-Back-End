@@ -1,7 +1,7 @@
 package com.webjob.application.mapper;
 
-import com.webjob.application.document.JobDocument;
-import com.webjob.application.document.JobSkillDocument;
+import com.webjob.application.elasticsearch.document.JobDocument;
+import com.webjob.application.elasticsearch.document.JobSkillDocument;
 import com.webjob.application.dto.Response.JobAIDetailResponseDTO;
 import com.webjob.application.dto.Response.JobAIResponseDTO;
 import com.webjob.application.dto.Response.JobResponse;
@@ -17,7 +17,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @Component

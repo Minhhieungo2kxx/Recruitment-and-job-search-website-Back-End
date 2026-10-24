@@ -25,7 +25,28 @@ import java.util.Set;
 @Repository
 public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificationExecutor<Job> {
 
-    boolean existsByNameAndDeletedFalse(String name);
+    @Query("""
+        SELECT CASE WHEN COUNT(j) > 0 THEN true ELSE false END
+        FROM Job j
+        WHERE LOWER(j.name) = LOWER(:name)
+          AND j.deleted = false
+    """)
+    boolean existsByNameIgnoreCaseAndDeletedFalse(
+            @Param("name") String name
+    );
+
+    @Query("""
+        SELECT CASE WHEN COUNT(j) > 0 THEN true ELSE false END
+        FROM Job j
+        WHERE LOWER(j.name) = LOWER(:name)
+          AND j.deleted = false
+          AND j.id <> :id
+    """)
+    boolean existsByNameIgnoreCaseAndDeletedFalseAndIdNot(
+            @Param("name") String name,
+            @Param("id") Long id
+    );
+
 
 
     @Query("""
@@ -92,7 +113,6 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
             GROUP BY jc.id
             """)
     List<JobCountDto> countJobsByCategory();
-
 
 
     @EntityGraph(attributePaths = "company")
@@ -457,17 +477,16 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     Page<Long> findAllIds(Pageable pageable);
 
 
-
     @Query("""
-    SELECT j.id
-    FROM Job j
-    WHERE j.status = :status
-      AND j.deleted = false
-      AND j.startDate <= :now
-      AND j.endDate >= :now
-      AND j.id NOT IN :excludedJobIds
-    ORDER BY j.createdAt DESC
-    """)
+            SELECT j.id
+            FROM Job j
+            WHERE j.status = :status
+              AND j.deleted = false
+              AND j.startDate <= :now
+              AND j.endDate >= :now
+              AND j.id NOT IN :excludedJobIds
+            ORDER BY j.createdAt DESC
+            """)
     Page<Long> findJobIds(
             @Param("status") JobStatus status,
             @Param("now") Instant now,
@@ -476,36 +495,34 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     );
 
 
-
     @Query("""
-    SELECT DISTINCT j
-    FROM Job j
-    LEFT JOIN FETCH j.company
-    LEFT JOIN FETCH j.jobSkills js
-    LEFT JOIN FETCH js.skill
-    LEFT JOIN FETCH j.jobCategory
-    WHERE j.id IN :ids
-    """)
+            SELECT DISTINCT j
+            FROM Job j
+            LEFT JOIN FETCH j.company
+            LEFT JOIN FETCH j.jobSkills js
+            LEFT JOIN FETCH js.skill
+            LEFT JOIN FETCH j.jobCategory
+            WHERE j.id IN :ids
+            """)
     List<Job> findJobsWithDetails(
             @Param("ids") List<Long> ids
     );
 
 
-
     @Query("""
-    SELECT j.id
-    FROM Job j
-    JOIN j.jobSkills js
-    JOIN js.skill s
-    WHERE j.status = :status
-      AND j.deleted = false
-      AND j.startDate <= :now
-      AND j.endDate >= :now
-      AND s.id IN :skillIds
-      AND j.id NOT IN :excludedJobIds
-    GROUP BY j.id
-    ORDER BY COUNT(DISTINCT s.id) DESC, j.createdAt DESC
-    """)
+            SELECT j.id
+            FROM Job j
+            JOIN j.jobSkills js
+            JOIN js.skill s
+            WHERE j.status = :status
+              AND j.deleted = false
+              AND j.startDate <= :now
+              AND j.endDate >= :now
+              AND s.id IN :skillIds
+              AND j.id NOT IN :excludedJobIds
+            GROUP BY j.id
+            ORDER BY COUNT(DISTINCT s.id) DESC, j.createdAt DESC
+            """)
     List<Long> findCandidateJobIdsBySkills(
             @Param("skillIds") List<Long> skillIds,
             @Param("excludedJobIds") List<Long> excludedJobIds,
@@ -516,10 +533,6 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
 
 
     boolean existsByIdAndCompanyId(Long id, Long companyId);
-
-
-
-
 
 
 }

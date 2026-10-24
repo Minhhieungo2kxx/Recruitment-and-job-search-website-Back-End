@@ -1,4 +1,4 @@
-package com.webjob.application.dto.event;
+package com.webjob.application.event;
 
 import com.webjob.application.dto.record.LoginSuccessEvent;
 import com.webjob.application.service.SendEmail.ApplicationEmailService;

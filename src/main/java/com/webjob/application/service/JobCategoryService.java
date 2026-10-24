@@ -108,6 +108,8 @@ public class JobCategoryService {
         }
 
         if (request.getSkills() != null) {
+            category.getJobCategorySkills().clear();
+            jobCategoryRepository.flush();
             Map<Long, Skill> skillMaps = getSkillMapFromRequest(request);
 
             for (JobCategoryRequest.JobCategorySkillRequest dto : request.getSkills()) {

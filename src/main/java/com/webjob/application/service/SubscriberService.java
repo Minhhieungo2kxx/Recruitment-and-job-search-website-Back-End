@@ -15,6 +15,7 @@ import com.webjob.application.repository.SubscriberRepository;
 
 import com.webjob.application.service.Specification.SubscriberSpecification;
 import com.webjob.application.component.SecurityUtils;
+import com.webjob.application.utils.common.UtilFormat;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -77,17 +78,18 @@ public class SubscriberService {
 
             Subscriber subscriber = new Subscriber();
             modelMapper.map(request, subscriber);
+            subscriber.setName(UtilFormat.clean(request.getName()));
 
             Map<Long, Skill> skillMap = getSkillMap(request.getSkillIds());
+            Set<Long> skillIdSet = new HashSet<>(request.getSkillIds());
 
-            if (skillMap.size() != request.getSkillIds().size()) {
+            if (skillMap.size() != skillIdSet.size() ) {
                 throw new ResourceNotFoundException("Một hoặc nhiều Skill không tồn tại.");
             }
             if (subscriberRepository.existsByName(request.getName())) {
                 throw new BadRequestException("Tên subscriber đã tồn tại.");
             }
-            List<SubscriberSkill> subscriberSkills =
-                    request.getSkillIds()
+            List<SubscriberSkill> subscriberSkills = skillIdSet
                             .stream()
                             .map(id -> {
                                 SubscriberSkill ss = new SubscriberSkill();
@@ -142,18 +144,20 @@ public class SubscriberService {
             modelMapper.map(request, subscriber);
 
             Map<Long, Skill> skillMap = getSkillMap(request.getSkillIds());
+            Set<Long> skillIdSet = new HashSet<>(request.getSkillIds());
 
-            if (skillMap.size() != request.getSkillIds().size()) {
+            if (skillMap.size() != skillIdSet.size()) {
                 throw new ResourceNotFoundException("Một hoặc nhiều Skill không tồn tại.");
             }
-            if (subscriberRepository.existsByName(request.getName())) {
+            if (subscriberRepository.existsByNameAndIdNot(request.getName(), UtilFormat.asLong(id))) {
                 throw new BadRequestException("Tên subscriber đã tồn tại.");
             }
+            subscriber.setName(UtilFormat.clean(request.getName()));
 
             subscriber.getSubscriberSkills().clear();
 
             subscriberRepository.flush();
-            List<SubscriberSkill> subscriberSkills = request.getSkillIds()
+            List<SubscriberSkill> subscriberSkills = skillIdSet
                     .stream()
                     .map(skillId -> {
 
@@ -286,11 +290,3 @@ public class SubscriberService {
 
 
 }
-//    Với cải tiến này:
-//
-// ✔ Không load tất cả subscriber vào RAM
-//✔ Chạy batch rất lớn (10k – 1M subscriber) vẫn ổn
-//✔ Email đúng người đúng kỹ năng
-//✔ Mỗi subscriber chỉ nhận TOP 10 job mới nhất
-//✔ Tối ưu hiệu năng, giảm thời gian chạy scheduled
-//✔ Code sạch & dễ mở rộng

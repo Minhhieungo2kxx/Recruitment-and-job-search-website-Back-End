@@ -118,10 +118,10 @@ public class NotificationService {
     @Transactional
     public void deleteNotification(Long notificationId) {
 
-        User user = securityUtils.getCurrentUser();
+//        User user = securityUtils.getCurrentUser();
         Notification notification = notificationRepository
                 .findByIdAndUserId(notificationId, securityUtils.getCurrentUserId())
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
         notificationRepository.delete(notification);
     }
 
@@ -136,8 +136,10 @@ public class NotificationService {
         Long userId = securityUtils.getCurrentUserId();
 
         List<Notification> notifications = notificationRepository.findByUserIdAndReadFalse(userId);
-        notifications.forEach(notification -> notification.setRead(true));
-        notificationRepository.saveAll(notifications);
+
+            notifications.forEach(notification -> notification.setRead(true));
+            notificationRepository.saveAll(notifications);
+
     }
 
 
@@ -160,6 +162,7 @@ public class NotificationService {
         notification.setRead(!notification.isRead());
 
     }
+
     @Transactional
     public void readById(Long id) {
         Notification notification = notificationRepository

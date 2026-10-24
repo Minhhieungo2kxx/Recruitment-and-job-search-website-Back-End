@@ -78,9 +78,7 @@ public class Permission {
     private String updatedBy;
 
 
-    @OneToMany(
-            mappedBy = "permission"
-    )
+    @OneToMany(mappedBy = "permission")
     @JsonIgnore
     private List<RolePermission> rolePermissions = new ArrayList<>();
 }

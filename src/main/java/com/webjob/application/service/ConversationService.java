@@ -25,7 +25,6 @@ public class ConversationService {
     private final ConversationRepository conversationRepository;
     private final MessageMapper messageMapper;
 
-
     public ResponseDTO<List<ConversationDTO>> getPaginated(int page,int size,ConversationFilter filter) {
         if(filter==null){
             filter=new ConversationFilter();

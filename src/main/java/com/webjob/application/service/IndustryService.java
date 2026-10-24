@@ -84,16 +84,18 @@ public class IndustryService {
                 .toList();
     }
 
+    @Transactional
     public IndustryResponse restore(Long id) {
-
         Industry industry = industryRepository.findByIdAndDeletedTrue(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Industry not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Industry not found"));
 
         industry.setDeleted(false);
         industry.setDeletedAt(null);
         industry.setDeletedBy(null);
-        industryRepository.save(industry);
-        return modelMapper.map(industryRepository.save(industry),IndustryResponse.class);
+
+        Industry restored = industryRepository.save(industry);
+        return modelMapper.map(restored, IndustryResponse.class);
     }
     public ResponseDTO< List<IndustryResponse>> getIndustries(int page, int size, IndustryFilter request) {
         request = request == null ? new IndustryFilter() : request;

@@ -1,4 +1,4 @@
-package com.webjob.application.document;
+package com.webjob.application.elasticsearch.document;
 
 import co.elastic.clients.elasticsearch._types.mapping.FieldType;
 import lombok.*;

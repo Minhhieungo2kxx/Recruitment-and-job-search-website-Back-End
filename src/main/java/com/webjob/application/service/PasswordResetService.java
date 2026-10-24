@@ -92,6 +92,9 @@ public class PasswordResetService {
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail());
+        if (user == null) {
+            throw new ResourceNotFoundException("User not found");
+        }
         String token = generateToken();
 
         redisService.save(user.getId(), token, Duration.ofMinutes(6));
@@ -113,11 +116,5 @@ public class PasswordResetService {
                 .build();
         outboxService.save(dto);
 
-
     }
-
-
-
-
-
 }

@@ -1,7 +1,7 @@
 package com.webjob.application.messaging.config;
 
 import com.webjob.application.dto.Response.RabbitEvent;
-import com.webjob.application.dto.event.dto.JobCreatedEvent;
+import com.webjob.application.event.dto.JobCreatedEvent;
 import com.webjob.application.messaging.dto.EmailJobMessage;
 import com.webjob.application.messaging.dto.ForgotPasswordEmailEvent;
 import com.webjob.application.messaging.dto.JobAlertMessage;

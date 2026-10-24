@@ -44,16 +44,17 @@ public interface SubscriberRepository extends JpaRepository<Subscriber, Long>, J
     Optional<Subscriber> findSubscriberDetail(@Param("id") Long id);
 
     boolean existsByName(String name);
+    boolean existsByNameAndIdNot(String name, Long id);
 
     long countByUserId(Long userId);
 
     @Query("""
-        SELECT DISTINCT s
-        FROM Subscriber s
-        LEFT JOIN FETCH s.subscriberSkills ss
-        LEFT JOIN FETCH ss.skill
-        WHERE s.user.id = :userId
-    """)
+                SELECT DISTINCT s
+                FROM Subscriber s
+                LEFT JOIN FETCH s.subscriberSkills ss
+                LEFT JOIN FETCH ss.skill
+                WHERE s.user.id = :userId
+            """)
     List<Subscriber> findByUserIdWithSkills(@Param("userId") Long userId);
 
 //    JOIN: chỉ dùng để nối bảng hoặc lọc dữ liệu, không đảm bảo entity liên quan được nạp vào đối tượng.

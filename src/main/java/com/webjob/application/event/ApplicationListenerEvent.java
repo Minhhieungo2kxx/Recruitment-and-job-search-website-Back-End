@@ -1,9 +1,9 @@
-package com.webjob.application.dto.event;
+package com.webjob.application.event;
 
 import com.webjob.application.dto.Request.NotificationRequest;
 import com.webjob.application.enums.NotificationType;
 import com.webjob.application.enums.ResumeStatus;
-import com.webjob.application.dto.event.dto.ApplicationStatusChangedEvent;
+import com.webjob.application.event.dto.ApplicationStatusChangedEvent;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.service.NotificationService;
 import com.webjob.application.component.SecurityUtils;

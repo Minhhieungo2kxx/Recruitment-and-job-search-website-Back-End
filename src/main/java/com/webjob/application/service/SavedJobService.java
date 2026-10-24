@@ -70,7 +70,6 @@ public class SavedJobService {
             savedJob.setUser(user);
             savedJob.setJob(job);
 
-
             savedJobRepository.save(savedJob);
             publishRecommendationCacheInvalidateEvent(user.getId(),"saved_job");
 
@@ -108,12 +107,9 @@ public class SavedJobService {
     }
     public ResponseDTO<List<SavedJobResponse>> getSavedJobs(int page, int size) {
 
-        if (page <= 0) {
-            page = 1;
-        }
-        if (size <= 0) {
-            size = 10;
-        }
+        size = Math.min(Math.max(size, 1), 50);
+        page = Math.max(page, 1);
+
         Long userId=utils.getCurrentUserId();
         Pageable pageable = PageRequest.of(page-1, size, Sort.by("savedAt").descending());
         Page<SavedJob> pagelist =savedJobRepository.findByUserId(userId,pageable);
