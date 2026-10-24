@@ -48,7 +48,6 @@ public class AuthService {
     private final JwtDecoder jwtDecoder;
 
     private final TokenBlacklistService tokenBlacklistService;
-
     private final ApplicationEmailService applicationEmailService;
     private final ApplicationEventPublisher eventPublisher;
 

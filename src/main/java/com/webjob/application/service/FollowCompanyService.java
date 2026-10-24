@@ -125,7 +125,7 @@ public class FollowCompanyService {
         if (!follow.isNotificationEnabled()) {
             throw new BadRequestException("Notification is already disabled");
         }
-        follow.setNotificationEnabled(true);
+        follow.setNotificationEnabled(false);
         followRepository.save(follow);
     }
 }

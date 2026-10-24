@@ -1,6 +1,6 @@
 package com.webjob.application.service;
 
-import com.webjob.application.document.JobDocument;
+import com.webjob.application.elasticsearch.document.JobDocument;
 import com.webjob.application.dto.Request.*;
 import com.webjob.application.dto.Response.*;
 import com.webjob.application.elasticsearch.job.JobElasticsearchSearchService;
@@ -8,7 +8,7 @@ import com.webjob.application.enums.CompanyStatus;
 import com.webjob.application.enums.JobStatus;
 import com.webjob.application.enums.OutboxCategory;
 import com.webjob.application.enums.OutboxEventType;
-import com.webjob.application.dto.event.dto.JobCreatedEvent;
+import com.webjob.application.event.dto.JobCreatedEvent;
 import com.webjob.application.exception.Customs.BadRequestException;
 import com.webjob.application.exception.Customs.ForbiddenException;
 import com.webjob.application.mapper.JobMapper;
@@ -26,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -72,7 +71,7 @@ public class JobService {
 
     @Transactional
     public JobResponse createJob(JobRequest request) {
-        checkNameJob(request.getName());
+        checkNameJobCreate(request.getName());
         User user = securityUtils.getCurrentUser();
         validateCompany(user);
         validateSalary(request.getSalaryMin(), request.getSalaryMax());
@@ -92,7 +91,6 @@ public class JobService {
         Job saved = jobRepository.save(job);
         publishJobEvent(saved);
         outBoxJobEventIndex(saved);
-
 
         return jobMapper.toResponse(saved);
     }
@@ -140,8 +138,8 @@ public class JobService {
 
 
     @Transactional
-    @CacheEvict(value = "jobsCache", allEntries = true)
     public JobResponse updateJob(Long id, JobRequest request) {
+        checkNameJobUpdate(id,request.getName());
         Job job = getById(id);
         User user = securityUtils.getCurrentUser();
         validateCompany(user);
@@ -162,21 +160,39 @@ public class JobService {
             job.getJobSkills().clear();
             jobRepository.flush();   // Thực hiện DELETE ngay
             jobSkills = buildJobSkills(job, request);
+            job.setJobSkills(jobSkills);
         }
-        job.setJobSkills(jobSkills);
+
         Job edit = jobRepository.save(job);
 
         updateJobIndexOutbox(edit);
         return jobMapper.toResponse(edit);
     }
 
-    public boolean checkNameJob(String name) {
-        boolean exist = jobRepository.existsByNameAndDeletedFalse(name);
-        if (exist) {
-            throw new IllegalArgumentException("Job name " + name + " da ton tai, vui long tao Job khac");
+    public void checkNameJobCreate(String name) {
+        boolean exists = jobRepository.existsByNameIgnoreCaseAndDeletedFalse(name);
+
+        if (exists) {
+            throw new IllegalArgumentException(
+                    "Job name " + name + " đã tồn tại, vui lòng chọn tên khác."
+            );
         }
-        return false;
+
     }
+    public void checkNameJobUpdate(Long id, String name) {
+        boolean exists =
+                jobRepository.existsByNameIgnoreCaseAndDeletedFalseAndIdNot(
+                        name, id
+                );
+
+        if (exists) {
+            throw new IllegalArgumentException(
+                    "Job name " + name + " đã tồn tại, vui lòng chọn tên khác."
+            );
+        }
+
+    }
+
 
     public Job getById(Long id) {
         Job job = jobRepository.findByIdAndDeletedFalse(id).
@@ -600,6 +616,7 @@ public class JobService {
                 .build();
         outboxService.save(dto);
     }
+
     public void JobViewCountIncrementedOutbox(Long jobId) {
         JobDocument document = JobDocument.builder()
                 .id(jobId)
@@ -616,8 +633,5 @@ public class JobService {
                 .build();
         outboxService.save(dto);
     }
-
-
-
 }
 

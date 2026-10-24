@@ -33,8 +33,11 @@ public class SkillService {
     private final ModelMapper modelMapper;
 
     private final SkillMapper skillMapper;
+
     private final JobSkillRepository jobSkillRepository;
+
     private final SubscriberSkillRepository subscriberSkillRepository;
+
     private final JobCategorySkillRepository jobCategorySkillRepository;
 
     private final SkillAliasRepository skillAliasRepository;
@@ -191,8 +194,7 @@ public class SkillService {
                     throw new IllegalArgumentException("Alias must not be blank");
                 }
 
-                String normalized =
-                        UtilFormat.normalize(alias);
+                String normalized = UtilFormat.normalize(alias);
 
                 if (!normalizedAliases.add(normalized)) {
                     throw new IllegalArgumentException("Duplicate alias: " + alias);
@@ -321,9 +323,5 @@ public class SkillService {
                 .map(skill -> modelMapper.map(skill,SkillOptionResponse.class))
                 .toList();
     }
-
-
-
-
 
 }

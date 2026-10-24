@@ -1,4 +1,4 @@
-package com.webjob.application.dto.event.dto;
+package com.webjob.application.event.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

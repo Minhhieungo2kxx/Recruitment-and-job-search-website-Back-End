@@ -1,4 +1,4 @@
-package com.webjob.application.dto.event;
+package com.webjob.application.event;
 
 import com.webjob.application.dto.record.PermissionCacheInvalidationEvent;
 import com.webjob.application.pubsub.publisher.RedisPublisher;

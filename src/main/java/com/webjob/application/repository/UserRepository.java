@@ -3,12 +3,10 @@ package com.webjob.application.repository;
 import com.webjob.application.models.Entity.Company;
 import com.webjob.application.models.Entity.Role;
 import com.webjob.application.models.Entity.User;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -23,7 +21,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     boolean existsByEmailAndDeletedFalse(String email);
 
 
-    @SuppressWarnings("NullableProblems")
+
     boolean existsByIdAndDeletedFalse(Long id);
 
     User findByEmailAndDeletedFalse(String email);
@@ -104,6 +102,15 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     """)
     List<Long> findUserIdsByPermissionId(@Param("permissionId") Long permissionId);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        SELECT u
+        FROM User u
+        WHERE u.id = :userId
+    """)
+    Optional<User> lockUser(
+            @Param("userId") Long userId
+    );
 
 
 }

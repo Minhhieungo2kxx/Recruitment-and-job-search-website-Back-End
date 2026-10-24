@@ -2,9 +2,7 @@ package com.webjob.application.messaging.consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.webjob.application.document.JobDocument;
 import com.webjob.application.dto.Response.RabbitEvent;
-import com.webjob.application.enums.JobStatus;
 import com.webjob.application.enums.OutboxEventType;
 import com.webjob.application.exception.Customs.ResourceNotFoundException;
 import com.webjob.application.messaging.config.RabbitMQConfig;

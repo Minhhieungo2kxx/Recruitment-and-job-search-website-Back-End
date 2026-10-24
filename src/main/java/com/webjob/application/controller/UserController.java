@@ -127,6 +127,7 @@ public class UserController {
 
     }
 
+
     @PutMapping("/{id}/password")
     public ResponseEntity<ApiResponse<Object>> updatePassword(
             @PathVariable Long id,

@@ -1,7 +1,7 @@
 package com.webjob.application.service;
 
 
-import com.webjob.application.document.CompanyDocument;
+import com.webjob.application.elasticsearch.document.CompanyDocument;
 import com.webjob.application.dto.Request.*;
 import com.webjob.application.dto.Response.*;
 import com.webjob.application.elasticsearch.company.CompanyElasticsearchSearchService;

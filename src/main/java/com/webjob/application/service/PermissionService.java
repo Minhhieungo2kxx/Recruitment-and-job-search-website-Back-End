@@ -33,8 +33,6 @@ public class PermissionService {
     private final UserRepository userRepository;
 
 
-
-
     @Transactional
     public Permission savePermission(Permission permission){
         boolean exist= permissionRepository.existsByApiPathAndMethodAndModule(

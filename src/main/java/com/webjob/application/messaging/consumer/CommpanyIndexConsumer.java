@@ -2,8 +2,7 @@ package com.webjob.application.messaging.consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.webjob.application.document.CompanyDocument;
-import com.webjob.application.document.JobDocument;
+import com.webjob.application.elasticsearch.document.CompanyDocument;
 import com.webjob.application.dto.Response.RabbitEvent;
 import com.webjob.application.elasticsearch.company.CompanyIndexService;
 import com.webjob.application.enums.OutboxEventType;

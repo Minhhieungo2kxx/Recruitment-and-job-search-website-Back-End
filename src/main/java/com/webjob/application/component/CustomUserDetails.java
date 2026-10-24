@@ -1,4 +1,4 @@
-package com.webjob.application.utils.common;
+package com.webjob.application.component;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

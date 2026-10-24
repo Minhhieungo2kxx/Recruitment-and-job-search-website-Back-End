@@ -1,11 +1,6 @@
 package com.webjob.application.messaging.consumer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.webjob.application.document.CompanyDocument;
 import com.webjob.application.dto.Response.RabbitEvent;
-import com.webjob.application.elasticsearch.company.CompanyIndexService;
-import com.webjob.application.enums.OutboxEventType;
 import com.webjob.application.messaging.config.RabbitMQConfig;
 import com.webjob.application.service.JobMatchingHR.Matching.CvJobMatchingService;
 import com.webjob.application.service.OutBox.RabbitMessageDeupService;
@@ -13,7 +8,6 @@ import com.webjob.application.utils.common.UtilFormat;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 @Service

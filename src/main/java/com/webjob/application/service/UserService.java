@@ -249,14 +249,9 @@ public class UserService {
 
     public ResponseDTO<List<UserDTO>> getPaginatedResumes(int page, int size) {
 
-        try {
+        size = Math.min(Math.max(size, 1), 50);
+        page = Math.max(page, 1);
 
-            if (page <= 0) page = 1;
-            if (size <= 0) size = 10;
-        } catch (NumberFormatException e) {
-            page = 1; // mặc định về trang đầu tiên nếu input không hợp lệ
-            size = 10;
-        }
         Page<User> pagelist = getAllPage(page - 1, size);
         int currentpage = pagelist.getNumber() + 1;
         int pagesize = pagelist.getSize();

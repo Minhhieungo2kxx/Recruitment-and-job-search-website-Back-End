@@ -1,6 +1,6 @@
 package com.webjob.application.service;
 
-import com.webjob.application.document.JobDocument;
+import com.webjob.application.elasticsearch.document.JobDocument;
 import com.webjob.application.dto.Request.ApplyRequest;
 import com.webjob.application.dto.Request.OutboxDTO;
 import com.webjob.application.dto.Request.UpdateApplicationStatusRequest;
@@ -9,8 +9,8 @@ import com.webjob.application.dto.record.RecommendationCacheInvalidateEvent;
 import com.webjob.application.enums.OutboxCategory;
 import com.webjob.application.enums.OutboxEventType;
 import com.webjob.application.enums.ResumeStatus;
-import com.webjob.application.dto.event.dto.ApplicationStatusChangedEvent;
-import com.webjob.application.dto.event.dto.JobAppliedNotificationEvent;
+import com.webjob.application.event.dto.ApplicationStatusChangedEvent;
+import com.webjob.application.event.dto.JobAppliedNotificationEvent;
 import com.webjob.application.exception.Customs.*;
 import com.webjob.application.mapper.ApplicationMapper;
 import com.webjob.application.messaging.config.RabbitMQConfig;
