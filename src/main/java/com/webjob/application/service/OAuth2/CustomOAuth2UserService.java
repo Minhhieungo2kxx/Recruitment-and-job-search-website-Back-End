@@ -35,7 +35,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         OAuth2User oauthUser = super.loadUser(userRequest);
         String email = oauthUser.getAttribute("email");
         Map<String, Object> attributes = new HashMap<>(oauthUser.getAttributes());
+
+
+        if (email == null || email.isBlank()) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("email_not_found"),
+                    "Google account does not provide an email."
+            );
+        }
         User dbUser = userService.getEmailbyGoogle(email);
+
+
 
         if (dbUser != null) {
 

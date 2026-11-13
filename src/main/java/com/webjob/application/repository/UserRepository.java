@@ -21,7 +21,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     boolean existsByEmailAndDeletedFalse(String email);
 
 
-
     boolean existsByIdAndDeletedFalse(Long id);
 
     User findByEmailAndDeletedFalse(String email);
@@ -40,7 +39,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
             SELECT u
             FROM User u
             WHERE u.deleted = false
-              AND u.role.code LIKE 'HR_%'
+              AND u.role.code LIKE 'HR%'
               AND u.fullName LIKE %:searchTerm%
             """)
     List<User> findHRsByName(@Param("searchTerm") String searchTerm);
@@ -67,15 +66,20 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     boolean existsByRoleAndDeletedFalse(Role role);
 
+
     @Query("""
-            SELECT u
-            FROM User u
-            JOIN FETCH u.role r
-            WHERE u.id = :id
-              AND u.deleted = false
-              AND r.active = true
+                SELECT DISTINCT u
+                FROM User u
+                JOIN FETCH u.role r
+                LEFT JOIN FETCH r.rolePermissions rp
+                LEFT JOIN FETCH rp.permission p
+                WHERE u.id = :userId
+                  AND u.deleted = false
+                  AND r.active = true
             """)
-    Optional<User> findActiveRoleUser(@Param("id") Long id);
+    Optional<User> findActiveRoleUser(
+            @Param("userId") Long userId
+    );
 
     Optional<User> findByIdAndDeletedTrue(Long id);
 
@@ -94,20 +98,20 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     List<Long> findUserIdsByRoleId(@Param("roleId") Long roleId);
 
     @Query("""
-        SELECT DISTINCT u.id
-        FROM User u
-        JOIN u.role r
-        JOIN r.rolePermissions rp
-        WHERE rp.permission.id = :permissionId
-    """)
+                SELECT DISTINCT u.id
+                FROM User u
+                JOIN u.role r
+                JOIN r.rolePermissions rp
+                WHERE rp.permission.id = :permissionId
+            """)
     List<Long> findUserIdsByPermissionId(@Param("permissionId") Long permissionId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
-        SELECT u
-        FROM User u
-        WHERE u.id = :userId
-    """)
+                SELECT u
+                FROM User u
+                WHERE u.id = :userId
+            """)
     Optional<User> lockUser(
             @Param("userId") Long userId
     );

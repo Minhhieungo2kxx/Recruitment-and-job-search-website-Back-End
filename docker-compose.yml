@@ -1,83 +1,155 @@
-version: '3.9'
+
+#version: '3.9'
 
 services:
   rabbitmq:
-
     image: rabbitmq:3.13-management
-
     container_name: rabbitmq
-
     restart: unless-stopped
-
     hostname: rabbitmq
-
     ports:
       - "${SPRING_RABBITMQ_PORT}:5672"
-      - "15672:15672"
-
+      - "30080:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
-
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   redis:
     image: redis:7.4-alpine
     container_name: redis-server
-
     restart: unless-stopped
-
     ports:
-      - "${SPRING_REDIS_PORT}:6379"
-
+      - "30081:6379"
     environment:
-      REDIS_PASSWORD: ${SPRING_REDIS_PASSWORD}
-
-    command: >
-      sh -c "
-      redis-server
-      --requirepass $$REDIS_PASSWORD
-      --appendonly yes
-      --save 60 1000
-      --maxmemory 512mb
-      --maxmemory-policy allkeys-lru
-      "
-
+      REDIS_PASSWORD: ${SPRING_REDIS_PASSWORD:?SPRING_REDIS_PASSWORD is required}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        exec redis-server \
+          --requirepass "$$REDIS_PASSWORD" \
+          --appendonly yes \
+          --save 60 1000 \
+          --maxmemory 512mb \
+          --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
-
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test:
+        - CMD-SHELL
+        - 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping 2>/dev/null | grep -q PONG'
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   elasticsearch:
     image: elasticsearch:8.15.0
     container_name: elasticsearch
     restart: unless-stopped
-
     environment:
       discovery.type: single-node
-
-      xpack.security.enabled: true
-
+      xpack.security.enabled: "true"
       ELASTIC_PASSWORD: ${SPRING_ELASTICSEARCH_PASSWORD}
-
-      ES_JAVA_OPTS: -Xms512m -Xmx512m
-
-      bootstrap.memory_lock: false
-
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      bootstrap.memory_lock: "false"
     ports:
-      - "${ELASTICSEARCH_PORT}:9200"
-
-
+      - "30082:9200"
     volumes:
       - elastic_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          curl -fsS -u "elastic:$${ELASTIC_PASSWORD}"
+          "http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s"
+          >/dev/null
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "30083:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  recruitmentjob:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: recruitmentjob:latest
+    container_name: recruitmentjob
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-8081}:8081"
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 8081
+      SPRING_PROFILES_ACTIVE: prod
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      recruitmentjob:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "nginx", "-t" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
 
 volumes:
   redis_data:
   rabbitmq-data:
   elastic_data:
+  mysql_data:
+

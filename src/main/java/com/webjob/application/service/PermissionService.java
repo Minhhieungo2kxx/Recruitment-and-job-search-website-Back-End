@@ -1,9 +1,13 @@
 package com.webjob.application.service;
 
+import com.webjob.application.dto.Request.Redis.PermissionSet;
 import com.webjob.application.dto.record.PermissionCacheInvalidationEvent;
 import com.webjob.application.models.Entity.Permission;
 import com.webjob.application.dto.Response.MetaDTO;
 import com.webjob.application.dto.Response.ResponseDTO;
+import com.webjob.application.models.Entity.Role;
+import com.webjob.application.models.Entity.RolePermission;
+import com.webjob.application.models.Entity.User;
 import com.webjob.application.repository.PermissionRepository;
 import com.webjob.application.repository.RolePermissionRepository;
 import com.webjob.application.repository.UserRepository;
@@ -14,10 +18,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -110,6 +116,40 @@ public class PermissionService {
     @Transactional
     public Permission createPermission (Permission permission){
         return savePermission(permission);
+    }
+
+
+
+    @Transactional(readOnly = true)
+    public PermissionSet loadFromDatabase(Long userId) {
+
+        User user = userRepository.findActiveRoleUser(userId)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "User not found or role inactive"
+                        )
+                );
+
+        Role role = user.getRole();
+
+        if (role == null || !role.isActive()) {
+            return new PermissionSet();
+        }
+
+        PermissionSet permissionSet = new PermissionSet();
+
+        role.getRolePermissions()
+                .stream()
+                .map(RolePermission::getPermission)
+                .filter(Objects::nonNull)
+                .forEach(permission ->
+                        permissionSet.add(
+                                permission.getMethod(),
+                                permission.getApiPath()
+                        )
+                );
+
+        return permissionSet;
     }
 
 

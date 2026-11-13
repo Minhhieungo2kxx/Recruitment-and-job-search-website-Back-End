@@ -9,12 +9,14 @@ import com.webjob.application.models.Entity.RolePermission;
 import com.webjob.application.models.Entity.User;
 import com.webjob.application.pubsub.publisher.RedisPublisher;
 import com.webjob.application.repository.UserRepository;
+import com.webjob.application.service.PermissionService;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.util.List;
@@ -35,6 +37,8 @@ public class PermissionCacheService {
     private final RedisPublisher redisPublisher;
 
     private final RedissonClient redissonClient;
+
+    private final PermissionService permissionService;
 
     public PermissionSet getPermissions(Long userId) {
 
@@ -82,7 +86,8 @@ public class PermissionCacheService {
             }
 
             // LOAD DATABASE
-            PermissionSet db = loadFromDatabase(userId);
+
+            PermissionSet db = permissionService.loadFromDatabase(userId);
 
             // CACHE
 
@@ -105,32 +110,33 @@ public class PermissionCacheService {
 
     }
 
-    private PermissionSet loadFromDatabase(Long userId) {
-
-        User user = userRepository.findActiveRoleUser(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found or role inactive"));
-
-        Role role = user.getRole();
-
-        if (role == null || !role.isActive()) {
-            return new PermissionSet();
-        }
-
-        PermissionSet permissionSet = new PermissionSet();
-
-        role.getRolePermissions()
-                .stream()
-                .map(RolePermission::getPermission)
-                .filter(Objects::nonNull)
-                .forEach(permission ->
-                        permissionSet.add(
-                                permission.getMethod(),
-                                permission.getApiPath()
-                        )
-                );
-
-        return permissionSet;
-    }
+//    @Transactional(readOnly = true)
+//    private PermissionSet loadFromDatabase(Long userId) {
+//
+//        User user = userRepository.findActiveRoleUser(userId)
+//                .orElseThrow(() -> new UsernameNotFoundException("User not found or role inactive"));
+//
+//        Role role = user.getRole();
+//
+//        if (role == null || !role.isActive()) {
+//            return new PermissionSet();
+//        }
+//
+//        PermissionSet permissionSet = new PermissionSet();
+//
+//        role.getRolePermissions()
+//                .stream()
+//                .map(RolePermission::getPermission)
+//                .filter(Objects::nonNull)
+//                .forEach(permission ->
+//                        permissionSet.add(
+//                                permission.getMethod(),
+//                                permission.getApiPath()
+//                        )
+//                );
+//
+//        return permissionSet;
+//    }
 
     public void evict(Long userId) {
 

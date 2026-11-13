@@ -40,7 +40,7 @@ public class ElasticsearchAdminController {
         ApiResponse<Object> response = new ApiResponse<>(
                 HttpStatus.OK.value(),
                 null,
-                "Migrate JobDocument successful",
+                "Migrate CompaniesDocument successful",
                 null
         );
         return new ResponseEntity<>(response, HttpStatus.OK);
