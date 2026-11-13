@@ -60,27 +60,8 @@ public class LoginResponse {
         private Long id;
         private String code; // HR_MANAGER
         private String displayName; // HR
-        private List<RolePermission> rolePermissions;
-    }
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class RolePermission{
-        private Long id;
-        private Permission permission;
 
     }
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class Permission{
-        private Long id;
-//        private String name;
 
-    }
 
 }

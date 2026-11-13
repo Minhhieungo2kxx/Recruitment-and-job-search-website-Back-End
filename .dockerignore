@@ -1,14 +1,33 @@
-target
-.idea
-.vscode
-.git
+
+# Build output của Maven/Gradle
+target/
+build/
+
+# IDE và cấu hình phát triển
+.idea/
+.vscode/
+*.iml
+
+# Git
+.git/
 .gitignore
 
-Dockerfile
-docker-compose.yml
-
+# Log files
 *.log
+logs/
 
+# Environment files chứa thông tin nhạy cảm
 .env
+.env.*
+!.env.example
 
-node_modules
+# Node.js dependencies nếu dự án có frontend
+node_modules/
+
+# Hệ điều hành
+.DS_Store
+Thumbs.db
+
+# Tài liệu và file tạm
+*.swp
+*.tmp
