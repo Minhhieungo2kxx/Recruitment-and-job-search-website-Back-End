@@ -86,13 +86,18 @@ myapp/uploads/
 application-local.properties
 application-secret.properties
 
-# ===== DB files =====
 
+# Deployment backups
+.deployment/
+
+# Database backups
+*.sql.gz
 
 # === Others ===
 *.swp
 *.bak
 *.old
+
 
 
 # Ignore all .json files (general, if bạn không dùng .json cho data khác)

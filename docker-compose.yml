@@ -7,14 +7,20 @@ services:
     container_name: rabbitmq
     restart: unless-stopped
     hostname: rabbitmq
-    ports:
-      - "${SPRING_RABBITMQ_PORT}:5672"
-      - "30080:15672"
+#    ports:
+#      - "${SPRING_RABBITMQ_PORT}:5672"
+#      - "30080:15672"
+    expose:
+      - "5672"
+      - "15672"
+
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - backend
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
@@ -26,8 +32,10 @@ services:
     image: redis:7.4-alpine
     container_name: redis-server
     restart: unless-stopped
-    ports:
-      - "30081:6379"
+#    ports:
+#      - "30081:6379"
+    expose:
+      - "6379"
     environment:
       REDIS_PASSWORD: ${SPRING_REDIS_PASSWORD:?SPRING_REDIS_PASSWORD is required}
     command:
@@ -42,6 +50,9 @@ services:
           --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
+
+    networks:
+      - backend
     healthcheck:
       test:
         - CMD-SHELL
@@ -49,7 +60,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
 
   elasticsearch:
     image: elasticsearch:8.15.0
@@ -61,10 +72,15 @@ services:
       ELASTIC_PASSWORD: ${SPRING_ELASTICSEARCH_PASSWORD}
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
       bootstrap.memory_lock: "false"
-    ports:
-      - "30082:9200"
+#    ports:
+#      - "30082:9200"
+    expose:
+      - "9200"
     volumes:
       - elastic_data:/usr/share/elasticsearch/data
+
+    networks:
+      - backend
     healthcheck:
       test:
         - CMD-SHELL
@@ -84,10 +100,15 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
-    ports:
-      - "30083:3306"
+#    ports:
+#      - "30083:3306"
+    expose:
+      - "3306"
     volumes:
       - mysql_data:/var/lib/mysql
+
+    networks:
+      - backend
     healthcheck:
       test:
         ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
@@ -97,19 +118,28 @@ services:
       start_period: 60s
 
   recruitmentjob:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: recruitmentjob:latest
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    image: recruitmentjob:latest
+    image: ${DOCKERHUB_USERNAME}/recruitmentjob-backend:${IMAGE_TAG:-latest}
+
     container_name: recruitmentjob
     restart: unless-stopped
-    ports:
-      - "${SERVER_PORT:-8081}:8081"
+    init: true
+#    ports:
+#      - "${SERVER_PORT:-8081}:8081"
+    expose:
+      - "8081"
     env_file:
       - .env
     environment:
       SERVER_PORT: 8081
       SPRING_PROFILES_ACTIVE: prod
+
+    networks:
+      - frontend
+      - backend
 
     depends_on:
       mysql:
@@ -123,10 +153,10 @@ services:
     healthcheck:
       test:
         ["CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health >/dev/null || exit 1"]
-      interval: 15s
-      timeout: 5s
+      interval: 30s
+      timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 90s
 
   nginx:
     image: nginx:stable-alpine
@@ -136,6 +166,9 @@ services:
       - "80:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
+
+    networks:
+      - frontend
     depends_on:
       recruitmentjob:
         condition: service_healthy
@@ -147,9 +180,39 @@ services:
       start_period: 20s
 
 
+  ngrok:
+    image: ngrok/ngrok:3-alpine
+    container_name: ngrok
+    restart: unless-stopped
+
+    command:
+      - http
+      - http://nginx:80
+      - --url
+      - https://${NGROK_DOMAIN}
+      - --log
+      - stdout
+
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+
+    networks:
+      - frontend
+
+    depends_on:
+      - nginx
+
+
 volumes:
   redis_data:
   rabbitmq-data:
   elastic_data:
   mysql_data:
+
+networks:
+  frontend:
+    driver: bridge
+
+  backend:
+    driver: bridge
 
