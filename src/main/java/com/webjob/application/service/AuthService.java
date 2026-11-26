@@ -257,7 +257,7 @@ public class AuthService {
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .domain("localhost") //  BẮT BUỘC
+//                .domain("localhost") //  BẮT BUỘC
                 .maxAge(jwtRefreshExpiration)
                 .build();
     }
