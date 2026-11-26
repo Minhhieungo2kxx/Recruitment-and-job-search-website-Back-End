@@ -1,0 +1,477 @@
+name: CD RecruitmentJob
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+# Prevent concurrent production deployments
+concurrency:
+  group: recruitmentjob-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy RecruitmentJob
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      # ==========================================
+      # 1. CHECKOUT SOURCE CODE
+      # ==========================================
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # ==========================================
+      # 2. SETUP JAVA 21
+      # ==========================================
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # ==========================================
+      # 3. BUILD AND TEST
+      # ==========================================
+      - name: Build Spring Boot Application
+        run: mvn -B -ntp clean verify
+
+      # ==========================================
+      # 4. SETUP DOCKER BUILDX
+      # ==========================================
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ==========================================
+      # 5. LOGIN DOCKER HUB
+      # ==========================================
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # ==========================================
+      # 6. BUILD AND PUSH DOCKER IMAGE
+      # ==========================================
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/recruitmentjob-backend:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/recruitmentjob-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ==========================================
+      # 7. CONNECT TAILSCALE
+      # ==========================================
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_CLIENT_SECRET }}
+          tags: tag:ci
+          ping: ${{ secrets.TS_SERVER_IP }}
+
+      # ==========================================
+      # 8. DEPLOY TO UBUNTU SERVER
+      # ==========================================
+      - name: Deploy to Ubuntu Server
+        uses: appleboy/ssh-action@v1
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          fingerprint: ${{ secrets.SSH_HOST_FINGERPRINT }}
+          port: 22
+          timeout: 60s
+          command_timeout: 30m
+          envs: IMAGE_TAG,DOCKERHUB_USERNAME
+
+          script: |
+            set -Eeuo pipefail
+
+            # ==========================================
+            # CONFIGURATION
+            # ==========================================
+
+            PROJECT_DIR="/home/hieucuto0975/recruitmentjob"
+            SERVICE="recruitmentjob"
+
+            HEALTHCHECK_URL="http://localhost:8081/actuator/health"
+
+            TIMEOUT=300
+            INTERVAL=10
+
+            STATE_FILE="$PROJECT_DIR/.deployment-image"
+
+            cd "$PROJECT_DIR"
+
+            export IMAGE_TAG
+            export DOCKERHUB_USERNAME
+
+            echo "========================================"
+            echo "RECRUITMENTJOB PRODUCTION DEPLOYMENT"
+            echo "========================================"
+
+            # ==========================================
+            # 1. VALIDATE INPUT
+            # ==========================================
+
+            if [[ ! "$IMAGE_TAG" =~ ^[a-f0-9]{40}$ ]]; then
+              echo "ERROR: Invalid IMAGE_TAG"
+              exit 1
+            fi
+
+            if [[ ! "$DOCKERHUB_USERNAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+              echo "ERROR: Invalid Docker Hub username"
+              exit 1
+            fi
+
+            EXPECTED_IMAGE="${DOCKERHUB_USERNAME}/recruitmentjob-backend:${IMAGE_TAG}"
+
+            echo "Deploying image: $EXPECTED_IMAGE"
+
+            # ==========================================
+            # 2. CHECK DOCKER ENVIRONMENT
+            # ==========================================
+
+            docker --version
+            docker compose version
+
+            docker compose config --quiet
+
+            # ==========================================
+            # 3. SAVE PREVIOUS IMAGE
+            # ==========================================
+
+            PREVIOUS_IMAGE=""
+
+            # Read previously saved deployment image
+            if [[ -f "$STATE_FILE" ]]; then
+              PREVIOUS_IMAGE=$(cat "$STATE_FILE")
+            fi
+
+            # Fallback to currently running container
+            if [[ -z "$PREVIOUS_IMAGE" ]]; then
+              CURRENT_CONTAINER=$(docker compose ps -q "$SERVICE" | head -n 1)
+
+              if [[ -n "$CURRENT_CONTAINER" ]]; then
+                PREVIOUS_IMAGE=$(docker inspect \
+                  --format='{{.Config.Image}}' \
+                  "$CURRENT_CONTAINER")
+              fi
+            fi
+
+            # Validate previous image reference
+            if [[ -n "$PREVIOUS_IMAGE" ]]; then
+              echo "Previous image: $PREVIOUS_IMAGE"
+
+              IMAGE_REGEX='^([a-zA-Z0-9._-]+(:[0-9]+)?/)?[a-zA-Z0-9._/-]+(:[a-zA-Z0-9._-]+|@sha256:[a-fA-F0-9]{64})$'
+
+              if [[ ! "$PREVIOUS_IMAGE" =~ $IMAGE_REGEX ]]; then
+                echo "ERROR: Invalid previous image reference"
+                exit 1
+              fi
+            else
+              echo "No previous deployment found."
+            fi
+
+            # ==========================================
+            # 4. DEPLOYMENT FAILURE HANDLER
+            # ==========================================
+
+            rollback() {
+              EXIT_CODE=$?
+
+              trap - ERR
+              set +e
+
+              echo "========================================"
+              echo "DEPLOYMENT FAILED"
+              echo "STARTING ROLLBACK"
+              echo "========================================"
+
+              if [[ -n "$PREVIOUS_IMAGE" ]]; then
+
+                echo "Restoring: $PREVIOUS_IMAGE"
+
+                # Pull previous image directly
+                if docker pull "$PREVIOUS_IMAGE"; then
+
+                  # Override image variable for Compose
+                  export IMAGE_TAG="${PREVIOUS_IMAGE##*:}"
+
+                  if docker compose up -d \
+                    --no-deps \
+                    --no-build \
+                    --force-recreate \
+                    "$SERVICE"; then
+
+                    echo "Waiting for rollback health..."
+
+                    ROLLBACK_OK=false
+
+                    for i in $(seq 1 30); do
+
+                      CONTAINER=$(docker compose ps -q "$SERVICE" | head -n 1)
+
+                      if [[ -n "$CONTAINER" ]]; then
+
+                        STATE=$(docker inspect \
+                          --format='{{.State.Status}}' \
+                          "$CONTAINER" 2>/dev/null)
+
+                        HEALTH=$(docker inspect \
+                          --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' \
+                          "$CONTAINER" 2>/dev/null)
+
+                        if [[ "$STATE" == "running" ]] &&
+                           [[ "$HEALTH" == "healthy" ]]; then
+
+                          if docker compose exec -T "$SERVICE" \
+                            curl -fsS --max-time 10 \
+                            "$HEALTHCHECK_URL"; then
+
+                            ROLLBACK_OK=true
+                            break
+                          fi
+                        fi
+                      fi
+
+                      sleep 5
+
+                    done
+
+                    if [[ "$ROLLBACK_OK" == true ]]; then
+
+                      # Update deployment state after successful rollback
+                      TEMP_FILE="${STATE_FILE}.tmp"
+
+                      printf '%s\n' "$PREVIOUS_IMAGE" > "$TEMP_FILE"
+                      mv "$TEMP_FILE" "$STATE_FILE"
+
+                      echo "ROLLBACK SUCCESSFUL"
+                      echo "RESTORED IMAGE: $PREVIOUS_IMAGE"
+
+                    else
+                      echo "CRITICAL: ROLLBACK HEALTHCHECK FAILED"
+                    fi
+
+                  else
+                    echo "CRITICAL: ROLLBACK COMMAND FAILED"
+                  fi
+
+                else
+                  echo "CRITICAL: PREVIOUS IMAGE PULL FAILED"
+                fi
+
+              else
+                echo "No previous image available."
+                echo "Manual recovery may be required."
+              fi
+
+              echo "========================================"
+              echo "FINAL CONTAINER STATUS"
+              echo "========================================"
+
+              docker compose ps
+
+              docker compose logs --tail=100 "$SERVICE"
+
+              exit "$EXIT_CODE"
+            }
+
+            trap rollback ERR
+
+            # ==========================================
+            # 5. PULL NEW IMAGE
+            # ==========================================
+
+            echo "Pulling new image..."
+
+            docker compose pull "$SERVICE"
+
+            # ==========================================
+            # 6. DEPLOY APPLICATION
+            # ==========================================
+
+            echo "Starting RecruitmentJob..."
+
+            docker compose up -d \
+              --no-deps \
+              --no-build \
+              --force-recreate \
+              "$SERVICE"
+
+            # ==========================================
+            # 7. WAIT FOR APPLICATION HEALTH
+            # ==========================================
+
+            echo "Waiting for application..."
+
+            ELAPSED=0
+
+            while true; do
+
+              CONTAINER=$(docker compose ps -q "$SERVICE" | head -n 1)
+
+              if [[ -n "$CONTAINER" ]]; then
+
+                STATE=$(docker inspect \
+                  --format='{{.State.Status}}' \
+                  "$CONTAINER")
+
+                HEALTH=$(docker inspect \
+                  --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' \
+                  "$CONTAINER")
+
+                echo "RecruitmentJob: state=$STATE health=$HEALTH"
+
+                if [[ "$STATE" == "running" ]] &&
+                   [[ "$HEALTH" == "healthy" ]]; then
+                  break
+                fi
+
+                if [[ "$STATE" == "exited" ]] ||
+                   [[ "$STATE" == "dead" ]]; then
+                  echo "ERROR: Application container stopped"
+                  docker compose logs --tail=100 "$SERVICE"
+                  false
+                fi
+
+                if [[ "$HEALTH" == "unhealthy" ]]; then
+                  echo "ERROR: Application is unhealthy"
+                  docker compose logs --tail=100 "$SERVICE"
+                  false
+                fi
+
+              fi
+
+              if [[ "$ELAPSED" -ge "$TIMEOUT" ]]; then
+                echo "ERROR: Application startup timeout"
+                docker compose logs --tail=100 "$SERVICE"
+                false
+              fi
+
+              sleep "$INTERVAL"
+              ELAPSED=$((ELAPSED + INTERVAL))
+
+            done
+
+            # ==========================================
+            # 8. VERIFY SPRING BOOT ACTUATOR
+            # ==========================================
+
+            echo "Checking Spring Boot Actuator..."
+
+            docker compose exec -T "$SERVICE" \
+              curl -fsS --max-time 10 \
+              "$HEALTHCHECK_URL"
+
+            echo
+
+            # ==========================================
+            # 9. VERIFY DEPLOYED IMAGE
+            # ==========================================
+
+            CONTAINER=$(docker compose ps -q "$SERVICE" | head -n 1)
+
+            DEPLOYED_IMAGE=$(docker inspect \
+              --format='{{.Config.Image}}' \
+              "$CONTAINER")
+
+            if [[ "$DEPLOYED_IMAGE" != "$EXPECTED_IMAGE" ]]; then
+              echo "ERROR: Image mismatch"
+              echo "Expected: $EXPECTED_IMAGE"
+              echo "Actual: $DEPLOYED_IMAGE"
+              false
+            fi
+
+            # ==========================================
+            # 10. SAVE DEPLOYMENT STATE
+            # ==========================================
+
+            TEMP_FILE="${STATE_FILE}.tmp"
+
+            printf '%s\n' "$EXPECTED_IMAGE" > "$TEMP_FILE"
+
+            mv "$TEMP_FILE" "$STATE_FILE"
+
+            # ==========================================
+            # 11. CLEANUP OLD DOCKER IMAGES
+            # ==========================================
+
+            echo "Starting Docker image cleanup..."
+
+            IMAGE_REPOSITORY="${DOCKERHUB_USERNAME}/recruitmentjob-backend"
+
+            KEEP_IMAGES=(
+              "$EXPECTED_IMAGE"
+              "$PREVIOUS_IMAGE"
+              "${IMAGE_REPOSITORY}:latest"
+            )
+
+            while IFS= read -r IMAGE; do
+
+              [[ -z "$IMAGE" ]] && continue
+
+              KEEP=false
+
+              for KEEP_IMAGE in "${KEEP_IMAGES[@]}"; do
+                if [[ -n "$KEEP_IMAGE" && "$IMAGE" == "$KEEP_IMAGE" ]]; then
+                  KEEP=true
+                  break
+                fi
+              done
+
+              if [[ "$KEEP" == true ]]; then
+                echo "[KEEP] $IMAGE"
+                continue
+              fi
+
+              echo "[REMOVE] $IMAGE"
+
+              if docker image rm "$IMAGE"; then
+                echo "[SUCCESS] Removed $IMAGE"
+              else
+                echo "[WARNING] Could not remove $IMAGE"
+              fi
+
+            done < <(
+              docker image ls "$IMAGE_REPOSITORY" \
+                --format '{{.Repository}}:{{.Tag}}'
+            )
+
+            docker image prune -f
+
+            echo "Docker image cleanup completed."
+
+            # ==========================================
+            # 12. DEPLOYMENT SUCCESS
+            # ==========================================
+
+            trap - ERR
+
+            echo "========================================"
+            echo "RECRUITMENTJOB DEPLOY SUCCESS"
+            echo "IMAGE: $EXPECTED_IMAGE"
+            echo "========================================"
+
+            docker compose ps
+
+            docker compose logs --tail=50 "$SERVICE"
